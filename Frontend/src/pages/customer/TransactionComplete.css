@@ -1,0 +1,286 @@
+/* Direct CSS declarations. Edit these values without Tailwind @apply. */
+
+.transaction-complete__item-1 {
+  height: 100%;
+  max-width: var(--container-lg,32rem);
+  background-color: var(--color-slate-950,oklch(12.9% .042 264.695));
+  padding-inline: calc(var(--spacing,.25rem) * 4);
+  padding-block: calc(var(--spacing,.25rem) * 2.5);
+  text-align: center;
+  color: var(--color-slate-100,oklch(96.8% .007 247.896));
+  -webkit-user-select: none;
+  user-select: none;
+  flex-direction: column;
+  justify-content: space-between;
+  margin-inline: auto;
+  display: flex;
+  overflow: hidden;
+}
+
+@media (width>=40rem) {
+  .transaction-complete__item-1 {
+    padding-block: calc(var(--spacing,.25rem) * 3);
+  }
+}
+
+.transaction-complete__item-2 {
+  flex-shrink: 0;
+}
+
+.transaction-complete__item-3 {
+  align-items: center;
+  gap: calc(var(--spacing,.25rem) * 1.5);
+  border-style: var(--tw-border-style);
+  border-width: 1px;
+  border-color: #00bb7f4d;
+  border-radius: 2147483647px;
+  display: inline-flex;
+}
+
+@supports (color:color-mix(in lab, red, red)) {
+  .transaction-complete__item-3 {
+    border-color: color-mix(in oklab, var(--color-emerald-500,oklch(69.6% .17 162.48)) 30%, transparent);
+  }
+}
+
+.transaction-complete__item-3 {
+  background-color: #00bb7f26;
+}
+
+@supports (color:color-mix(in lab, red, red)) {
+  .transaction-complete__item-3 {
+    background-color: color-mix(in oklab, var(--color-emerald-500,oklch(69.6% .17 162.48)) 15%, transparent);
+  }
+}
+
+.transaction-complete__item-3 {
+  padding-inline: calc(var(--spacing,.25rem) * 3);
+  padding-block: calc(var(--spacing,.25rem) * .5);
+  --tw-font-weight: var(--font-weight-black,900);
+  font-size: 11px;
+  font-weight: var(--font-weight-black,900);
+  --tw-tracking: var(--tracking-wider,.05em);
+  letter-spacing: var(--tracking-wider,.05em);
+  color: var(--color-emerald-300,oklch(84.5% .143 164.978));
+  text-transform: uppercase;
+}
+
+.transaction-complete__item-4 {
+  height: calc(var(--spacing,.25rem) * 3.5);
+  width: calc(var(--spacing,.25rem) * 3.5);
+}
+
+.transaction-complete__item-5 {
+  padding-block: var(--spacing,.25rem);
+  flex-shrink: 0;
+  margin-block: auto;
+}
+
+.transaction-complete__item-6 {
+  margin-inline: auto;
+  margin-bottom: calc(var(--spacing,.25rem) * 2);
+  height: calc(var(--spacing,.25rem) * 14);
+  width: calc(var(--spacing,.25rem) * 14);
+  border-radius: var(--radius-3xl,1.5rem);
+  border-style: var(--tw-border-style);
+  border-width: 1px;
+  border-color: #00bb7f66;
+  justify-content: center;
+  align-items: center;
+  display: flex;
+}
+
+@supports (color:color-mix(in lab, red, red)) {
+  .transaction-complete__item-6 {
+    border-color: color-mix(in oklab, var(--color-emerald-500,oklch(69.6% .17 162.48)) 40%, transparent);
+  }
+}
+
+.transaction-complete__item-6 {
+  background-color: #00bb7f33;
+}
+
+@supports (color:color-mix(in lab, red, red)) {
+  .transaction-complete__item-6 {
+    background-color: color-mix(in oklab, var(--color-emerald-500,oklch(69.6% .17 162.48)) 20%, transparent);
+  }
+}
+
+.transaction-complete__item-6 {
+  color: var(--color-emerald-400,oklch(76.5% .177 163.223));
+  --tw-shadow: 0 20px 25px -5px var(--tw-shadow-color,#0000001a), 0 8px 10px -6px var(--tw-shadow-color,#0000001a);
+  box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  --tw-shadow-color: #002c2299;
+}
+
+@supports (color:color-mix(in lab, red, red)) {
+  .transaction-complete__item-6 {
+    --tw-shadow-color: color-mix(in oklab, color-mix(in oklab, var(--color-emerald-950,oklch(26.2% .051 172.552)) 60%, transparent) var(--tw-shadow-alpha), transparent);
+  }
+}
+
+@media (width>=40rem) {
+  .transaction-complete__item-6 {
+    height: calc(var(--spacing,.25rem) * 16);
+    width: calc(var(--spacing,.25rem) * 16);
+  }
+}
+
+.transaction-complete__item-7 {
+  height: calc(var(--spacing,.25rem) * 9);
+  width: calc(var(--spacing,.25rem) * 9);
+  stroke-width: 2.5px;
+}
+
+@media (width>=40rem) {
+  .transaction-complete__item-7 {
+    height: calc(var(--spacing,.25rem) * 10);
+    width: calc(var(--spacing,.25rem) * 10);
+  }
+}
+
+.transaction-complete__item-8 {
+  font-size: var(--text-2xl,1.5rem);
+  line-height: var(--tw-leading,var(--text-2xl--line-height,calc(2 / 1.5)));
+  --tw-leading: var(--leading-tight,1.25);
+  line-height: var(--leading-tight,1.25);
+  --tw-font-weight: var(--font-weight-black,900);
+  font-weight: var(--font-weight-black,900);
+  --tw-tracking: var(--tracking-tight,-.025em);
+  letter-spacing: var(--tracking-tight,-.025em);
+  color: var(--color-white,#fff);
+}
+
+@media (width>=40rem) {
+  .transaction-complete__item-8 {
+    font-size: var(--text-3xl,1.875rem);
+    line-height: var(--tw-leading,var(--text-3xl--line-height,calc(2.25 / 1.875)));
+  }
+}
+
+.transaction-complete__item-9 {
+  margin-inline: auto;
+  margin-top: calc(var(--spacing,.25rem) * 3);
+  max-width: var(--container-xs,20rem);
+}
+
+:where(.transaction-complete__item-9>:not(:last-child)) {
+  --tw-space-y-reverse: 0;
+  margin-block-start: calc(calc(var(--spacing,.25rem) * 2) * var(--tw-space-y-reverse));
+  margin-block-end: calc(calc(var(--spacing,.25rem) * 2) * calc(1 - var(--tw-space-y-reverse)));
+}
+
+.transaction-complete__item-9 {
+  border-radius: var(--radius-2xl,1rem);
+  border-style: var(--tw-border-style);
+  border-width: 1px;
+  border-color: var(--color-slate-800,oklch(27.9% .041 260.031));
+  background-color: #0f172be6;
+}
+
+@supports (color:color-mix(in lab, red, red)) {
+  .transaction-complete__item-9 {
+    background-color: color-mix(in oklab, var(--color-slate-900,oklch(20.8% .042 265.755)) 90%, transparent);
+  }
+}
+
+.transaction-complete__item-9 {
+  padding: calc(var(--spacing,.25rem) * 3.5);
+  text-align: left;
+  font-family: var(--font-mono,ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+  font-size: var(--text-xs,.75rem);
+  line-height: var(--tw-leading,var(--text-xs--line-height,calc(1 / .75)));
+  --tw-shadow: 0 20px 25px -5px var(--tw-shadow-color,#0000001a), 0 8px 10px -6px var(--tw-shadow-color,#0000001a);
+  box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+}
+
+.transaction-complete__item-10 {
+  color: var(--color-slate-400,oklch(70.4% .04 256.788));
+  justify-content: space-between;
+  align-items: center;
+  display: flex;
+}
+
+.transaction-complete__item-11 {
+  font-family: var(--font-mono,ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+  --tw-font-weight: var(--font-weight-black,900);
+  font-weight: var(--font-weight-black,900);
+  color: var(--color-white,#fff);
+}
+
+.transaction-complete__item-12 {
+  color: var(--color-slate-400,oklch(70.4% .04 256.788));
+  justify-content: space-between;
+  align-items: center;
+  display: flex;
+}
+
+.transaction-complete__item-13 {
+  font-family: var(--font-mono,ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+  --tw-font-weight: var(--font-weight-black,900);
+  font-weight: var(--font-weight-black,900);
+  color: var(--color-emerald-400,oklch(76.5% .177 163.223));
+}
+
+.transaction-complete__item-14 {
+  border-top-style: var(--tw-border-style);
+  border-top-width: 1px;
+  border-color: var(--color-slate-800,oklch(27.9% .041 260.031));
+  padding-top: calc(var(--spacing,.25rem) * 2);
+  font-family: var(--font-sans,-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
+  color: var(--color-slate-400,oklch(70.4% .04 256.788));
+  justify-content: space-between;
+  align-items: center;
+  display: flex;
+}
+
+.transaction-complete__item-15 {
+  --tw-font-weight: var(--font-weight-bold,700);
+  font-weight: var(--font-weight-bold,700);
+  color: var(--color-slate-300,oklch(86.9% .022 252.894));
+}
+
+.transaction-complete__item-16 {
+  font-family: var(--font-mono,ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+  font-size: var(--text-lg,1.125rem);
+  line-height: var(--tw-leading,var(--text-lg--line-height,calc(1.75 / 1.125)));
+  --tw-font-weight: var(--font-weight-black,900);
+  font-weight: var(--font-weight-black,900);
+  color: var(--color-white,#fff);
+  --tw-numeric-spacing: tabular-nums;
+  font-variant-numeric: var(--tw-ordinal,) var(--tw-slashed-zero,) var(--tw-numeric-figure,) var(--tw-numeric-spacing,) var(--tw-numeric-fraction,);
+}
+
+.transaction-complete__item-17 {
+  padding-top: calc(var(--spacing,.25rem) * 1.5);
+  flex-shrink: 0;
+}
+
+.transaction-complete__item-18 {
+  width: 100%;
+  padding-block: calc(var(--spacing,.25rem) * 3);
+  font-size: var(--text-base,1rem);
+  line-height: var(--tw-leading,var(--text-base--line-height,calc(1.5 / 1)));
+  --tw-shadow: 0 20px 25px -5px var(--tw-shadow-color,#0000001a), 0 8px 10px -6px var(--tw-shadow-color,#0000001a);
+  box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  --tw-shadow-color: #00bb7f40;
+}
+
+@supports (color:color-mix(in lab, red, red)) {
+  .transaction-complete__item-18 {
+    --tw-shadow-color: color-mix(in oklab, color-mix(in oklab, var(--color-emerald-500,oklch(69.6% .17 162.48)) 25%, transparent) var(--tw-shadow-alpha), transparent);
+  }
+}
+
+@media (width>=40rem) {
+  .transaction-complete__item-18 {
+    font-size: var(--text-lg,1.125rem);
+    line-height: var(--tw-leading,var(--text-lg--line-height,calc(1.75 / 1.125)));
+  }
+}
+
+.transaction-complete__item-19 {
+  height: calc(var(--spacing,.25rem) * 5);
+  width: calc(var(--spacing,.25rem) * 5);
+  stroke-width: 2.5px;
+}

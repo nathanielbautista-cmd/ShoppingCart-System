@@ -1,0 +1,97 @@
+/* Direct CSS declarations. Edit these values without Tailwind @apply. */
+
+.modal__item-1 {
+  z-index: 50;
+  background-color: #020618cc;
+  justify-content: center;
+  align-items: center;
+  display: flex;
+  position: fixed;
+  inset: 0;
+}
+
+@supports (color:color-mix(in lab, red, red)) {
+  .modal__item-1 {
+    background-color: color-mix(in oklab, var(--color-slate-950,oklch(12.9% .042 264.695)) 80%, transparent);
+  }
+}
+
+.modal__item-1 {
+  padding: calc(var(--spacing,.25rem) * 3);
+  --tw-backdrop-blur: blur(var(--blur-sm,8px));
+  -webkit-backdrop-filter: var(--tw-backdrop-blur,) var(--tw-backdrop-brightness,) var(--tw-backdrop-contrast,) var(--tw-backdrop-grayscale,) var(--tw-backdrop-hue-rotate,) var(--tw-backdrop-invert,) var(--tw-backdrop-opacity,) var(--tw-backdrop-saturate,) var(--tw-backdrop-sepia,);
+  backdrop-filter: var(--tw-backdrop-blur,) var(--tw-backdrop-brightness,) var(--tw-backdrop-contrast,) var(--tw-backdrop-grayscale,) var(--tw-backdrop-hue-rotate,) var(--tw-backdrop-invert,) var(--tw-backdrop-opacity,) var(--tw-backdrop-saturate,) var(--tw-backdrop-sepia,);
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+@media (width>=40rem) {
+  .modal__item-1 {
+    padding: calc(var(--spacing,.25rem) * 4);
+  }
+}
+
+.modal__item-1 {
+  transition-duration: .2s;
+}
+
+.modal__item-2 {
+  border-bottom-style: var(--tw-border-style);
+  border-bottom-width: 1px;
+  border-color: var(--color-slate-800,oklch(27.9% .041 260.031));
+  padding-bottom: calc(var(--spacing,.25rem) * 3);
+  flex-shrink: 0;
+  justify-content: space-between;
+  align-items: center;
+  display: flex;
+}
+
+.modal__item-3 {
+  font-size: var(--text-base,1rem);
+  line-height: var(--tw-leading,var(--text-base--line-height,calc(1.5 / 1)));
+  --tw-font-weight: var(--font-weight-bold,700);
+  font-weight: var(--font-weight-bold,700);
+  --tw-tracking: var(--tracking-tight,-.025em);
+  letter-spacing: var(--tracking-tight,-.025em);
+  color: var(--color-white,#fff);
+}
+
+@media (width>=40rem) {
+  .modal__item-3 {
+    font-size: var(--text-lg,1.125rem);
+    line-height: var(--tw-leading,var(--text-lg--line-height,calc(1.75 / 1.125)));
+  }
+}
+
+.modal__item-4 {
+  height: calc(var(--spacing,.25rem) * 8);
+  width: calc(var(--spacing,.25rem) * 8);
+  cursor: pointer;
+  border-radius: var(--radius-xl,.75rem);
+  background-color: var(--color-slate-800,oklch(27.9% .041 260.031));
+  color: var(--color-slate-400,oklch(70.4% .04 256.788));
+  transition-property: color,background-color,border-color,outline-color,text-decoration-color,fill,stroke,--tw-gradient-from,--tw-gradient-via,--tw-gradient-to;
+  transition-timing-function: var(--tw-ease,var(--default-transition-timing-function,cubic-bezier(.4, 0, .2, 1)));
+  transition-duration: var(--tw-duration,var(--default-transition-duration,.15s));
+  justify-content: center;
+  align-items: center;
+  display: flex;
+}
+
+@media (hover:hover) {
+  .modal__item-4:hover {
+    background-color: var(--color-slate-700,oklch(37.2% .044 257.287));
+    color: var(--color-white,#fff);
+  }
+}
+
+.modal__item-5 {
+  height: calc(var(--spacing,.25rem) * 4);
+  width: calc(var(--spacing,.25rem) * 4);
+}
+
+.modal__item-6 {
+  padding-block: calc(var(--spacing,.25rem) * 3);
+  flex: 1;
+  overflow-y: auto;
+}

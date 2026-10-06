@@ -1,0 +1,3 @@
+# OJ-MP6300 / YOKO HID GUM in USB keyboard mode.
+# Confirmed with evtest: vendor 1d82, product 5c92.
+ACTION=="add", SUBSYSTEM=="input", KERNEL=="event*", ATTRS{idVendor}=="1d82", ATTRS{idProduct}=="5c92", MODE="0660", GROUP="icart"

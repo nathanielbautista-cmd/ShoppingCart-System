@@ -1,0 +1,13 @@
+/* Direct CSS declarations. Edit these values without Tailwind @apply. */
+
+.button__item-1 {
+  flex-shrink: 0;
+}
+
+.button__item-2 {
+  text-align: center;
+  --tw-leading: var(--leading-tight,1.25);
+  min-width: 0;
+  line-height: var(--leading-tight,1.25);
+  white-space: normal;
+}

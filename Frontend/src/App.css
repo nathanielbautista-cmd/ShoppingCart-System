@@ -1,0 +1,133 @@
+/* Direct CSS declarations. Edit these values without Tailwind @apply. */
+
+.app__item-1 {
+  flex: 1;
+  overflow: hidden;
+}
+
+.app__item-5 {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.kiosk-customer-layout {
+  display: flex;
+  background: #020617;
+}
+
+.kiosk-customer-content {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #020617;
+}
+
+.kiosk-customer-page {
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+  background: #020617;
+}
+
+/* Every customer screen must cover the available kiosk viewport. Page-specific
+   content can still constrain its inner controls without exposing side gutters. */
+.kiosk-customer-page > * {
+  width: 100%;
+  max-width: none;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+.admin-layout,
+.admin-page {
+  min-width: 0;
+  background: #020617;
+}
+
+/* Admin screens use the entire content area instead of exposing the shell
+   behind their page-specific max-width containers. */
+.admin-page > * {
+  width: 100%;
+  max-width: none;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+/* Customer theme overrides controlled by the quick Settings menu. */
+.customer-theme-dark .customer-topbar {
+  border-color: #1e293b;
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+.customer-theme-dark .customer-topbar__title small {
+  color: #94a3b8;
+}
+
+.customer-theme-dark .customer-topbar > nav > button,
+.customer-theme-dark .customer-topbar__settings-button {
+  border-color: #334155;
+  color: #cbd5e1;
+  background: #1e293b;
+}
+
+.customer-theme-dark .customer-topbar__cart {
+  border-color: #166348 !important;
+  color: #a7f3d0 !important;
+  background: #064e3b !important;
+}
+
+.customer-theme-dark .customer-topbar__cart em {
+  border-color: #167354;
+  color: #a7f3d0;
+}
+
+.customer-theme-dark .customer-topbar__settings-menu {
+  border-color: #334155;
+  color: #e2e8f0;
+  background: #0f172a;
+  box-shadow: 0 16px 38px rgba(0,0,0,.45);
+}
+
+.customer-theme-dark .customer-topbar__settings-heading,
+.customer-theme-dark .customer-topbar__setting-row + .customer-topbar__setting-row {
+  border-color: #263449;
+}
+
+.customer-theme-dark .customer-topbar__setting-row strong {
+  color: #e2e8f0;
+}
+
+.customer-theme-dark .kiosk-home {
+  color: #e2e8f0;
+  background: #020617;
+}
+
+.customer-theme-dark .kiosk-home__primary,
+.customer-theme-dark .kiosk-home__product,
+.customer-theme-dark .kiosk-home__empty {
+  border-color: #334155;
+  background: #0f172a;
+  box-shadow: 0 2px 8px rgba(0,0,0,.2);
+}
+
+.customer-theme-dark .kiosk-home__primary input,
+.customer-theme-dark .kiosk-home__product-details strong,
+.customer-theme-dark .kiosk-home__empty strong {
+  color: #e2e8f0;
+}
+
+.customer-theme-dark .kiosk-home__primary input::placeholder,
+.customer-theme-dark .kiosk-home__product-details small,
+.customer-theme-dark .kiosk-home__product-details span,
+.customer-theme-dark .kiosk-home__empty {
+  color: #94a3b8;
+}
+
+.customer-theme-dark .kiosk-home__product-icon {
+  color: #6ee7b7;
+  background: #133c35;
+}

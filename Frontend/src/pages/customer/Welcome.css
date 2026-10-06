@@ -1,0 +1,33 @@
+/* Compact, balanced welcome screen after removing the hero copy. */
+.welcome-page {
+  justify-content: flex-start;
+  position: relative;
+  overflow: hidden;
+  background-image:
+    radial-gradient(circle at 50% 22%, rgba(49, 159, 121, .26), transparent 30%),
+    radial-gradient(circle at 10% 100%, rgba(30, 91, 152, .22), transparent 35%);
+}
+
+.welcome-page__content {
+  width: min(100%, 430px);
+  margin: clamp(26px, 7vh, 56px) auto 0;
+  position: relative;
+  z-index: 1;
+}
+
+.welcome-page__hero {
+  margin: 0 auto 20px;
+}
+
+.welcome-page__actions {
+  width: 100%;
+  transform: translateY(30px);
+}
+
+@media (max-height: 600px) {
+  .welcome-page__content {
+    margin-top: 24px;
+  }
+
+  .welcome-page__hero { margin-bottom: 14px; }
+}

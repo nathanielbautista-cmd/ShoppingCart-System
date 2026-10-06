@@ -1,0 +1,15 @@
+[Unit]
+Description=iCart Scanner Service
+After=network.target
+
+[Service]
+Type=simple
+User=icart
+Group=icart
+WorkingDirectory=/home/icart/icart/scanner
+ExecStart=/usr/bin/python3 scanner_service.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

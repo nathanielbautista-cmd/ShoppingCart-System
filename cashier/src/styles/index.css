@@ -1,0 +1,3 @@
+/* Cashier stylesheet entry point. Keep global, layout, and checkout rules separate from JSX. */
+@import "./core.css";
+@import "./checkout.css";

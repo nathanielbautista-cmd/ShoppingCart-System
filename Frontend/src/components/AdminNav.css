@@ -1,0 +1,99 @@
+/* Direct CSS declarations. Edit these values without Tailwind @apply. */
+
+.admin-nav__item-1,.admin-nav__item-2,.admin-nav__item-3,.admin-nav__item-4,.admin-nav__item-5,.admin-nav__item-6,.admin-nav__item-7 {
+  height: calc(var(--spacing,.25rem) * 4);
+  width: calc(var(--spacing,.25rem) * 4);
+}
+
+.admin-nav__item-1,.admin-nav__item-2,.admin-nav__item-3,.admin-nav__item-4,.admin-nav__item-5,.admin-nav__item-6,.admin-nav__item-7 {
+  height: calc(var(--spacing,.25rem) * 4);
+  width: calc(var(--spacing,.25rem) * 4);
+}
+
+.admin-nav__item-1,.admin-nav__item-2,.admin-nav__item-3,.admin-nav__item-4,.admin-nav__item-5,.admin-nav__item-6,.admin-nav__item-7 {
+  height: calc(var(--spacing,.25rem) * 4);
+  width: calc(var(--spacing,.25rem) * 4);
+}
+
+.admin-nav__item-1,.admin-nav__item-2,.admin-nav__item-3,.admin-nav__item-4,.admin-nav__item-5,.admin-nav__item-6,.admin-nav__item-7 {
+  height: calc(var(--spacing,.25rem) * 4);
+  width: calc(var(--spacing,.25rem) * 4);
+}
+
+.admin-nav__item-1,.admin-nav__item-2,.admin-nav__item-3,.admin-nav__item-4,.admin-nav__item-5,.admin-nav__item-6,.admin-nav__item-7 {
+  height: calc(var(--spacing,.25rem) * 4);
+  width: calc(var(--spacing,.25rem) * 4);
+}
+
+.admin-nav__item-1,.admin-nav__item-2,.admin-nav__item-3,.admin-nav__item-4,.admin-nav__item-5,.admin-nav__item-6,.admin-nav__item-7 {
+  height: calc(var(--spacing,.25rem) * 4);
+  width: calc(var(--spacing,.25rem) * 4);
+}
+
+.admin-nav__item-1,.admin-nav__item-2,.admin-nav__item-3,.admin-nav__item-4,.admin-nav__item-5,.admin-nav__item-6,.admin-nav__item-7 {
+  height: calc(var(--spacing,.25rem) * 4);
+  width: calc(var(--spacing,.25rem) * 4);
+}
+
+.admin-nav__item-8 {
+  font-size: var(--text-sm,.875rem);
+  line-height: var(--tw-leading,var(--text-sm--line-height,calc(1.25 / .875)));
+  --tw-font-weight: var(--font-weight-bold,700);
+  font-weight: var(--font-weight-bold,700);
+}
+
+.admin-nav__item-9 {
+  flex: 1;
+}
+
+:where(.admin-nav__item-9>:not(:last-child)) {
+  --tw-space-y-reverse: 0;
+  margin-block-start: calc(var(--spacing,.25rem) * var(--tw-space-y-reverse));
+  margin-block-end: calc(var(--spacing,.25rem) * calc(1 - var(--tw-space-y-reverse)));
+}
+
+.admin-nav__item-9 {
+  padding-inline: calc(var(--spacing,.25rem) * 2);
+  padding-block: calc(var(--spacing,.25rem) * 3);
+  overflow-y: auto;
+}
+
+.admin-nav__item-10 {
+  opacity: .9;
+}
+
+.admin-nav__item-11 {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.admin-nav__item-12 {
+  cursor: pointer;
+  align-items: center;
+  gap: calc(var(--spacing,.25rem) * 2);
+  border-radius: var(--radius-lg,.5rem);
+  width: 100%;
+  padding-inline: calc(var(--spacing,.25rem) * 3);
+  padding-block: calc(var(--spacing,.25rem) * 2);
+  font-size: var(--text-sm,.875rem);
+  line-height: var(--tw-leading,var(--text-sm--line-height,calc(1.25 / .875)));
+  --tw-font-weight: var(--font-weight-semibold,600);
+  font-weight: var(--font-weight-semibold,600);
+  color: var(--color-rose-500,oklch(64.5% .246 16.439));
+  transition-property: color,background-color,border-color,outline-color,text-decoration-color,fill,stroke,--tw-gradient-from,--tw-gradient-via,--tw-gradient-to;
+  transition-timing-function: var(--tw-ease,var(--default-transition-timing-function,cubic-bezier(.4, 0, .2, 1)));
+  transition-duration: var(--tw-duration,var(--default-transition-duration,.15s));
+  display: flex;
+}
+
+@media (hover:hover) {
+  .admin-nav__item-12:hover {
+    background-color: var(--color-rose-50,oklch(96.9% .015 12.422));
+  }
+}
+
+.admin-nav__item-13 {
+  height: calc(var(--spacing,.25rem) * 4);
+  width: calc(var(--spacing,.25rem) * 4);
+}

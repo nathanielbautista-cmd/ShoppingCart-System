@@ -1,0 +1,6 @@
+{
+  "name": "iCart - Smart Shopping Cart",
+  "description": "Smart shopping cart kiosk UI with barcode scanning, voice assistance, load-cell weight verification, and budget monitoring for Raspberry Pi 3B.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

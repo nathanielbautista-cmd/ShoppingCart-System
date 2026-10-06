@@ -1,0 +1,10 @@
+import api from './api';
+
+export const createCart = async (body?: any) => api.post('/cart', body || {});
+export const getCart = async (cartId: string) => api.get(`/cart/${encodeURIComponent(cartId)}`);
+export const addCartItem = async (cartId: string, payload: any) => api.post(`/cart/${encodeURIComponent(cartId)}/items`, payload);
+export const updateCartItem = async (cartId: string, itemId: string, payload: any) => api.put(`/cart/${encodeURIComponent(cartId)}/items/${encodeURIComponent(itemId)}`, payload);
+export const removeCartItem = async (cartId: string, itemId: string) => api.del(`/cart/${encodeURIComponent(cartId)}/items/${encodeURIComponent(itemId)}`);
+export const updateBudget = async (cartId: string, payload: any) => api.put(`/cart/${encodeURIComponent(cartId)}/budget`, payload);
+export const checkoutCart = async (cartId: string, payload?: any) => api.post(`/checkout/${encodeURIComponent(cartId)}`, payload || {});
+export const getWaitingTransactions = async () => api.get('/checkout/waiting');

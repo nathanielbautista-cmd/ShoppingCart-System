@@ -1,0 +1,37 @@
+/* Store analytics and reports page */
+.admin-reports { display:flex; flex-direction:column; gap:1rem; height:100%; max-width:72rem; margin:auto; padding:.75rem; overflow:auto; color:#0f172a; background:#f8fafc; }
+.admin-reports__header { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding-bottom:.75rem; border-bottom:1px solid #e2e8f0; }
+.admin-reports__title { margin:0; font-size:1.25rem; font-weight:900; }
+.admin-reports__error { margin:0; padding:.5rem .75rem; color:#be123c; font-size:.75rem; background:#fff1f2; border:1px solid #fecdd3; border-radius:.5rem; }
+
+.admin-reports__summary-grid, .admin-reports__details-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:.75rem; }
+.admin-reports__summary-card, .admin-reports__chart-card, .admin-reports__details-card { padding:1rem; background:#fff; border:1px solid #e2e8f0; border-radius:.75rem; box-shadow:0 1px 2px #0000000d; }
+.admin-reports__summary-card--revenue { border-left:4px solid #10b981; }
+.admin-reports__summary-card--transactions { border-left:4px solid #3b82f6; }
+.admin-reports__card-heading, .admin-reports__details-heading { display:flex; align-items:center; gap:.5rem; color:#334155; font-size:.75rem; font-weight:800; }
+.admin-reports__details-heading--warning { color:#b45309; }
+.admin-reports__card-icon, .admin-reports__details-icon { width:1rem; height:1rem; color:#0f766e; }
+.admin-reports__details-heading--warning .admin-reports__details-icon { color:#d97706; }
+.admin-reports__card-value { margin-top:.5rem; color:#0f172a; font-size:1.5rem; font-weight:900; font-variant-numeric:tabular-nums; }
+.admin-reports__card-note { display:block; margin-top:.25rem; color:#64748b; font-size:.7rem; }
+
+.admin-reports__chart-card { min-height:15rem; }
+.admin-reports__section-title { display:block; margin-bottom:.75rem; color:#334155; font-size:.75rem; font-weight:800; }
+.admin-reports__chart { display:flex; align-items:flex-end; gap:.5rem; height:11rem; padding-top:1.5rem; }
+.admin-reports__chart-column { display:flex; flex:1; flex-direction:column; align-items:center; justify-content:flex-end; min-width:0; height:100%; }
+.admin-reports__chart-value { margin-bottom:.25rem; color:#64748b; font-size:.65rem; white-space:nowrap; }
+.admin-reports__chart-bar { width:100%; min-height:2px; background:linear-gradient(to top, #0d9488, #5eead4); border-radius:.25rem .25rem 0 0; }
+.admin-reports__chart-label { margin-top:.35rem; color:#64748b; font-size:.65rem; }
+
+.admin-reports__details-card { min-height:10rem; }
+.admin-reports__list { margin-top:.75rem; }
+.admin-reports__list > :not(:last-child) { border-bottom:1px solid #f1f5f9; }
+.admin-reports__list-item { display:flex; align-items:center; justify-content:space-between; gap:.75rem; padding:.625rem 0; }
+.admin-reports__item-name { min-width:0; overflow:hidden; color:#334155; font-size:.75rem; font-weight:700; text-overflow:ellipsis; white-space:nowrap; }
+.admin-reports__item-stats { display:flex; align-items:center; gap:.5rem; flex-shrink:0; font-size:.7rem; }
+.admin-reports__item-quantity, .admin-reports__item-stock { color:#64748b; font-size:.7rem; }
+.admin-reports__item-revenue { color:#047857; font-weight:800; }
+.admin-reports__empty-state { margin:.75rem 0 0; color:#94a3b8; font-size:.75rem; text-align:center; }
+
+@media (min-width:40rem) { .admin-reports { padding:1.25rem; } .admin-reports__title { font-size:1.5rem; } }
+@media (max-width:30rem) { .admin-reports__summary-grid, .admin-reports__details-grid { grid-template-columns:1fr; } }
