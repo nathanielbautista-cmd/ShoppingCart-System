@@ -1,20 +1,19 @@
 import './App.css';
 import './design.css';
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
+
+
+
+
 
 import React, { useEffect, useState } from 'react';
 import { CartProvider, useCart } from './context/CartContext';
-import { Header } from './components/Header';
 import { CustomerSidebar } from './components/CustomerSidebar';
 import { CustomerTopbar } from './components/CustomerTopbar';
 import ScannerInput from './components/ScannerInput';
 import { AdminNav } from './components/AdminNav';
 import { HardwareButtonBridge } from './components/HardwareButtonBridge';
 
-// Customer Pages
+
 import { Welcome } from './pages/customer/Welcome';
 import { BudgetSetup } from './pages/customer/BudgetSetup';
 import { ShoppingHome } from './pages/customer/ShoppingHome';
@@ -28,8 +27,8 @@ import { TransactionComplete } from './pages/customer/TransactionComplete';
 import { Help } from './pages/customer/Help';
 import { SearchProducts } from './pages/customer/SearchProducts';
 
-// Admin Pages
-import { AdminLogin } from './pages/admin/AdminLogin';
+
+import { AdminAuth } from './pages/admin/AdminAuth';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminProducts } from './pages/admin/AdminProducts';
 import { AdminInventory } from './pages/admin/AdminInventory';
@@ -37,9 +36,11 @@ import { AdminTransactions } from './pages/admin/AdminTransactions';
 import { AdminReports } from './pages/admin/AdminReports';
 import { AdminCartMonitoring } from './pages/admin/AdminCartMonitoring';
 import { AdminSettings } from './pages/admin/AdminSettings';
+import { AdminCashiers } from './pages/admin/AdminCashiers';
+import './kiosk-800x480.css';
 
 const AppContent: React.FC = () => {
-  const { userMode, customerScreen, adminScreen, settings, hasSetBudget } = useCart();
+  const { userMode, customerScreen, adminScreen, adminUser, settings, hasSetBudget } = useCart();
   const [powered, setPowered] = useState(true);
 
   useEffect(() => {
@@ -52,6 +53,10 @@ const AppContent: React.FC = () => {
     window.addEventListener('icart-hardware', onHardware);
     return () => window.removeEventListener('icart-hardware', onHardware);
   }, []);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = settings.theme.toLowerCase();
+  }, [settings.theme]);
 
   const renderCustomerScreen = () => {
     switch (customerScreen) {
@@ -85,12 +90,12 @@ const AppContent: React.FC = () => {
   };
 
   const renderAdminScreen = () => {
-    if (adminScreen === 'LOGIN') {
-      return <AdminLogin />;
+    if (adminScreen === 'LOGIN' || !adminUser) {
+      return <AdminAuth />;
     }
 
     return (
-      <div className="admin-layout flex h-full overflow-hidden bg-slate-950 text-slate-100">
+      <div className={`admin-layout admin-theme-${settings.theme.toLowerCase()}`}>
         <AdminNav />
         <div className="app__item-1 admin-page">
           {adminScreen === 'DASHBOARD' && <AdminDashboard />}
@@ -99,6 +104,7 @@ const AppContent: React.FC = () => {
           {adminScreen === 'TRANSACTIONS' && <AdminTransactions />}
           {adminScreen === 'REPORTS' && <AdminReports />}
           {adminScreen === 'CART_MONITORING' && <AdminCartMonitoring />}
+          {adminScreen === 'CASHIERS' && <AdminCashiers />}
           {adminScreen === 'SETTINGS' && <AdminSettings />}
         </div>
       </div>
@@ -106,28 +112,34 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className={`w-screen h-screen flex flex-col overflow-hidden font-sans select-none ${userMode === 'ADMIN' || settings.theme === 'DARK' ? 'bg-slate-950 text-slate-100' : 'bg-slate-100 text-slate-900'} ${userMode === 'CUSTOMER' && settings.theme === 'DARK' ? 'customer-theme-dark' : ''}`}>
+    <div className={`app-shell app-theme-${settings.theme.toLowerCase()} w-screen h-screen flex flex-col overflow-hidden font-sans select-none ${settings.theme === 'DARK' ? 'bg-slate-950 text-slate-100' : 'bg-slate-100 text-slate-900'} ${userMode === 'CUSTOMER' && settings.theme === 'DARK' ? 'customer-theme-dark' : ''}`}>
       <HardwareButtonBridge />
       {!powered ? <div className="flex-1 grid place-items-center bg-black text-slate-500">iCart is powered off</div> : <>
-      {/* Main Touchscreen Stage */}
-      <main className={`flex-1 overflow-hidden ${userMode === 'ADMIN' || settings.theme === 'DARK' ? 'bg-slate-950' : 'bg-slate-50'}`}>
+
+      <main className={`flex-1 overflow-hidden ${settings.theme === 'DARK' ? 'bg-slate-950' : 'bg-slate-50'}`}>
         <div
           className="flex h-full w-full flex-col overflow-hidden relative"
         >
-          {/* The compact customer sidebar provides kiosk navigation; admin keeps its header. */}
-          {userMode === 'ADMIN' && adminScreen !== 'LOGIN' ? (
-            <Header />
-          ) : null}
 
-          {/* Scanner input listens globally for keyboard-HID scans */}
           <ScannerInput />
 
-          {/* Screen Content Container */}
+
           <div className={`app__item-5 ${userMode === 'CUSTOMER' ? 'kiosk-customer-layout' : ''}`}>
             {userMode === 'CUSTOMER' && hasSetBudget && <CustomerSidebar />}
             <div className="kiosk-customer-content">
               {userMode === 'CUSTOMER' && hasSetBudget && <CustomerTopbar />}
-              <div className="kiosk-customer-page">{userMode === 'CUSTOMER' ? renderCustomerScreen() : renderAdminScreen()}</div>
+              <div className="kiosk-customer-page">
+                {userMode === 'CUSTOMER' ? (
+                  customerScreen === 'CART' ? (
+                    <div className="kiosk-cart-view">
+                      <ShoppingHome />
+                      <aside className="kiosk-cart-panel" aria-label="My cart sidebar">
+                        <Cart />
+                      </aside>
+                    </div>
+                  ) : renderCustomerScreen()
+                ) : renderAdminScreen()}
+              </div>
             </div>
           </div>
         </div>

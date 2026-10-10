@@ -1,4 +1,4 @@
-/* Direct CSS declarations. Edit these values without Tailwind @apply. */
+
 
 .cart__item-1 {
   height: 100%;
@@ -30,6 +30,37 @@
   justify-content: space-between;
   align-items: center;
   display: flex;
+}
+
+.cart__close {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid #dce5ee;
+  border-radius: 9px;
+  color: #60738b;
+  background: #fff;
+  cursor: pointer;
+  transition: color .15s, border-color .15s, background .15s;
+}
+
+.cart__close:hover {
+  border-color: #aacdbf;
+  color: #176e50;
+  background: #effaf4;
+}
+
+.cart__close:focus-visible {
+  outline: 2px solid #258967;
+  outline-offset: 2px;
+}
+
+.cart__close svg {
+  width: 18px;
+  height: 18px;
 }
 
 @supports (color:color-mix(in lab, red, red)) {
@@ -298,4 +329,56 @@
   height: calc(var(--spacing,.25rem) * 4);
   width: calc(var(--spacing,.25rem) * 4);
   stroke-width: 2.5px;
+}
+
+.cart__item-1--drawer {
+  width: 100%;
+  max-width: none;
+  min-height: 0;
+  padding: 14px !important;
+}
+
+.cart__item-1--drawer .cart-item__item-1 {
+  gap: 8px;
+  padding: 9px !important;
+}
+
+.cart__item-1--drawer .cart-item__item-2 {
+  gap: 8px;
+  padding-right: 0;
+}
+
+.cart__item-1--drawer .cart-item__item-3 {
+  width: 32px;
+  height: 32px;
+}
+
+.cart__item-1--drawer .cart-item__item-11 {
+  gap: 6px;
+}
+
+.cart__item-1--drawer .cart-item__item-12 {
+  margin-right: 0;
+}
+
+.cart__item-1--drawer .cart-item__item-16,
+.cart__item-1--drawer .cart-item__item-19,
+.cart__item-1--drawer .cart-item__item-21 {
+  width: 28px;
+  height: 28px;
+}
+
+.cart__item-1--drawer .cart__item-20 {
+  gap: 8px;
+}
+
+@media (max-width: 430px) {
+  .cart__item-1--drawer .cart-item__item-1 {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .cart__item-1--drawer .cart-item__item-11 {
+    justify-content: flex-end;
+  }
 }

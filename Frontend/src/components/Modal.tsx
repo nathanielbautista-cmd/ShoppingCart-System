@@ -31,7 +31,7 @@ export const Modal: React.FC<ModalProps> = ({
       <div
         className={`w-full ${maxWidthStyles[maxWidth]} bg-slate-900 border border-slate-700/80 rounded-3xl shadow-2xl p-4 sm:p-6 overflow-hidden flex flex-col max-h-[92vh] text-slate-100`}
       >
-        {/* Header */}
+
         <div className="modal__item-2">
           <h3 className="modal__item-3">{title}</h3>
           <button
@@ -42,7 +42,7 @@ export const Modal: React.FC<ModalProps> = ({
           </button>
         </div>
 
-        {/* Content */}
+
         <div className="modal__item-6">{children}</div>
       </div>
     </div>

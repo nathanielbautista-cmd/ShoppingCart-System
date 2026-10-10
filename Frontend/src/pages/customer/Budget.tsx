@@ -46,7 +46,7 @@ export const Budget: React.FC = () => {
 
   return (
     <div className="budget__item-1">
-      {/* Header */}
+
       <div className="budget__item-2">
         <div className="budget__item-3">
           <div className="budget__item-4">
@@ -69,11 +69,11 @@ export const Budget: React.FC = () => {
         </button>
       </div>
 
-      {/* Main Budget Display */}
+
       <div className="budget__item-9">
         <BudgetDisplay />
 
-        {/* Quick Edit Budget Modal / Drawer if toggled */}
+
         {isEditing && (
           <div className="budget__item-10">
             <span className="budget__item-11">
@@ -122,7 +122,7 @@ export const Budget: React.FC = () => {
 
       </div>
 
-      {/* Action Footer */}
+
       <div className="budget__item-18">
         <Button
           variant="secondary"

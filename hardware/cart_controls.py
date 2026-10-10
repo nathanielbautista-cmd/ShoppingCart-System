@@ -76,13 +76,16 @@ class CartControls:
             logger.info("Ignored %s: cart is powered off", name)
 
     def run(self):
-        logger.info("Ready: power=GPIO23, restart=GPIO24, add=GPIO17, remove=GPIO27, LED=GPIO25")
+        logger.info("Ready: power=GPIO23, restart=GPIO24, add=GPIO17, delete=GPIO27, LED=GPIO25")
+        # Publish the controller's initial state so a page that was already open
+        # cannot remain visibly on after this service is restarted.
+        self.emit("power_off")
         try:
             while True:
                 now = time.monotonic()
                 for name, pin in BUTTON_PINS.items():
                     state = lgpio.gpio_read(self.handle, pin)
-                    # Falling edge: button has connected the pin to GND.
+
                     if self.previous[name] == 1 and state == 0 and now - self.last_press[name] >= BUTTON_DEBOUNCE_SECONDS:
                         self.last_press[name] = now
                         self.press(name)

@@ -36,12 +36,17 @@ const productSchema = new mongoose.Schema(
       min: [0, 'Stock cannot be negative'],
       default: 0
     },
+    minimumStock: {
+      type: Number,
+      min: [0, 'Minimum stock cannot be negative'],
+      default: 5
+    },
     unit: {
       type: String,
       default: 'piece',
       trim: true
     },
-    // Expected product weight in grams (used for HX711 load-cell weight verification)
+
     weight: {
       type: Number,
       required: [true, 'Please provide expected weight in grams'],

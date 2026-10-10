@@ -25,6 +25,7 @@ export const WeightVerification: React.FC<WeightVerificationProps> = ({
     pendingProduct,
     verificationStatus,
     detectedWeight,
+    scanError,
     startProductVerification,
     settings,
   } = useCart();
@@ -48,7 +49,7 @@ export const WeightVerification: React.FC<WeightVerificationProps> = ({
 
   return (
     <div className="weight-verification">
-      {/* Title & Instructions */}
+
       <div className="weight-verification__header">
         <div className="weight-verification__badge">
           <Scale className="weight-verification__badge-icon" />
@@ -66,12 +67,12 @@ export const WeightVerification: React.FC<WeightVerificationProps> = ({
           {verificationStatus === 'VERIFIED'
             ? `${pendingProduct.name} has been successfully added to your cart.`
             : verificationStatus === 'FAILED'
-            ? 'The detected basket weight does not match the expected product weight.'
+            ? scanError || 'The detected basket weight does not match the expected product weight.'
             : 'The cart load cells are awaiting weight increase inside the basket.'}
         </p>
       </div>
 
-      {/* Main Status & Metrics Card */}
+
       <div className="weight-verification__content">
         <div
           className={`weight-verification__card ${
@@ -82,7 +83,7 @@ export const WeightVerification: React.FC<WeightVerificationProps> = ({
               : 'weight-verification__card--default'
           }`}
         >
-          {/* Status Badge */}
+
           <div className="weight-verification__status-wrap">
             {verificationStatus === 'WAITING' && (
               <div className="weight-verification__status weight-verification__status--waiting">
@@ -110,7 +111,7 @@ export const WeightVerification: React.FC<WeightVerificationProps> = ({
             )}
           </div>
 
-          {/* Product details */}
+
           <div className="weight-verification__product">
             <span className="weight-verification__label">
               Product:
@@ -123,7 +124,7 @@ export const WeightVerification: React.FC<WeightVerificationProps> = ({
             </div>
           </div>
 
-          {/* Scale comparison columns */}
+
           <div className="weight-verification__metrics">
             <div className="weight-verification__metric">
               <span className="weight-verification__metric-label">
@@ -159,7 +160,7 @@ export const WeightVerification: React.FC<WeightVerificationProps> = ({
           </div>
         </div>
 
-        {/* Diagnostic Toggle for Capstone Examiners to test failure state */}
+
         <div className="weight-verification__diagnostic">
           <label className="weight-verification__diagnostic-label">
             <input
@@ -173,7 +174,7 @@ export const WeightVerification: React.FC<WeightVerificationProps> = ({
         </div>
       </div>
 
-      {/* Action Footer */}
+
       <div className="weight-verification__actions">
         <Button variant="ghost" size="sm" className="weight-verification__cancel" onClick={onCancel}>
           Cancel

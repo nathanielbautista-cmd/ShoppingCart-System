@@ -10,7 +10,7 @@ const {
 } = require('../controllers/checkoutController');
 const { CART_STATUS } = require('../config/constants');
 
-// Cashiers authenticate through the same User collection as the rest of iCart.
+
 router.post('/login', async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -18,8 +18,8 @@ router.post('/login', async (req, res, next) => {
     if (!user || user.role !== 'cashier' || !(await user.matchPassword(password || ''))) {
       return res.status(401).json({ success: false, message: 'Invalid cashier email or password' });
     }
-    // Delegate token creation to the existing authentication endpoint contract is unnecessary here;
-    // sign the same standard token locally for this restricted login.
+
+
     const jwt = require('jsonwebtoken');
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'icart_secret_jwt_key_2026_capstone', { expiresIn: '30d' });
     res.json({ success: true, token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });

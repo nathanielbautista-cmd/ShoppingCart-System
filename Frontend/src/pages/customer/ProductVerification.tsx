@@ -3,10 +3,11 @@ import { useCart } from '../../context/CartContext';
 import { WeightVerification } from '../../components/WeightVerification';
 
 export const ProductVerification: React.FC = () => {
-  const { setCustomerScreen, cancelVerification } = useCart();
+  const { setCustomerScreen, setPendingProduct, cancelVerification } = useCart();
 
   const handleContinue = () => {
-    // Verified item has been added to cartItems in CartContext
+
+    setPendingProduct(null);
     setCustomerScreen('CART');
   };
 

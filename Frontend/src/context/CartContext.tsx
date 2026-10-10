@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useMemo, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import {
   Product,
   CartItem,
@@ -24,6 +24,7 @@ import {
   updateBudget,
   checkoutCart,
   requestCashierCheckout,
+  getCartTransactions,
 } from '../services/cartApi';
 import { handleBarcodeDetected } from '../services/barcodeService';
 import { verifyProductWeight } from '../services/sensorService';
@@ -34,7 +35,7 @@ import { loginAdmin as authenticateAdmin, logoutAdmin as clearAdminSession, adju
 import { soundService } from '../services/soundService';
 
 interface CartContextType {
-  // Mode & Navigation
+
   userMode: UserMode;
   setUserMode: (mode: UserMode) => void;
   customerScreen: CustomerScreen;
@@ -45,7 +46,7 @@ interface CartContextType {
   adminScreen: AdminScreen;
   setAdminScreen: (screen: AdminScreen) => void;
 
-  // Cart & Budget State
+
   cartId: string;
   sessionError: string | null;
   cartStatus: CartStatus;
@@ -56,29 +57,29 @@ interface CartContextType {
   budgetState: BudgetState;
   budgetProgressPercent: number;
 
-  // Verification & Scanning
+
   pendingProduct: Product | null;
   verificationStatus: VerificationStatus;
   detectedWeight: number | null;
   scanError: string | null;
 
-  // Removal state
+
   itemToRemove: CartItem | null;
   removalStatus: RemovalStatus;
 
-  // Settings & Voice
+
   settings: StoreSettings;
   updateSettings: (newSettings: Partial<StoreSettings>) => void;
   toggleVoice: () => void;
   playVoice: (message: string) => void;
   adminUser: AdminUser | null;
 
-  // Data collections (Admin & Store)
+
   products: Product[];
   transactions: TransactionRecord[];
   monitoredCarts: MonitoredCart[];
 
-  // Action Handlers
+
   startShoppingSession: () => void;
   applyBudget: (budgetAmount: number) => void;
   handleBarcodeScan: (barcode: string) => { success: boolean; product?: Product; error?: string };
@@ -90,13 +91,13 @@ interface CartContextType {
   updateItemQuantity: (productId: string, delta: number) => void;
   promptRemoveItem: (item: CartItem, quantityToRemove?: number) => void;
   cancelItemRemoval: () => void;
-  startItemRemovalVerification: (skipWeightCheck?: boolean) => Promise<boolean>;
+  startItemRemovalVerification: () => Promise<boolean>;
   confirmCheckout: () => void;
   markCashierComplete: () => Promise<boolean>;
   resetShoppingSession: () => void;
 
-  // Admin Actions
-  loginAdmin: (username: string, pass: string) => Promise<{ success: boolean; error?: string }>;
+
+  loginAdmin: (username: string, pass: string) => Promise<{ success: boolean; error?: string; needsVerification?: boolean }>;
   logoutAdmin: () => void;
   saveProduct: (product: Product) => Promise<void>;
   deleteProduct: (productId: string) => Promise<void>;
@@ -108,31 +109,48 @@ const DEFAULT_SETTINGS: StoreSettings = {
   storeName: 'Metro Supermarket',
   currency: 'PHP',
   currencySymbol: '₱',
-  budgetWarningThreshold: 80, // % of budget
-  weightToleranceGrams: 20, // ±20g tolerance
+  budgetWarningThreshold: 80,
+  weightToleranceGrams: 20,
   voiceEnabled: true,
   theme: 'LIGHT',
+};
+
+const SETTINGS_STORAGE_KEY = 'icart_store_settings';
+
+const loadStoredSettings = (): StoreSettings => {
+  try {
+    const stored = localStorage.getItem(SETTINGS_STORAGE_KEY);
+    if (!stored) return DEFAULT_SETTINGS;
+    const parsed = JSON.parse(stored) as Partial<StoreSettings>;
+    return {
+      ...DEFAULT_SETTINGS,
+      ...parsed,
+      theme: parsed.theme === 'DARK' ? 'DARK' : 'LIGHT',
+    };
+  } catch {
+    return DEFAULT_SETTINGS;
+  }
 };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Mode & Navigation
+
   const [userMode, setUserMode] = useState<UserMode>('CUSTOMER');
   const [customerScreen, setCustomerScreenState] = useState<CustomerScreen>('WELCOME');
   const [selectedProductCategory, setSelectedProductCategory] = useState('All');
   const [adminScreen, setAdminScreen] = useState<AdminScreen>('LOGIN');
 
-  // Cart Core State
+
   const [cartId, setCartId] = useState<string>('');
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [cartStatus, setCartStatus] = useState<CartStatus>('ACTIVE');
-  const [budget, setBudget] = useState<number>(500);
+  const [budget, setBudget] = useState<number>(0);
   const [hasSetBudget, setHasSetBudget] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
-  // A shopping session cannot leave budget setup until the shopper confirms a budget.
-  // This central guard also prevents navigation from bypassing the header controls.
+
+
   const setCustomerScreen = useCallback((screen: CustomerScreen) => {
     if (
       customerScreen === 'BUDGET_SETUP' &&
@@ -145,26 +163,29 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCustomerScreenState(screen);
   }, [customerScreen, hasSetBudget]);
 
-  // Verification & Scanner States
+
   const [pendingProduct, setPendingProduct] = useState<Product | null>(null);
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>('WAITING');
   const [detectedWeight, setDetectedWeight] = useState<number | null>(null);
   const [scanError, setScanError] = useState<string | null>(null);
+  const verificationInProgressRef = useRef(false);
+  const verificationAttemptRef = useRef(0);
 
-  // Removal state
+
   const [itemToRemove, setItemToRemove] = useState<CartItem | null>(null);
   const [removalStatus, setRemovalStatus] = useState<RemovalStatus>('WAITING_FOR_REMOVAL');
+  const removalInProgressRef = useRef(false);
 
-  // Settings & Voice
-  const [settings, setSettings] = useState<StoreSettings>(DEFAULT_SETTINGS);
+
+  const [settings, setSettings] = useState<StoreSettings>(loadStoredSettings);
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
 
-  // Collections
+
   const [products, setProducts] = useState<Product[]>([]);
   const [transactions, setTransactions] = useState<TransactionRecord[]>([]);
   const [monitoredCarts, setMonitoredCarts] = useState<MonitoredCart[]>(INITIAL_CARTS);
 
-  // Financial Computations
+
   const currentTotal = useMemo(() => {
     return cartItems.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
   }, [cartItems]);
@@ -186,7 +207,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return 'NORMAL';
   }, [currentTotal, budget, settings.budgetWarningThreshold]);
 
-  // Voice Helper
+
   const playVoice = useCallback(
     (message: string) => {
       speakMessage(message, settings.voiceEnabled);
@@ -200,15 +221,21 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (updated) {
         speakMessage('Voice assistance activated', true);
       }
-      return { ...prev, voiceEnabled: updated };
+      const nextSettings = { ...prev, voiceEnabled: updated };
+      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(nextSettings));
+      return nextSettings;
     });
   }, []);
 
   const updateSettings = useCallback((newSettings: Partial<StoreSettings>) => {
-    setSettings((prev) => ({ ...prev, ...newSettings }));
+    setSettings((prev) => {
+      const nextSettings = { ...prev, ...newSettings };
+      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(nextSettings));
+      return nextSettings;
+    });
   }, []);
 
-  // Sync state whenever cartItems or status changes
+
   useEffect(() => {
     syncCartToBackend({
       cartId,
@@ -220,7 +247,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   }, [cartId, cartItems, currentTotal, budget, cartStatus]);
 
-  // Load products from backend on mount
+
   useEffect(() => {
     let mounted = true;
     getProducts()
@@ -235,7 +262,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             price: p.price,
             expectedWeightGrams: p.weight || 0,
             stock: p.stock || 0,
-            minimumStock: 0,
+            minimumStock: p.minimumStock ?? 5,
             description: p.description || '',
             aisleLocation: '',
             image: p.image || '',
@@ -249,9 +276,92 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  // Navigation & Flow Actions
+
+
+  useEffect(() => {
+    if (customerScreen !== 'WAITING_FOR_CASHIER' || !cartId) return;
+
+    let stopped = false;
+    let requestInFlight = false;
+    let intervalId: number | undefined;
+
+    const checkPaymentStatus = async () => {
+      if (requestInFlight || stopped) return;
+      requestInFlight = true;
+
+      try {
+        const response: any = await getCart(cartId);
+        if (stopped || response?.cart?.status !== 'COMPLETED') return;
+
+
+
+        try {
+          const transactionResponse: any = await getCartTransactions(cartId);
+          const transaction = transactionResponse?.transactions?.[0];
+
+          if (!stopped && transaction) {
+            const completedTransaction: TransactionRecord = {
+              id: transaction.transactionId,
+              cartId: transaction.cartId,
+              date: transaction.createdAt,
+              items: (transaction.items || []).map((item: any) => ({
+                product: {
+                  id: String(item.productId),
+                  barcode: item.barcode,
+                  name: item.name,
+                  category: '',
+                  price: item.price,
+                  expectedWeightGrams: 0,
+                  stock: 0,
+                  minimumStock: 0,
+                },
+                quantity: item.quantity,
+              })),
+              total: transaction.total,
+              subtotal: transaction.subtotal,
+              discount: transaction.discount,
+              paymentMethod: transaction.paymentMethod,
+              amountReceived: transaction.amountReceived,
+              change: transaction.change,
+              paymentStatus: transaction.paymentStatus,
+              cashierName: transaction.cashierId,
+            };
+
+            setTransactions((previous) => [
+              completedTransaction,
+              ...previous.filter((item) => item.id !== completedTransaction.id),
+            ]);
+          }
+        } catch {
+
+        }
+
+        if (stopped) return;
+        stopped = true;
+        if (intervalId !== undefined) window.clearInterval(intervalId);
+        setCartStatus('COMPLETED');
+        setCustomerScreenState('TRANSACTION_COMPLETE');
+        soundService.playSuccessChime();
+        playVoice('Payment confirmed by cashier. Thank you for shopping with iCart!');
+      } catch {
+
+      } finally {
+        requestInFlight = false;
+      }
+    };
+
+    void checkPaymentStatus();
+    intervalId = window.setInterval(checkPaymentStatus, 2000);
+
+    return () => {
+      stopped = true;
+      if (intervalId !== undefined) window.clearInterval(intervalId);
+    };
+  }, [cartId, customerScreen, playVoice]);
+
+
   const startShoppingSession = useCallback(() => {
-    // create cart on backend and store cartId
+
     setSessionError(null);
     createCart()
       .then((res: any) => {
@@ -300,7 +410,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     [playVoice, settings.currencySymbol]
   );
 
-  // Barcode Detection
+
   const handleBarcodeScan = useCallback(
     (barcode: string) => {
       setScanError(null);
@@ -321,51 +431,59 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     [products, playVoice, settings.currencySymbol]
   );
 
-  // Weight Verification after scanning
+
   const startProductVerification = useCallback(
     async (product: Product, simulateFailure: boolean = false) => {
+      if (verificationInProgressRef.current) return false;
+      verificationInProgressRef.current = true;
+      const attempt = ++verificationAttemptRef.current;
       setPendingProduct(product);
       setCustomerScreen('PRODUCT_VERIFICATION');
       setVerificationStatus('WAITING');
       setDetectedWeight(null);
-      playVoice('Please place the item inside the cart.');
-
-      // Transition to VERIFYING
-      await new Promise((r) => setTimeout(r, 600));
+      setScanError(null);
       setVerificationStatus('VERIFYING');
+      playVoice('Keep the basket still while the load cells capture its current weight.');
 
-      // Call sensorService placeholder
-      const result = await verifyProductWeight(
-        product.expectedWeightGrams,
-        settings.weightToleranceGrams,
-        simulateFailure
-      );
+      try {
+        const result = await verifyProductWeight(
+          product.expectedWeightGrams,
+          settings.weightToleranceGrams,
+          simulateFailure,
+          'increase',
+          () => playVoice('Scale ready. Place the scanned item inside the cart now.')
+        );
 
-      setDetectedWeight(result.detectedWeightGrams);
+        if (attempt !== verificationAttemptRef.current) return false;
+        setDetectedWeight(result.detectedWeightGrams);
 
-      if (result.verified) {
-        soundService.playSuccessChime();
-        setVerificationStatus('VERIFIED');
-        // Add to backend cart if available, otherwise local fallback
+        if (!result.verified) {
+          soundService.playWarning();
+          setVerificationStatus('FAILED');
+          const message = result.reason === 'TIMEOUT'
+            ? 'No matching weight change was detected. Remove the item and try again.'
+            : 'Weight verification failed. Please remove extra items and try again.';
+          setScanError(message);
+          playVoice(message);
+          return false;
+        }
+
+
         if (cartId) {
-          addCartItem(cartId, { barcode: product.barcode, quantity: 1 })
-            .then((res: any) => {
-              if (res && res.cart) {
-                const formatted = res.cart.items.map((i: any) => ({ product: {
-                      id: i.productId,
-                      barcode: i.barcode,
-                      name: i.name,
-                      category: i.category || '',
-                      price: i.price,
-                      expectedWeightGrams: i.quantity ? i.expectedWeight / i.quantity : 0,
-                      stock: i.stock || 0,
-                      minimumStock: 0,
-                    }, quantity: i.quantity }));
-                setCartItems(formatted);
-                setCartStatus(res.cart.status || 'ACTIVE');
-              }
-            })
-            .catch((err) => console.error('Add cart item failed', err));
+          const res: any = await addCartItem(cartId, { barcode: product.barcode, quantity: 1 });
+          if (!res?.cart) throw new Error('The server did not return the updated cart.');
+          const formatted = res.cart.items.map((i: any) => ({ product: {
+            id: i.productId,
+            barcode: i.barcode,
+            name: i.name,
+            category: i.category || '',
+            price: i.price,
+            expectedWeightGrams: i.quantity ? i.expectedWeight / i.quantity : 0,
+            stock: i.stock || 0,
+            minimumStock: 0,
+          }, quantity: i.quantity }));
+          setCartItems(formatted);
+          setCartStatus(res.cart.status || 'ACTIVE');
         } else {
           setCartItems((prev) => {
             const existing = prev.find((item) => item.product.id === product.id);
@@ -377,13 +495,23 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return [...prev, { product, quantity: 1 }];
           });
         }
+        soundService.playSuccessChime();
+        setVerificationStatus('VERIFIED');
         playVoice(`${product.name} verified and added to cart.`);
         return true;
-      } else {
+      } catch (error) {
+        if (attempt !== verificationAttemptRef.current) return false;
+        console.error('Product verification failed', error);
         soundService.playWarning();
         setVerificationStatus('FAILED');
-        playVoice('Weight verification failed. Please place only the scanned item into the cart.');
+        const message = error instanceof Error ? error.message : 'The load cells could not verify this item.';
+        setScanError(message);
+        playVoice(message);
         return false;
+      } finally {
+        if (attempt === verificationAttemptRef.current) {
+          verificationInProgressRef.current = false;
+        }
       }
     },
     [cartId, settings.weightToleranceGrams, playVoice]
@@ -394,43 +522,20 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return startProductVerification(pendingProduct, false);
   }, [pendingProduct, startProductVerification]);
 
-  // Physical ADD button: intentionally bypasses the scale only after a product
-  // has already been scanned and is awaiting confirmation.
+
+
   const confirmPendingProduct = useCallback(async () => {
-    if (!pendingProduct) return false;
-    const product = pendingProduct;
-    try {
-      if (cartId) {
-        const res: any = await addCartItem(cartId, { barcode: product.barcode, quantity: 1 });
-        if (res?.cart) {
-          setCartItems(res.cart.items.map((i: any) => ({ product: {
-            id: i.productId, barcode: i.barcode, name: i.name, category: i.category || '',
-            price: i.price, expectedWeightGrams: i.quantity ? i.expectedWeight / i.quantity : 0,
-            stock: i.stock || 0, minimumStock: 0,
-          }, quantity: i.quantity })));
-        }
-      } else {
-        setCartItems((prev) => {
-          const existing = prev.find((item) => item.product.id === product.id);
-          return existing
-            ? prev.map((item) => item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item)
-            : [...prev, { product, quantity: 1 }];
-        });
-      }
-      setVerificationStatus('VERIFIED');
-      setPendingProduct(null);
-      soundService.playSuccessChime();
-      playVoice(`${product.name} added to cart.`);
-      return true;
-    } catch (err) {
-      console.error('Physical add failed', err);
-      setVerificationStatus('FAILED');
-      playVoice('Item could not be added to the cart.');
+    if (!pendingProduct) {
+      playVoice('Scan a product before pressing the add button.');
       return false;
     }
-  }, [cartId, pendingProduct, playVoice]);
+    if (verificationStatus === 'VERIFIED') return false;
+    return startProductVerification(pendingProduct, false);
+  }, [pendingProduct, playVoice, startProductVerification, verificationStatus]);
 
   const cancelVerification = useCallback(() => {
+    verificationAttemptRef.current += 1;
+    verificationInProgressRef.current = false;
     setPendingProduct(null);
     setVerificationStatus('WAITING');
     setDetectedWeight(null);
@@ -438,31 +543,31 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     playVoice('Scan cancelled.');
   }, [playVoice]);
 
-  // Quantity modification
+
   const updateItemQuantity = useCallback(
     (productId: string, delta: number) => {
       const item = cartItems.find((i) => i.product.id === productId);
       if (!item) return;
 
       if (delta > 0) {
-        // Do not update the quantity until the newly placed item passes the scale check.
+
         void startProductVerification(item.product);
         return;
       }
 
-      // Remove exactly one unit only after its weight reduction is verified.
+
       promptRemoveItem(item, 1);
     },
     [cartItems, startProductVerification]
   );
 
-  // Item Removal Flow
+
   const promptRemoveItem = useCallback(
     (item: CartItem, quantityToRemove: number = item.quantity) => {
       setItemToRemove({ ...item, quantity: Math.min(quantityToRemove, item.quantity) });
       setRemovalStatus('WAITING_FOR_REMOVAL');
       setCustomerScreen('REMOVE_ITEM');
-      playVoice(`Remove ${item.product.name}? Please remove the item from the cart.`);
+      playVoice(`Remove ${item.product.name}? Confirm first, then remove the item from the basket.`);
     },
     [playVoice]
   );
@@ -472,27 +577,35 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCustomerScreen('CART');
   }, []);
 
-  const startItemRemovalVerification = useCallback(async (skipWeightCheck: boolean = false) => {
-    if (!itemToRemove) return false;
+  const startItemRemovalVerification = useCallback(async () => {
+    if (!itemToRemove) {
+      setCustomerScreen('CART');
+      playVoice('Select an item with the minus or trash button before pressing remove.');
+      return false;
+    }
+    if (removalInProgressRef.current) return false;
+    removalInProgressRef.current = true;
     setRemovalStatus('VERIFYING_REMOVAL');
-    playVoice('Verifying item removal from cart...');
+    playVoice('Keep the basket still while the load cells capture its current weight.');
 
-    if (!skipWeightCheck) {
+    try {
       const weightCheck = await verifyProductWeight(
         itemToRemove.product.expectedWeightGrams * itemToRemove.quantity,
-        settings.weightToleranceGrams
+        settings.weightToleranceGrams,
+        false,
+        'decrease',
+        () => playVoice('Scale ready. Remove the selected item from the basket now.')
       );
 
       if (!weightCheck.verified) {
         soundService.playWarning();
         setRemovalStatus('REMOVAL_FAILED');
         playVoice('Weight verification failed. Please remove the selected item from the cart and try again.');
+        removalInProgressRef.current = false;
         return false;
       }
-    }
 
-    try {
-      // The cart API identifies an item by its cart-item ID or barcode, not its product ID.
+
       if (cartId) {
         const currentItem = cartItems.find((item) => item.product.id === itemToRemove.product.id);
         if (!currentItem) throw new Error('Item is no longer in the cart');
@@ -526,6 +639,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('Remove cart item failed', err);
       setRemovalStatus('REMOVAL_FAILED');
       playVoice('Item could not be removed from the cart. Please try again.');
+      removalInProgressRef.current = false;
       return false;
     }
 
@@ -533,16 +647,17 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     soundService.playSuccessChime();
     playVoice(`${itemToRemove.product.name} has been removed from your cart.`);
 
-    // Delay briefly so user sees the "REMOVED" state
+
     setTimeout(() => {
       setItemToRemove(null);
       setCustomerScreen('CART');
     }, 1000);
 
+    removalInProgressRef.current = false;
     return true;
   }, [cartId, cartItems, itemToRemove, playVoice, settings.weightToleranceGrams]);
 
-  // Checkout Flow
+
   const confirmCheckout = useCallback(() => {
     if (!cartId) {
       playVoice('No active cart found. Please start a shopping session first.');
@@ -605,19 +720,39 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [cartId, cartItems, currentTotal, playVoice]);
 
   const resetShoppingSession = useCallback(() => {
+    verificationAttemptRef.current += 1;
+    verificationInProgressRef.current = false;
+    removalInProgressRef.current = false;
+    setCartId('');
+    setSessionError(null);
     setCartItems([]);
+    setBudget(0);
     setPendingProduct(null);
+    setVerificationStatus('WAITING');
+    setDetectedWeight(null);
+    setScanError(null);
     setItemToRemove(null);
+    setRemovalStatus('WAITING_FOR_REMOVAL');
+    setSelectedProductCategory('All');
     setHasSetBudget(false);
     setCartStatus('ACTIVE');
     setCustomerScreenState('WELCOME');
   }, []);
 
-  // Admin Actions
+
   const loginAdmin = useCallback(async (email: string, pass: string) => {
     try {
       const res = await authenticateAdmin(email, pass);
-      setAdminUser({ username: res.user.email, name: res.user.name, role: 'ADMIN' });
+      setAdminUser({
+        id: res.user.id,
+        username: res.user.email,
+        name: res.user.name,
+        phoneNumber: res.user.phoneNumber,
+        isEmailVerified: res.user.isEmailVerified,
+        createdAt: res.user.createdAt,
+        updatedAt: res.user.updatedAt,
+        role: 'ADMIN',
+      });
       setUserMode('ADMIN');
       setAdminScreen('DASHBOARD');
 
@@ -625,7 +760,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (productRes.products) {
         setProducts(productRes.products.map((p: any) => ({
           id: p._id, barcode: p.barcode, name: p.name, category: p.category, price: p.price,
-          expectedWeightGrams: p.weight || 0, stock: p.stock || 0, minimumStock: 5,
+          expectedWeightGrams: p.weight || 0, stock: p.stock || 0, minimumStock: p.minimumStock ?? 5,
           description: p.description || '', aisleLocation: '', image: p.image || ''
         })));
       }
@@ -644,13 +779,15 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { success: true };
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unable to sign in.';
-      return { success: false, error: message };
+      const needsVerification = (error as any)?.body?.code === 'EMAIL_NOT_VERIFIED';
+      return { success: false, error: message, needsVerification };
     }
   }, []);
 
   const logoutAdmin = useCallback(() => {
     clearAdminSession();
     setAdminUser(null);
+    setAdminScreen('LOGIN');
     setUserMode('CUSTOMER');
     setCustomerScreen('WELCOME');
   }, []);
@@ -659,7 +796,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const payload = {
       barcode: product.barcode, name: product.name, category: product.category,
       description: product.description || '', price: product.price, stock: product.stock,
-      weight: product.expectedWeightGrams, image: product.image || '', unit: 'piece', isActive: true,
+      weight: product.expectedWeightGrams, minimumStock: product.minimumStock,
+      image: product.image || '', unit: 'piece', isActive: true,
     };
     const res: any = product.id.startsWith('prod-')
       ? await createProduct(payload)

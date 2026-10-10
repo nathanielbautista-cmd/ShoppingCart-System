@@ -1,20 +1,14 @@
-/**
- * Sensor Service for iCart
- *
- * HARDWARE TARGET:
- * HX711 24-bit ADC amplifier module connected to four half-bridge load cells
- * (Wheatstone bridge configuration) on Raspberry Pi GPIO pins.
- *
- * NOTE:
- * Real hardware communication (HX711 reading / tare calibration)
- * will be hooked into this module in the hardware phase.
- */
+import api from './api';
+
 
 export interface WeightReading {
-  rawWeightGrams: number;
-  stabilizedWeightGrams: number;
-  isStable: boolean;
-  timestamp: number;
+  grams: number;
+  stable: boolean;
+  spreadGrams: number;
+  sampleCount: number;
+  sensorCount: number;
+  measuredAt: string;
+  receivedAt: string;
 }
 
 export interface WeightVerificationResult {
@@ -23,59 +17,133 @@ export interface WeightVerificationResult {
   detectedWeightGrams: number;
   differenceGrams: number;
   toleranceGrams: number;
+  reason?: 'MISMATCH' | 'TIMEOUT' | 'HARDWARE_UNAVAILABLE';
 }
 
-/**
- * Placeholder for reading current weight from load cell ADC.
- */
-export async function getCurrentWeight(): Promise<number> {
-  // Mock weight reader placeholder
-  // In hardware phase, this will poll HX711 via GPIO or local daemon
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(0);
-    }, 100);
-  });
+type WeightDirection = 'increase' | 'decrease';
+
+const POLL_INTERVAL_MS = 350;
+const BASELINE_TIMEOUT_MS = 5000;
+const CHANGE_TIMEOUT_MS = 15000;
+
+const delay = (milliseconds: number) => new Promise((resolve) => {
+  window.setTimeout(resolve, milliseconds);
+});
+
+export async function getCurrentWeight(): Promise<WeightReading> {
+  const response: any = await api.get('/hardware/weight');
+  if (!response?.reading || !Number.isFinite(Number(response.reading.grams))) {
+    throw new Error('The load-cell service returned an invalid reading.');
+  }
+  return {
+    ...response.reading,
+    grams: Number(response.reading.grams),
+    stable: response.reading.stable === true,
+  };
 }
 
-/**
- * Placeholder for taring the cart scale (zeroing weight).
- */
-export async function tareCartScale(): Promise<boolean> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(true);
-    }, 200);
-  });
+async function getStableBaseline(): Promise<WeightReading> {
+  const deadline = Date.now() + BASELINE_TIMEOUT_MS;
+  let lastError: unknown = null;
+
+  while (Date.now() < deadline) {
+    try {
+      const reading = await getCurrentWeight();
+      if (reading.stable) return reading;
+    } catch (error) {
+      lastError = error;
+    }
+    await delay(POLL_INTERVAL_MS);
+  }
+
+  if (lastError instanceof Error) throw lastError;
+  throw new Error('The load-cell reading did not become stable. Keep the basket still and try again.');
 }
 
-/**
- * Simulates or verifies whether placed item weight matches expected weight
- * within user-configured tolerance.
- */
+
+
+
+
 export async function verifyProductWeight(
   expectedWeightGrams: number,
   toleranceGrams: number = 15,
-  simulateMismatch: boolean = false
+  simulateMismatch: boolean = false,
+  direction: WeightDirection = 'increase',
+  onBaselineCaptured?: () => void
 ): Promise<WeightVerificationResult> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      // Simulate slight natural variance (+/- 1-5g) or deliberate failure
-      const variance = simulateMismatch
-        ? toleranceGrams + 45
-        : (Math.random() * 4 - 2);
+  if (expectedWeightGrams <= 0) {
+    throw new Error('This product has no valid expected weight. Ask staff to update the product record.');
+  }
 
-      const detectedWeightGrams = Math.max(0, Math.round(expectedWeightGrams + variance));
-      const differenceGrams = Math.abs(detectedWeightGrams - expectedWeightGrams);
-      const verified = differenceGrams <= toleranceGrams;
 
-      resolve({
-        verified,
-        expectedWeightGrams,
-        detectedWeightGrams,
-        differenceGrams,
-        toleranceGrams,
-      });
-    }, 1200);
-  });
+  if (simulateMismatch) {
+    onBaselineCaptured?.();
+    await delay(600);
+    const detectedWeightGrams = expectedWeightGrams + toleranceGrams + 45;
+    return {
+      verified: false,
+      expectedWeightGrams,
+      detectedWeightGrams,
+      differenceGrams: Math.abs(detectedWeightGrams - expectedWeightGrams),
+      toleranceGrams,
+      reason: 'MISMATCH',
+    };
+  }
+
+  let baseline: WeightReading;
+  try {
+    baseline = await getStableBaseline();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'HX711 load cells are unavailable.';
+    throw new Error(`Load-cell verification unavailable: ${message}`);
+  }
+  onBaselineCaptured?.();
+
+  const deadline = Date.now() + CHANGE_TIMEOUT_MS;
+  const minimumChange = Math.max(2, Math.min(toleranceGrams, expectedWeightGrams * 0.1));
+  let lastDetected = 0;
+
+  while (Date.now() < deadline) {
+    await delay(POLL_INTERVAL_MS);
+    let reading: WeightReading;
+    try {
+      reading = await getCurrentWeight();
+    } catch {
+
+      continue;
+    }
+    if (!reading.stable || reading.receivedAt === baseline.receivedAt) continue;
+
+    const rawDelta = direction === 'increase'
+      ? reading.grams - baseline.grams
+      : baseline.grams - reading.grams;
+    lastDetected = Math.max(0, Number(rawDelta.toFixed(1)));
+
+
+    if (lastDetected < minimumChange) continue;
+
+    const differenceGrams = Number(Math.abs(lastDetected - expectedWeightGrams).toFixed(1));
+    const verified = differenceGrams <= toleranceGrams;
+    return {
+      verified,
+      expectedWeightGrams,
+      detectedWeightGrams: lastDetected,
+      differenceGrams,
+      toleranceGrams,
+      reason: verified ? undefined : 'MISMATCH',
+    };
+  }
+
+  return {
+    verified: false,
+    expectedWeightGrams,
+    detectedWeightGrams: lastDetected,
+    differenceGrams: Number(Math.abs(lastDetected - expectedWeightGrams).toFixed(1)),
+    toleranceGrams,
+    reason: 'TIMEOUT',
+  };
+}
+
+export async function tareCartScale(): Promise<boolean> {
+  throw new Error('Taring must be performed locally on the Raspberry Pi with calibration.py.');
 }

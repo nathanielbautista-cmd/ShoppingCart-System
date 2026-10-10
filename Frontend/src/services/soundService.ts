@@ -1,14 +1,14 @@
-/**
- * Web Audio Sound Effects Service for iCart
- *
- * Provides instant, zero-dependency tactile audio feedback for:
- * - Barcode scan beep (mimicking OJ-MP6300 scanner beep)
- * - Load-cell scale verification success chime
- * - Alert / budget warning tone
- * - Touch button clicks
- *
- * Runs efficiently on low-spec hardware (Raspberry Pi 3B) using pure Web Audio API oscillator.
- */
+
+
+
+
+
+
+
+
+
+
+
 
 class SoundService {
   private ctx: AudioContext | null = null;
@@ -36,9 +36,9 @@ class SoundService {
     return this.isMuted;
   }
 
-  /**
-   * Classic POS Scanner Beep (High frequency 2400Hz, crisp 80ms)
-   */
+
+
+
   public playScanBeep() {
     if (this.isMuted) return;
     try {
@@ -60,13 +60,13 @@ class SoundService {
       osc.start();
       osc.stop(ctx.currentTime + 0.08);
     } catch {
-      // AudioContext failure gracefully ignored
+
     }
   }
 
-  /**
-   * Scale Verification Success Chime (Two-tone rising pleasant chime)
-   */
+
+
+
   public playSuccessChime() {
     if (this.isMuted) return;
     try {
@@ -79,9 +79,9 @@ class SoundService {
       const gain = ctx.createGain();
 
       osc1.type = 'triangle';
-      osc1.frequency.setValueAtTime(880, now); // A5
+      osc1.frequency.setValueAtTime(880, now);
       osc2.type = 'sine';
-      osc2.frequency.setValueAtTime(1174.66, now + 0.09); // D6
+      osc2.frequency.setValueAtTime(1174.66, now + 0.09);
 
       gain.gain.setValueAtTime(0.15, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
@@ -95,13 +95,13 @@ class SoundService {
       osc2.start(now + 0.09);
       osc2.stop(now + 0.28);
     } catch {
-      // AudioContext failure gracefully ignored
+
     }
   }
 
-  /**
-   * Warning / Attention double-tone (Used for budget warning or weight mismatch)
-   */
+
+
+
   public playWarning() {
     if (this.isMuted) return;
     try {
@@ -125,13 +125,13 @@ class SoundService {
       osc.start(now);
       osc.stop(now + 0.25);
     } catch {
-      // AudioContext failure gracefully ignored
+
     }
   }
 
-  /**
-   * Subtle touch key click
-   */
+
+
+
   public playKeyClick() {
     if (this.isMuted) return;
     try {
@@ -154,7 +154,7 @@ class SoundService {
       osc.start(now);
       osc.stop(now + 0.03);
     } catch {
-      // AudioContext failure gracefully ignored
+
     }
   }
 }

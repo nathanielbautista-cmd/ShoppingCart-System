@@ -94,8 +94,8 @@ Populate the database with default accounts and 12 sample supermarket items:
 npm run seed
 ```
 This sets up:
-* **Admin Account:** `admin@icart.com` / `password`
-* **Cashier Account:** `cashier@icart.com` / `password`
+* **Admin Account:** `admin@icart.com` / `Admin@12345`
+* **Cashier Account:** `cashier@icart.com` / `Cashier@12345`
 * **Sample Cart:** `ICART-001` (Active with initial items and ₱500 budget)
 * Sample products with realistic barcodes and weights in grams (e.g., Del Monte Pineapple Juice, Pancit Canton, Bear Brand Milk, Piattos, Kopiko, etc.).
 
@@ -120,13 +120,24 @@ iCart backend running on port 5000
 
 ### 5.1 Authentication (`/api/auth`)
 
+#### `POST /api/auth/register`
+Creates an admin account with `name`, `email`, `phoneNumber`, and `password`. Passwords must contain at least 8 characters, uppercase and lowercase letters, a number, and a special character. The account cannot log in until its email is verified.
+
+#### `POST /api/auth/verify-email`
+Verifies a pending admin account with `{ "email": "...", "code": "123456" }`. Codes expire after 10 minutes.
+
+#### `POST /api/auth/resend-verification`
+Sends a replacement verification code with `{ "email": "..." }`.
+
+Configure `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, and `EMAIL_FROM` in `.env` to send verification emails. Verification codes are never returned by the API or exposed in the frontend.
+
 #### `POST /api/auth/login`
 Authenticates an administrator or cashier.
 * **Request:**
 ```json
 {
   "email": "admin@icart.com",
-  "password": "password"
+  "password": "Admin@12345"
 }
 ```
 * **Response (200 OK):**

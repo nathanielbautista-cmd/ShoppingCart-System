@@ -1,8 +1,9 @@
 const express = require('express');
-const { getReportSummary } = require('../controllers/reportController');
+const { getProductPerformance, getDashboardOverview } = require('../controllers/reportController');
 const { protect, adminOnly } = require('../middleware/authMiddleware');
 
 const router = express.Router();
-router.get('/summary', protect, adminOnly, getReportSummary);
+router.get('/product-performance', protect, adminOnly, getProductPerformance);
+router.get('/dashboard', protect, adminOnly, getDashboardOverview);
 
 module.exports = router;

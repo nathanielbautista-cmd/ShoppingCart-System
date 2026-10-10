@@ -8,7 +8,7 @@ export const WaitingForCashier: React.FC = () => {
 
   return (
     <div className="waiting-for-cashier__item-1">
-      {/* Top Header */}
+
       <div className="waiting-for-cashier__item-2">
         <span className="waiting-for-cashier__item-3">
           <Clock className="waiting-for-cashier__item-4" />
@@ -16,7 +16,7 @@ export const WaitingForCashier: React.FC = () => {
         </span>
       </div>
 
-      {/* Clear Cart ID Presentation Box */}
+
       <div className="waiting-for-cashier__item-5">
         <div className="waiting-for-cashier__item-6">
           <div className="waiting-for-cashier__item-7">
@@ -35,7 +35,7 @@ export const WaitingForCashier: React.FC = () => {
               {cartId}
             </div>
 
-            {/* Simulated Cart Barcode for Cashier handheld gun scanner */}
+
             <div className="waiting-for-cashier__item-13">
               <Barcode className="waiting-for-cashier__item-14" />
               <span>||| | | |||| | ||</span>

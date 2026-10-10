@@ -11,12 +11,12 @@ export const AdminTransactions: React.FC = () => {
 
   return (
     <div className="admin-transactions__item-1">
-      {/* Header */}
+
       <div className="admin-transactions__item-2">
         <h2 className="admin-transactions__item-3">Transaction Logs</h2>
       </div>
 
-      {/* Transactions Table */}
+
       <div className="admin-transactions__item-4">
         <table className="admin-transactions__item-5">
           <thead className="admin-transactions__item-6">
@@ -63,7 +63,7 @@ export const AdminTransactions: React.FC = () => {
         </table>
       </div>
 
-      {/* Transaction Details Modal */}
+
       <Modal
         isOpen={selectedTx !== null}
         onClose={() => setSelectedTx(null)}

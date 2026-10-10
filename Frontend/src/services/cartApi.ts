@@ -9,3 +9,4 @@ export const updateBudget = async (cartId: string, payload: any) => api.put(`/ca
 export const requestCashierCheckout = async (cartId: string) => api.post(`/checkout/${encodeURIComponent(cartId)}/request-cashier`);
 export const checkoutCart = async (cartId: string, payload?: any) => api.post(`/checkout/${encodeURIComponent(cartId)}`, payload || {});
 export const getWaitingCarts = async () => api.get('/checkout/waiting');
+export const getCartTransactions = async (cartId: string) => api.get(`/checkout/transactions?cartId=${encodeURIComponent(cartId)}&limit=1`);

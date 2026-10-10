@@ -4,7 +4,7 @@ from threading import Lock
 
 try:
     import lgpio
-except ImportError:  # Allows a useful error when copied to a non-Pi computer.
+except ImportError:
     lgpio = None
 
 
@@ -64,12 +64,8 @@ class HX711:
             for _ in range(24):
                 lgpio.gpio_write(self._chip_handle, self.sck_pin, 1)
                 lgpio.gpio_write(self._chip_handle, self.sck_pin, 0)
-                # Each rising edge shifts the next bit out. Read it after the
-                # falling edge; the initial DOUT-low ready state is not data.
-                # No sleep occurs while HIGH, preventing an accidental power-down.
                 value = (value << 1) | lgpio.gpio_read(self._chip_handle, self.dt_pin)
 
-            # The 25th pulse selects channel A with gain 128 for the next read.
             lgpio.gpio_write(self._chip_handle, self.sck_pin, 1)
             lgpio.gpio_write(self._chip_handle, self.sck_pin, 0)
 

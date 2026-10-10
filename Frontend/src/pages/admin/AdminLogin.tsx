@@ -1,105 +1,60 @@
-import './AdminLogin.css';
 import React, { useState } from 'react';
-import { Shield, ArrowLeft, KeyRound, AlertCircle } from 'lucide-react';
-import { useCart } from '../../context/CartContext';
+import { Eye, EyeOff, KeyRound } from 'lucide-react';
 import { Button } from '../../components/Button';
+import { useCart } from '../../context/CartContext';
 
-export const AdminLogin: React.FC = () => {
-  const { loginAdmin, setUserMode, setCustomerScreen } = useCart();
-  const [username, setUsername] = useState('admin@icart.com');
-  const [password, setPassword] = useState('password');
+interface AdminLoginProps {
+  onSignup: () => void;
+  onNeedsVerification: (email: string, password: string, message: string) => void;
+}
+
+export const AdminLogin: React.FC<AdminLoginProps> = ({ onSignup, onNeedsVerification }) => {
+  const { loginAdmin } = useCart();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleLogin = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
+  const handleLogin = async (event: React.FormEvent) => {
+    event.preventDefault();
     setErrorMessage('');
-    const res = await loginAdmin(username, password);
-    if (!res.success) {
-      setErrorMessage(res.error || 'Invalid credentials');
+    setIsSubmitting(true);
+    const result = await loginAdmin(email, password);
+    setIsSubmitting(false);
+
+    if (!result.success) {
+      const message = result.error || 'Invalid credentials';
+      if (result.needsVerification) {
+        onNeedsVerification(email, password, message);
+      } else {
+        setErrorMessage(message);
+      }
     }
   };
 
-  const handleBack = () => {
-    setUserMode('CUSTOMER');
-    setCustomerScreen('WELCOME');
-  };
-
   return (
-    <div className="admin-login__item-1">
-      {/* Header */}
-      <div className="admin-login__item-2">
-        <div className="admin-login__item-3">
-          <Shield className="admin-login__item-4" />
-        </div>
-        <h2 className="admin-login__item-5">Admin </h2>
-      </div>
-
-      {/* Form */}
-      <form onSubmit={handleLogin} className="admin-login__item-6">
-        {errorMessage && (
-          <div role="alert" aria-live="assertive" className="admin-login__item-7">
-            <AlertCircle className="admin-login__item-8" />
-            <span>{errorMessage}</span>
+    <>
+      {errorMessage && <div role="alert" className="admin-auth-message admin-auth-message--error">{errorMessage}</div>}
+      <form onSubmit={handleLogin} className="admin-auth-form">
+        <label>
+          <span>Admin email</span>
+          <input type="email" value={email} onChange={(event) => { setEmail(event.target.value); setErrorMessage(''); }} placeholder="Enter Email" autoComplete="email" required />
+        </label>
+        <label>
+          <span>Password</span>
+          <div className="admin-auth-password-field">
+            <input type={showPassword ? 'text' : 'password'} value={password} onChange={(event) => { setPassword(event.target.value); setErrorMessage(''); }} placeholder="Enter your password" autoComplete="current-password" required />
+            <button type="button" className="admin-auth-password-toggle" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? 'Hide password' : 'Show password'} title={showPassword ? 'Hide password' : 'Show password'}>
+              {showPassword ? <EyeOff /> : <Eye />}
+            </button>
           </div>
-        )}
-
-        <div className="admin-login__item-9">
-          <label className="admin-login__item-10">
-            Admin email
-          </label>
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => {
-              setUsername(e.target.value);
-              setErrorMessage('');
-            }}
-            className="admin-login__item-11"
-            placeholder="admin@icart.com"
-            aria-invalid={Boolean(errorMessage)}
-          />
-        </div>
-
-        <div className="admin-login__item-12">
-          <label className="admin-login__item-13">
-            Password
-          </label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => {
-              setPassword(e.target.value);
-              setErrorMessage('');
-            }}
-            className="admin-login__item-14"
-            placeholder="password"
-            aria-invalid={Boolean(errorMessage)}
-          />
-        </div>
-
-        <Button
-          type="submit"
-          variant="glow"
-          size="md"
-          className="admin-login__item-15"
-          icon={<KeyRound className="admin-login__item-16" />}
-        >
-          Login to Admin 
+        </label>
+        <Button type="submit" variant="glow" size="md" className="admin-auth-primary" icon={<KeyRound />} disabled={isSubmitting}>
+          {isSubmitting ? 'Signing in...' : 'Login to Admin'}
         </Button>
+        <button type="button" className="admin-auth-link" onClick={onSignup}>Create an admin account</button>
       </form>
-
-      {/* Footer */}
-      <div className="admin-login__item-17">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="admin-login__item-18"
-          icon={<ArrowLeft className="admin-login__item-19" />}
-          onClick={handleBack}
-        >
-          Return to Customer Screen
-        </Button>
-      </div>
-    </div>
+    </>
   );
 };

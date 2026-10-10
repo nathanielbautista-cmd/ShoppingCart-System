@@ -2,7 +2,7 @@
 """Tare and calibrate one HX711 load cell with a known reference weight."""
 import argparse
 
-from load_cell import LoadCell, load_calibration_data
+from load_cell import CalibrationRequiredError, LoadCell, load_calibration_data
 
 
 def main() -> None:
@@ -18,14 +18,18 @@ def main() -> None:
     if args.action == "calibrate" and args.reference_grams is None:
         parser.error("--reference-grams is required for calibration")
 
-    with LoadCell(args.sensor) as cell:
-        if args.action == "tare":
-            print("Keep the platform empty and still while samples are collected.")
-            print(f"Tare offset: {cell.tare():.1f}")
-        else:
-            print("Keep the reference weight still while samples are collected.")
-            factor = cell.calibrate(args.reference_grams)
-            print(f"Calibration factor: {factor:.6f} raw units per gram")
+    try:
+        with LoadCell(args.sensor) as cell:
+            if args.action == "tare":
+                print("Keep the platform empty and still while samples are collected.")
+                print(f"Tare offset: {cell.tare():.1f}")
+            else:
+                print("Keep the reference weight still while samples are collected.")
+                factor = cell.calibrate(args.reference_grams)
+                print(f"Calibration factor: {factor:.6f} raw units per gram")
+    except CalibrationRequiredError as error:
+        print(f"Calibration failed: {error}")
+        raise SystemExit(2) from error
 
 
 if __name__ == "__main__":

@@ -3,21 +3,21 @@ const Product = require('../models/Product');
 const Transaction = require('../models/Transaction');
 const { CART_STATUS } = require('../config/constants');
 
-/**
- * Generate unique transaction ID
- * Example: TXN-20260928-8921
- */
+
+
+
+
 const generateTransactionId = () => {
   const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
   const randomSuffix = Math.floor(1000 + Math.random() * 9000);
   return `TXN-${dateStr}-${randomSuffix}`;
 };
 
-/**
- * @desc    Request cashier assistance / move cart to WAITING_FOR_CASHIER
- * @route   POST /api/checkout/:cartId/request-cashier
- * @access  Public
- */
+
+
+
+
+
 const requestCashierCheckout = async (req, res, next) => {
   try {
     const { cartId } = req.params;
@@ -55,11 +55,11 @@ const requestCashierCheckout = async (req, res, next) => {
   }
 };
 
-/**
- * @desc    Process checkout and deduct product inventory
- * @route   POST /api/checkout/:cartId
- * @access  Public
- */
+
+
+
+
+
 const processCheckout = async (req, res, next) => {
   try {
     const { cartId } = req.params;
@@ -88,7 +88,7 @@ const processCheckout = async (req, res, next) => {
       });
     }
 
-    // 1. Calculate and validate payment before making any inventory changes.
+
     const subtotal = cart.subtotal;
     const appliedDiscount = Number(discount) > 0 ? Number(discount) : 0;
     const finalTotal = Math.max(0, Number((subtotal - appliedDiscount).toFixed(2)));
@@ -104,7 +104,7 @@ const processCheckout = async (req, res, next) => {
     }
     const change = Number((paidAmount - finalTotal).toFixed(2));
 
-    // 2. Verify stock availability for all items before making any modifications
+
     for (const item of cart.items) {
       const product = await Product.findById(item.productId);
       if (!product) {
@@ -122,7 +122,7 @@ const processCheckout = async (req, res, next) => {
       }
     }
 
-    // 3. Deduct inventory stock for each product
+
     for (const item of cart.items) {
       await Product.findByIdAndUpdate(
         item.productId,
@@ -131,13 +131,13 @@ const processCheckout = async (req, res, next) => {
       );
     }
 
-    // 4. Create Transaction record
-    // Defensive: drop any stale index that may reference a missing/unused field
+
+
     try {
       await Transaction.collection.dropIndex('transactionCode_1');
       console.log('Dropped stale index transactionCode_1');
     } catch (idxErr) {
-      // ignore if index not found or other harmless errors
+
     }
 
     const transactionId = generateTransactionId();
@@ -163,7 +163,7 @@ const processCheckout = async (req, res, next) => {
       cashierNotes
     });
 
-    // 5. Update cart status to COMPLETED
+
     cart.status = CART_STATUS.COMPLETED;
     await cart.save();
 
@@ -190,11 +190,11 @@ const processCheckout = async (req, res, next) => {
   }
 };
 
-/**
- * @desc    Get all transactions (Cashier / Admin Dashboard)
- * @route   GET /api/checkout/transactions
- * @access  Public (or Private)
- */
+
+
+
+
+
 const getTransactions = async (req, res, next) => {
   try {
     const { cartId, paymentMethod, limit = 50 } = req.query;
@@ -222,25 +222,28 @@ const getTransactions = async (req, res, next) => {
   }
 };
 
-/**
- * @desc    Get carts waiting for cashier assistance
- * @route   GET /api/checkout/waiting
- * @access  Public
- */
+
+
+
+
+
 const getWaitingForCashier = async (req, res, next) => {
   try {
-    const waitingCarts = await Cart.find({ status: CART_STATUS.WAITING_FOR_CASHIER });
+    const waitingCarts = await Cart.find({
+      status: CART_STATUS.WAITING_FOR_CASHIER,
+      cartId: { $nin: ['ICART-002', 'ICART-003'] }
+    });
     res.status(200).json({ success: true, count: waitingCarts.length, carts: waitingCarts });
   } catch (error) {
     next(error);
   }
 };
 
-/**
- * @desc    Get single transaction by ID or transactionId
- * @route   GET /api/checkout/transactions/:id
- * @access  Public
- */
+
+
+
+
+
 const getTransactionById = async (req, res, next) => {
   try {
     const { id } = req.params;

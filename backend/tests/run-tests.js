@@ -1,6 +1,6 @@
 require('dotenv').config();
 
-// Start the server (server.js calls app.listen)
+
 const server = require('../server');
 
 const BASE = `http://localhost:${process.env.PORT || 5000}/api`;
@@ -24,7 +24,7 @@ async function run() {
   console.log('Waiting 1.5s for server & DB to be ready...');
   await wait(1500);
 
-  // Test 1 — Server health
+
   try {
     const r = await fetchJson('/health');
     if (r.status !== 200) throw new Error('Health endpoint did not return 200');
@@ -36,7 +36,7 @@ async function run() {
     failures++;
   }
 
-  // Test 2 — Products list
+
   let productsResp;
   try {
     productsResp = await fetchJson('/products');
@@ -49,7 +49,7 @@ async function run() {
     failures++;
   }
 
-  // Test 3 — Barcode search
+
   try {
     const r = await fetchJson('/products/barcode/4800012345678');
     if (r.status !== 200) throw new Error('Barcode lookup did not return 200');
@@ -62,7 +62,7 @@ async function run() {
     failures++;
   }
 
-  // Test 4 — Create cart
+
   const CART_ID = 'TEST-001';
   try {
     const r = await fetchJson('/cart', { method: 'POST', body: JSON.stringify({ cartId: CART_ID }) });
@@ -74,7 +74,7 @@ async function run() {
     failures++;
   }
 
-  // Test 5 — Add product to cart
+
   let addedItemId = null;
   try {
     const r = await fetchJson(`/cart/${CART_ID}/items`, { method: 'POST', body: JSON.stringify({ barcode: '4800012345678', quantity: 1 }) });
@@ -89,7 +89,7 @@ async function run() {
     failures++;
   }
 
-  // Test 6 — Update quantity
+
   try {
     if (!addedItemId) throw new Error('No itemId available from previous step');
     const r = await fetchJson(`/cart/${CART_ID}/items/${addedItemId}`, { method: 'PUT', body: JSON.stringify({ quantity: 2 }) });
@@ -103,7 +103,7 @@ async function run() {
     failures++;
   }
 
-  // Test 7 — Remove product
+
   try {
     if (!addedItemId) throw new Error('No itemId available from previous steps');
     const r = await fetchJson(`/cart/${CART_ID}/items/${addedItemId}`, { method: 'DELETE' });
@@ -117,7 +117,7 @@ async function run() {
     failures++;
   }
 
-  // Test 8 — Budget update
+
   try {
     const r = await fetchJson(`/cart/${CART_ID}/budget`, { method: 'PUT', body: JSON.stringify({ budget: 400 }) });
     if (r.status !== 200) throw new Error('Budget update did not return 200');
@@ -128,12 +128,12 @@ async function run() {
     failures++;
   }
 
-  // Before checkout, add an item again
+
   try {
     await fetchJson(`/cart/${CART_ID}/items`, { method: 'POST', body: JSON.stringify({ barcode: '4800012345678', quantity: 1 }) });
   } catch (e) {}
 
-  // Test 9 — Checkout
+
   try {
     const r = await fetchJson(`/checkout/${CART_ID}`, { method: 'POST', body: JSON.stringify({ paymentMethod: 'CASH' }) });
     if (r.status !== 200) {
@@ -144,7 +144,7 @@ async function run() {
       console.error('Checkout response body (no receipt):', r.body);
       throw new Error('Receipt not returned');
     }
-    // Verify cart status changed
+
     const cartGet = await fetchJson(`/cart/${CART_ID}`);
     const status = cartGet.body && cartGet.body.cart && cartGet.body.cart.status;
     if (!status || status.toUpperCase().indexOf('COMPLETED') === -1) throw new Error('Cart status not changed to COMPLETED');
@@ -154,7 +154,7 @@ async function run() {
     failures++;
   }
 
-  // Test 10 — Waiting cashier listing (endpoint may not exist)
+
   try {
     const r = await fetchJson('/checkout/waiting');
     if (r.status === 404) {

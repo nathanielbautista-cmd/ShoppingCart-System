@@ -69,7 +69,7 @@ export const SearchProducts: React.FC = () => {
 
   return (
     <div className="search-products__item-1">
-      {/* Top Header & Search Bar */}
+
       <div className="search-products__item-2">
         <div className="search-products__item-3">
           <div className="search-products__item-4">
@@ -105,7 +105,7 @@ export const SearchProducts: React.FC = () => {
           </button>
         </div>
 
-        {/* Input Bar */}
+
         <div className="search-products__item-9">
           <Search className="search-products__item-10" />
           <input
@@ -113,7 +113,7 @@ export const SearchProducts: React.FC = () => {
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search by product name, category, or aisle (e.g. 'coke', 'bread', 'milk')..."
+            placeholder="Search product"
             className="search-products__item-11"
           />
 
@@ -127,7 +127,7 @@ export const SearchProducts: React.FC = () => {
           )}
         </div>
 
-        {/* Category & Filter Chips */}
+
         <div className="search-products__item-14">
           {categories.map((cat) => (
             <button
@@ -162,7 +162,7 @@ export const SearchProducts: React.FC = () => {
         </div>
       </div>
 
-      {/* On-screen touch keypad for 7-inch touch screens */}
+
       {showTouchKeypad && (
         <div className="search-products__item-15">
           <div className="search-products__item-16">
@@ -213,7 +213,7 @@ export const SearchProducts: React.FC = () => {
         </div>
       )}
 
-      {/* Product Results List */}
+
       <div className="search-products__item-24">
         {filteredProducts.length === 0 ? (
           <div className="search-products__item-25">
@@ -244,7 +244,7 @@ export const SearchProducts: React.FC = () => {
                     : 'bg-slate-900/90 border-slate-800/90 hover:border-slate-700'
                 }`}
               >
-                {/* Details */}
+
                 <div className="search-product-image">{product.image ? <img src={product.image} alt="" onError={(event) => { event.currentTarget.style.display = 'none'; }} /> : <ImageIcon />}</div>
                 <div className="search-products__item-30">
                   <div className="search-products__item-31">
@@ -263,7 +263,7 @@ export const SearchProducts: React.FC = () => {
                     <span className="search-products__item-36">·</span>
                     <span className="search-products__item-37">{product.expectedWeightGrams}g</span>
 
-                    {/* Stock Status Badge */}
+
                     <span className="search-products__item-38">·</span>
                     {isOutOfStock ? (
                       <span className="search-products__item-39">
@@ -283,7 +283,7 @@ export const SearchProducts: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Aisle Location */}
+
                   {product.aisleLocation && (
                     <div className="search-products__item-45">
                       <MapPin className="search-products__item-46" />
@@ -298,7 +298,7 @@ export const SearchProducts: React.FC = () => {
         )}
       </div>
 
-      {/* Bottom bar */}
+
       <div className="search-products__item-47">
         <span className="search-products__item-48">
           Showing <strong className="search-products__item-49">{filteredProducts.length}</strong> of {products.length} catalog items

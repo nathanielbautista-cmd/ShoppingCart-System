@@ -8,9 +8,9 @@ const {
   WEIGHT_TOLERANCE_GRAMS
 } = require('../config/constants');
 
-/**
- * Helper to generate cart summary response
- */
+
+
+
 const formatCartResponse = (cart) => {
   const budgetInfo = calculateBudgetStatus(cart.budget, cart.total);
   const totalItemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
@@ -37,21 +37,21 @@ const formatCartResponse = (cart) => {
   };
 };
 
-/**
- * @desc    Create a new active shopping cart
- * @route   POST /api/cart
- * @access  Public
- */
+
+
+
+
+
 const createCart = async (req, res, next) => {
   try {
     const { cartId, budget } = req.body;
 
-    // Use provided cartId or auto-generate
+
     const finalCartId = cartId && cartId.trim()
       ? cartId.trim().toUpperCase()
       : `ICART-${Date.now().toString().slice(-4)}`;
 
-    // Check if cartId already exists
+
     const existing = await Cart.findOne({ cartId: finalCartId });
     if (existing) {
       if (existing.status === CART_STATUS.ACTIVE) {
@@ -61,7 +61,7 @@ const createCart = async (req, res, next) => {
           cart: formatCartResponse(existing)
         });
       }
-      // If previous cart with this ID was completed/cancelled, reset it
+
       existing.status = CART_STATUS.ACTIVE;
       existing.items = [];
       existing.subtotal = 0;
@@ -97,11 +97,11 @@ const createCart = async (req, res, next) => {
   }
 };
 
-/**
- * @desc    Get shopping cart by cartId
- * @route   GET /api/cart/:cartId
- * @access  Public
- */
+
+
+
+
+
 const getCart = async (req, res, next) => {
   try {
     const { cartId } = req.params;
@@ -123,11 +123,11 @@ const getCart = async (req, res, next) => {
   }
 };
 
-/**
- * @desc    Add product to cart via barcode
- * @route   POST /api/cart/:cartId/items
- * @access  Public (Used by Touchscreen / Logicowl OJ-MP6300 scanner)
- */
+
+
+
+
+
 const addItemToCart = async (req, res, next) => {
   try {
     const { cartId } = req.params;
@@ -141,10 +141,10 @@ const addItemToCart = async (req, res, next) => {
       });
     }
 
-    // 1. Find Cart
+
     let cart = await Cart.findOne({ cartId: cartId.trim().toUpperCase() });
     if (!cart) {
-      // Auto-create active cart if not yet created
+
       cart = await Cart.create({
         cartId: cartId.trim().toUpperCase(),
         status: CART_STATUS.ACTIVE,
@@ -162,7 +162,7 @@ const addItemToCart = async (req, res, next) => {
       });
     }
 
-    // 2. Find Product by barcode
+
     const product = await Product.findOne({ barcode: barcode.trim() });
     if (!product) {
       return res.status(404).json({
@@ -171,7 +171,7 @@ const addItemToCart = async (req, res, next) => {
       });
     }
 
-    // 3. Check if active
+
     if (!product.isActive) {
       return res.status(400).json({
         success: false,
@@ -179,7 +179,7 @@ const addItemToCart = async (req, res, next) => {
       });
     }
 
-    // 4. Check available stock
+
     const existingItemIndex = cart.items.findIndex(
       (item) => item.barcode === product.barcode
     );
@@ -194,13 +194,13 @@ const addItemToCart = async (req, res, next) => {
       });
     }
 
-    // 5. Add or update item in cart
+
     if (existingItemIndex > -1) {
       const item = cart.items[existingItemIndex];
       item.quantity += requestedQty;
       item.subtotal = Number((item.price * item.quantity).toFixed(2));
       item.expectedWeight = Number((product.weight * item.quantity).toFixed(2));
-      item.weightStatus = WEIGHT_STATUS.PENDING; // Needs weight verification after new item placed
+      item.weightStatus = WEIGHT_STATUS.PENDING;
     } else {
       cart.items.push({
         productId: product._id,
@@ -215,7 +215,7 @@ const addItemToCart = async (req, res, next) => {
       });
     }
 
-    // 6. Recalculate cart subtotal & total
+
     cart.recalculateTotals();
     await cart.save();
 
@@ -237,11 +237,11 @@ const addItemToCart = async (req, res, next) => {
   }
 };
 
-/**
- * @desc    Remove item from cart
- * @route   DELETE /api/cart/:cartId/items/:itemId
- * @access  Public
- */
+
+
+
+
+
 const removeItemFromCart = async (req, res, next) => {
   try {
     const { cartId, itemId } = req.params;
@@ -254,7 +254,7 @@ const removeItemFromCart = async (req, res, next) => {
       });
     }
 
-    // Match by item._id or by item.barcode
+
     const initialItemCount = cart.items.length;
     cart.items = cart.items.filter(
       (item) => item._id.toString() !== itemId && item.barcode !== itemId
@@ -280,11 +280,11 @@ const removeItemFromCart = async (req, res, next) => {
   }
 };
 
-/**
- * @desc    Update item quantity in cart
- * @route   PUT /api/cart/:cartId/items/:itemId
- * @access  Public
- */
+
+
+
+
+
 const updateItemQuantity = async (req, res, next) => {
   try {
     const { cartId, itemId } = req.params;
@@ -317,7 +317,7 @@ const updateItemQuantity = async (req, res, next) => {
       });
     }
 
-    // Check product stock limit
+
     const product = await Product.findById(item.productId);
     if (product && newQty > product.stock) {
       return res.status(400).json({
@@ -330,7 +330,7 @@ const updateItemQuantity = async (req, res, next) => {
     item.quantity = newQty;
     item.subtotal = Number((item.price * newQty).toFixed(2));
     item.expectedWeight = Number((singleWeight * newQty).toFixed(2));
-    item.weightStatus = WEIGHT_STATUS.PENDING; // Mark pending re-verification
+    item.weightStatus = WEIGHT_STATUS.PENDING;
 
     cart.recalculateTotals();
     await cart.save();
@@ -345,11 +345,11 @@ const updateItemQuantity = async (req, res, next) => {
   }
 };
 
-/**
- * @desc    Set/Update cart budget and get budget status
- * @route   PUT /api/cart/:cartId/budget
- * @access  Public
- */
+
+
+
+
+
 const updateBudget = async (req, res, next) => {
   try {
     const { cartId } = req.params;
@@ -388,11 +388,11 @@ const updateBudget = async (req, res, next) => {
   }
 };
 
-/**
- * @desc    Update verified weight for a cart item (HX711 Load Cell verification)
- * @route   POST /api/cart/:cartId/items/:itemId/weight
- * @access  Public (Hardware / Raspberry Pi)
- */
+
+
+
+
+
 const verifyItemWeight = async (req, res, next) => {
   try {
     const { cartId, itemId } = req.params;
@@ -454,11 +454,11 @@ const verifyItemWeight = async (req, res, next) => {
   }
 };
 
-/**
- * @desc    Report weight anomaly (Situation B: item placed in cart without scanning)
- * @route   POST /api/cart/:cartId/weight-anomaly
- * @access  Public (Raspberry Pi HX711 background monitor)
- */
+
+
+
+
+
 const reportWeightAnomaly = async (req, res, next) => {
   try {
     const { cartId } = req.params;
@@ -486,11 +486,11 @@ const reportWeightAnomaly = async (req, res, next) => {
   }
 };
 
-/**
- * @desc    Clear weight anomaly flag (e.g. after cashier verification)
- * @route   POST /api/cart/:cartId/clear-anomaly
- * @access  Public
- */
+
+
+
+
+
 const clearWeightAnomaly = async (req, res, next) => {
   try {
     const { cartId } = req.params;

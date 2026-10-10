@@ -69,7 +69,6 @@ class ScannerService:
         return device
 
     def _emit_barcode(self) -> None:
-        # Only line termination is removed; all barcode characters are preserved.
         barcode = self.buffer.rstrip("\r\n")
         self.buffer = ""
         if not barcode:

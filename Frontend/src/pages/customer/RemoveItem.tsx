@@ -35,7 +35,7 @@ export const RemoveItem: React.FC = () => {
 
   return (
     <div className="remove-item">
-      {/* Title */}
+
       <div className="remove-item__header">
         <div className="remove-item__icon-wrap">
           <Trash2 className="remove-item__title-icon" />
@@ -46,7 +46,7 @@ export const RemoveItem: React.FC = () => {
         </h2>
       </div>
 
-      {/* Main Status & Removal Verification Area */}
+
       <div className="remove-item__content">
         <div className="remove-item__card">
           <div className="remove-item__label">
@@ -62,13 +62,13 @@ export const RemoveItem: React.FC = () => {
             <span>Expected basket scale reduction: -{product.expectedWeightGrams * quantity}g</span>
           </div>
 
-          {/* Verification Status Banner */}
+
           {hasConfirmed && (
             <div className="remove-item__verification">
               {removalStatus === 'WAITING_FOR_REMOVAL' && (
                 <div className="remove-item__status remove-item__status--waiting">
                   <AlertTriangle className="remove-item__status-icon" />
-                  <span>Waiting for item removal from basket...</span>
+                  <span>Press confirm, then remove the item from the basket.</span>
                 </div>
               )}
 
@@ -97,7 +97,7 @@ export const RemoveItem: React.FC = () => {
         </div>
       </div>
 
-      {/* Action Buttons */}
+
       <div className="remove-item__actions">
         <Button
           variant="secondary"
@@ -118,7 +118,7 @@ export const RemoveItem: React.FC = () => {
             icon={<Trash2 className="remove-item__button-icon" />}
             onClick={handleConfirmRemove}
           >
-            CONFIRM REMOVE
+            START SCALE CHECK
           </Button>
         ) : (
           <Button

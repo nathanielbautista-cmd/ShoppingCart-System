@@ -1,37 +1,33 @@
 const Product = require('../models/Product');
 
-/**
- * Helper to determine stock status label
- */
+
+
+
 const getStockStatus = (stock, threshold = 5) => {
   if (stock <= 0) return 'OUT_OF_STOCK';
   if (stock <= threshold) return 'LOW_STOCK';
   return 'IN_STOCK';
 };
 
-/**
- * @desc    Get inventory overview with stock indicators
- * @route   GET /api/inventory
- * @access  Public / Admin
- */
+
+
+
+
+
 const getInventory = async (req, res, next) => {
   try {
     const { status, category, lowStockOnly } = req.query;
-    const LOW_STOCK_THRESHOLD = 5;
 
     let query = {};
     if (category) {
       query.category = { $regex: new RegExp(`^${category}$`, 'i') };
     }
 
-    if (lowStockOnly === 'true') {
-      query.stock = { $lte: LOW_STOCK_THRESHOLD };
-    }
-
     const products = await Product.find(query).sort({ stock: 1, name: 1 });
 
-    const formattedInventory = products.map((p) => {
-      const stockStatus = getStockStatus(p.stock, LOW_STOCK_THRESHOLD);
+    let formattedInventory = products.map((p) => {
+      const minimumStock = p.minimumStock ?? 5;
+      const stockStatus = getStockStatus(p.stock, minimumStock);
       return {
         id: p._id,
         barcode: p.barcode,
@@ -39,15 +35,23 @@ const getInventory = async (req, res, next) => {
         category: p.category,
         price: p.price,
         stock: p.stock,
+        minimumStock,
         unit: p.unit,
         weight: p.weight,
         stockStatus,
-        isLowStock: p.stock <= LOW_STOCK_THRESHOLD && p.stock > 0,
+        isLowStock: p.stock <= minimumStock && p.stock > 0,
         isOutOfStock: p.stock === 0,
         isActive: p.isActive,
         updatedAt: p.updatedAt
       };
     });
+
+    if (lowStockOnly === 'true') {
+      formattedInventory = formattedInventory.filter((item) => item.stockStatus !== 'IN_STOCK');
+    }
+    if (status) {
+      formattedInventory = formattedInventory.filter((item) => item.stockStatus === status.toUpperCase());
+    }
 
     const summary = {
       totalProducts: formattedInventory.length,
@@ -66,11 +70,11 @@ const getInventory = async (req, res, next) => {
   }
 };
 
-/**
- * @desc    Adjust product stock level
- * @route   PUT /api/inventory/:productId/stock
- * @access  Private / Admin
- */
+
+
+
+
+
 const adjustStock = async (req, res, next) => {
   try {
     const { productId } = req.params;
@@ -86,7 +90,7 @@ const adjustStock = async (req, res, next) => {
 
     let product = await Product.findById(productId);
     if (!product) {
-      // Try finding by barcode as fallback
+
       product = await Product.findOne({ barcode: productId });
     }
 
@@ -151,7 +155,7 @@ const adjustStock = async (req, res, next) => {
         currentStock: product.stock,
         action,
         reason,
-        stockStatus: getStockStatus(product.stock)
+        stockStatus: getStockStatus(product.stock, product.minimumStock ?? 5)
       }
     });
   } catch (error) {
@@ -159,22 +163,21 @@ const adjustStock = async (req, res, next) => {
   }
 };
 
-/**
- * @desc    Get low stock items (<= 5 units)
- * @route   GET /api/inventory/low-stock
- * @access  Public / Admin
- */
+
+
+
+
+
 const getLowStockAlerts = async (req, res, next) => {
   try {
-    const threshold = Number(req.query.threshold) || 5;
-
-    const lowStockProducts = await Product.find({
-      stock: { $lte: threshold }
-    }).sort({ stock: 1 });
+    const parsedThreshold = req.query.threshold === undefined ? null : Number(req.query.threshold);
+    const requestedThreshold = Number.isFinite(parsedThreshold) ? parsedThreshold : null;
+    const lowStockProducts = (await Product.find({}).sort({ stock: 1, name: 1 }))
+      .filter((product) => product.stock <= (requestedThreshold ?? product.minimumStock ?? 5));
 
     res.status(200).json({
       success: true,
-      threshold,
+      threshold: requestedThreshold,
       count: lowStockProducts.length,
       alerts: lowStockProducts.map((p) => ({
         id: p._id,
@@ -182,6 +185,7 @@ const getLowStockAlerts = async (req, res, next) => {
         name: p.name,
         category: p.category,
         stock: p.stock,
+        minimumStock: requestedThreshold ?? p.minimumStock ?? 5,
         status: p.stock === 0 ? 'OUT_OF_STOCK' : 'LOW_STOCK'
       }))
     });

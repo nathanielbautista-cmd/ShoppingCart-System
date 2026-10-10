@@ -74,7 +74,7 @@ export const BudgetDisplay: React.FC<BudgetDisplayProps> = ({ compact = false })
 
   return (
     <div className={`p-3 sm:p-3.5 rounded-2xl border ${currentTheme.border} ${currentTheme.bg} shadow-lg shadow-black/40 transition-all`}>
-      {/* 3 Metric columns */}
+
       <div className="budget-display__item-9">
         <div className="budget-display__item-10">
           <div className="budget-display__item-11">
@@ -108,7 +108,7 @@ export const BudgetDisplay: React.FC<BudgetDisplayProps> = ({ compact = false })
         </div>
       </div>
 
-      {/* Progress Bar with glow */}
+
       <div className="budget-display__item-18">
         <div className="budget-display__item-19">
           <span className="budget-display__item-20">
@@ -127,7 +127,7 @@ export const BudgetDisplay: React.FC<BudgetDisplayProps> = ({ compact = false })
         </div>
       </div>
 
-      {/* Status banner */}
+
       <div className={`mt-2 flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-lg border ${currentTheme.badge}`}>
         {currentTheme.icon}
         <span className="budget-display__item-23">{currentTheme.message}</span>

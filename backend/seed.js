@@ -16,7 +16,7 @@ const sampleProducts = [
     price: 45.00,
     stock: 25,
     unit: 'can',
-    weight: 240, // 220ml liquid + ~20g aluminum can
+    weight: 240,
     image: '',
     isActive: true
   },
@@ -28,7 +28,7 @@ const sampleProducts = [
     price: 16.50,
     stock: 60,
     unit: 'pack',
-    weight: 85, // 80g noodles + seasoning sachet & foil pack
+    weight: 85,
     image: '',
     isActive: true
   },
@@ -52,7 +52,7 @@ const sampleProducts = [
     price: 110.00,
     stock: 18,
     unit: 'pack',
-    weight: 315, // 300g milk powder + foil pouch packaging
+    weight: 315,
     image: '',
     isActive: true
   },
@@ -76,7 +76,7 @@ const sampleProducts = [
     price: 18.00,
     stock: 50,
     unit: 'bottle',
-    weight: 520, // 500ml water + ~20g PET bottle and cap
+    weight: 520,
     image: '',
     isActive: true
   },
@@ -88,7 +88,7 @@ const sampleProducts = [
     price: 38.50,
     stock: 35,
     unit: 'can',
-    weight: 185, // 155g net weight + 30g tin can
+    weight: 185,
     image: '',
     isActive: true
   },
@@ -100,7 +100,7 @@ const sampleProducts = [
     price: 28.00,
     stock: 22,
     unit: 'bottle',
-    weight: 430, // 385ml sauce + bottle
+    weight: 430,
     image: '',
     isActive: true
   },
@@ -124,7 +124,7 @@ const sampleProducts = [
     price: 38.00,
     stock: 30,
     unit: 'bag',
-    weight: 92, // 85g chips + foil bag
+    weight: 92,
     image: '',
     isActive: true
   },
@@ -160,15 +160,15 @@ const seedDatabase = async () => {
     await mongoose.connect(mongoUri);
     console.log('Connected to MongoDB for database seeding...');
 
-    // Clear existing collections if desired
+
     console.log('Clearing existing products and carts...');
     await Product.deleteMany({});
-    // Drop any stale indexes that may block insertion (e.g., productId_1 pointing to null)
+
     try {
       await Product.collection.dropIndex('productId_1');
       console.log('Dropped stale index productId_1');
     } catch (idxErr) {
-      // ignore if index did not exist
+
       if (idxErr && idxErr.codeName !== 'IndexNotFound' && !/index not found/.test(String(idxErr))) {
         console.warn('Could not drop index productId_1:', idxErr.message || idxErr);
       }
@@ -176,36 +176,40 @@ const seedDatabase = async () => {
     await Cart.deleteMany({});
     await Transaction.deleteMany({});
 
-    // Seed default admin and cashier
+
     console.log('Checking / Seeding users...');
     await User.deleteMany({});
     
     const adminUser = await User.create({
       name: 'Admin',
       email: 'admin@icart.com',
-      password: 'password', // will be hashed by pre-save hook
-      role: 'admin'
+      phoneNumber: '09171234567',
+      password: 'Admin@12345',
+      role: 'admin',
+      isEmailVerified: true
     });
 
     const cashierUser = await User.create({
       name: 'Cashier Station 1',
       email: 'cashier@icart.com',
-      password: 'password',
-      role: 'cashier'
+      phoneNumber: '09171234568',
+      password: 'Cashier@12345',
+      role: 'cashier',
+      isEmailVerified: true
     });
 
-    console.log(`Created admin: ${adminUser.email} / password`);
-    console.log(`Created cashier: ${cashierUser.email} / password`);
+    console.log(`Created admin: ${adminUser.email} / Admin@12345`);
+    console.log(`Created cashier: ${cashierUser.email} / Cashier@12345`);
 
-    // Seed Products
+
     console.log('Seeding products with realistic barcodes and weights...');
     const insertedProducts = await Product.insertMany(sampleProducts);
     console.log(`Successfully seeded ${insertedProducts.length} products.`);
 
-    // Seed Initial Sample Cart
+
     console.log('Seeding sample active cart ICART-001...');
-    const firstProduct = insertedProducts[0]; // Pineapple juice
-    const secondProduct = insertedProducts[1]; // Pancit Canton
+    const firstProduct = insertedProducts[0];
+    const secondProduct = insertedProducts[1];
 
     const sampleCart = await Cart.create({
       cartId: 'ICART-001',
@@ -221,7 +225,7 @@ const seedDatabase = async () => {
           price: firstProduct.price,
           quantity: 1,
           expectedWeight: firstProduct.weight,
-          verifiedWeight: firstProduct.weight - 2, // 238g vs 240g (within 5g tolerance)
+          verifiedWeight: firstProduct.weight - 2,
           weightStatus: 'VERIFIED',
           subtotal: firstProduct.price
         },
@@ -232,7 +236,7 @@ const seedDatabase = async () => {
           price: secondProduct.price,
           quantity: 2,
           expectedWeight: secondProduct.weight * 2,
-          verifiedWeight: 170, // 85g * 2 = 170g
+          verifiedWeight: 170,
           weightStatus: 'VERIFIED',
           subtotal: secondProduct.price * 2
         }

@@ -1,4 +1,4 @@
-/* Direct CSS declarations. Edit these values without Tailwind @apply. */
+
 
 .admin-inventory__item-1 {
   height: 100%;
@@ -350,4 +350,155 @@
   --tw-scale-y: 95%;
   --tw-scale-z: 95%;
   scale: var(--tw-scale-x) var(--tw-scale-y);
+}
+
+.admin-inventory__notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 9px 12px;
+  border: 1px solid;
+  border-radius: 10px;
+  font-size: .72rem;
+  font-weight: 700;
+}
+
+.admin-inventory__notice > svg { width: 16px; height: 16px; flex: 0 0 16px; }
+.admin-inventory__notice > span { flex: 1; }
+.admin-inventory__notice > button { width: 26px; height: 26px; display: grid; place-items: center; border: 0; background: transparent; color: currentColor; cursor: pointer; opacity: .7; }
+.admin-inventory__notice > button svg { width: 14px; height: 14px; }
+.admin-inventory__notice--success { border-color: #bbf7d0; background: #f0fdf4; color: #15803d; }
+.admin-inventory__notice--error { border-color: #fecaca; background: #fef2f2; color: #b91c1c; }
+
+.admin-inventory__restock-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 11px;
+  border: 1px solid var(--color-emerald-300, #6ee7b7);
+  border-radius: 8px;
+  background: var(--color-emerald-100, #d1fae5);
+  color: var(--color-emerald-800, #065f46);
+  cursor: pointer;
+  font-size: .7rem;
+  font-weight: 800;
+  transition: background-color .15s ease, transform .15s ease;
+}
+
+.admin-inventory__restock-button:hover { background: var(--color-emerald-200, #a7f3d0); }
+.admin-inventory__restock-button:active { transform: scale(.96); }
+.admin-inventory__restock-button svg { width: 15px; height: 15px; }
+
+.inventory-restock__backdrop {
+  position: fixed;
+  z-index: 1100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  overflow-y: auto;
+  background: rgba(2, 6, 23, .7);
+  backdrop-filter: blur(6px);
+  animation: inventory-restock-fade .16s ease-out;
+}
+
+.inventory-restock {
+  width: min(490px, 100%);
+  overflow: hidden;
+  border: 1px solid #dbe4ec;
+  border-radius: 18px;
+  background: #fff;
+  color: #172033;
+  box-shadow: 0 28px 80px rgba(2, 6, 23, .36);
+  animation: inventory-restock-rise .18s ease-out;
+}
+
+.inventory-restock__header {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 17px 19px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #fbfcfd;
+}
+
+.inventory-restock__icon { width: 40px; height: 40px; flex: 0 0 40px; display: grid; place-items: center; border-radius: 11px; background: #e8f7ed; color: #15803d; }
+.inventory-restock__icon svg { width: 19px; height: 19px; }
+.inventory-restock__header > div:nth-child(2) { min-width: 0; flex: 1; }
+.inventory-restock__header h2 { margin: 0; color: #0f172a; font-size: 1rem; }
+.inventory-restock__header p { margin: 3px 0 0; overflow: hidden; color: #64748b; font-size: .7rem; text-overflow: ellipsis; white-space: nowrap; }
+.inventory-restock__header > button { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid #dbe4ec; border-radius: 9px; background: #fff; color: #64748b; cursor: pointer; }
+.inventory-restock__header > button:hover { background: #f1f5f9; color: #0f172a; }
+.inventory-restock__header > button:disabled { cursor: wait; opacity: .5; }
+.inventory-restock__header > button svg { width: 17px; height: 17px; }
+
+.inventory-restock__body { padding: 19px; }
+.inventory-restock__stock-summary { display: grid; grid-template-columns: 1fr 26px 1fr 1fr; gap: 9px; align-items: center; padding: 14px; border: 1px solid #dbe4ec; border-radius: 13px; background: #f8fafc; }
+.inventory-restock__stock-summary > div { min-width: 0; }
+.inventory-restock__stock-summary > svg { width: 16px; height: 16px; color: #94a3b8; }
+.inventory-restock__stock-summary span { display: block; color: #64748b; font-size: .58rem; font-weight: 750; text-transform: uppercase; }
+.inventory-restock__stock-summary strong { display: block; margin-top: 4px; color: #1e293b; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+.inventory-restock__new-stock strong { color: #15803d; }
+.inventory-restock__section { margin-top: 18px; }
+.inventory-restock__label,
+.inventory-restock__custom > span { display: block; margin-bottom: 7px; color: #475569; font-size: .69rem; font-weight: 800; }
+.inventory-restock__presets { display: grid; grid-template-columns: repeat(3, 1fr) 1.65fr; gap: 7px; }
+.inventory-restock__presets button { min-height: 38px; padding: 0 8px; border: 1px solid #cbd5e1; border-radius: 9px; background: #fff; color: #475569; cursor: pointer; font-size: .68rem; font-weight: 800; }
+.inventory-restock__presets button:hover { border-color: #86efac; background: #f0fdf4; color: #15803d; }
+.inventory-restock__presets button.is-selected { border-color: #22c55e; background: #e8f7ed; color: #15803d; box-shadow: 0 0 0 2px rgba(34, 197, 94, .1); }
+.inventory-restock__presets button:disabled { cursor: not-allowed; opacity: .42; }
+.inventory-restock__custom { display: block; margin-top: 17px; }
+.inventory-restock__custom > div { position: relative; }
+.inventory-restock__custom input { width: 100%; height: 44px; padding: 0 60px 0 12px; border: 1px solid #cbd5e1; border-radius: 9px; outline: none; background: #fff; color: #0f172a; font: inherit; font-size: .82rem; font-weight: 750; }
+.inventory-restock__custom input:focus { border-color: #22c55e; box-shadow: 0 0 0 3px rgba(34, 197, 94, .13); }
+.inventory-restock__custom > div > span { position: absolute; top: 50%; right: 12px; color: #94a3b8; font-size: .67rem; transform: translateY(-50%); }
+.inventory-restock__validation { display: flex; align-items: center; gap: 5px; margin: 8px 0 0; color: #b91c1c; font-size: .64rem; font-weight: 700; }
+.inventory-restock__validation svg { width: 13px; height: 13px; }
+
+.inventory-restock__footer { display: flex; justify-content: flex-end; gap: 9px; padding: 14px 19px; border-top: 1px solid #e2e8f0; background: #f8fafc; }
+.inventory-restock__footer button { min-height: 40px; padding: 0 16px; border-radius: 9px; cursor: pointer; font-size: .7rem; font-weight: 800; }
+.inventory-restock__footer button:disabled { cursor: not-allowed; opacity: .55; }
+.inventory-restock__cancel { border: 1px solid #cbd5e1; background: #fff; color: #475569; }
+.inventory-restock__cancel:hover { background: #f1f5f9; }
+.inventory-restock__confirm { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-width: 145px; border: 1px solid #16a34a; background: linear-gradient(135deg, #16a34a, #0f8a68); color: #fff; box-shadow: 0 7px 16px rgba(22, 163, 74, .2); }
+.inventory-restock__confirm:hover:not(:disabled) { filter: brightness(.96); }
+.inventory-restock__confirm svg { width: 16px; height: 16px; }
+.inventory-restock .is-spinning { animation: inventory-restock-spin .8s linear infinite; }
+
+html[data-theme="dark"] .inventory-restock { border-color: #334155; background: #111c2d; color: #e2e8f0; }
+html[data-theme="dark"] .inventory-restock__header { border-color: #334155; background: #101a2a; }
+html[data-theme="dark"] .inventory-restock__header h2,
+html[data-theme="dark"] .inventory-restock__stock-summary strong { color: #f8fafc; }
+html[data-theme="dark"] .inventory-restock__header p,
+html[data-theme="dark"] .inventory-restock__stock-summary span { color: #94a3b8; }
+html[data-theme="dark"] .inventory-restock__header > button,
+html[data-theme="dark"] .inventory-restock__presets button,
+html[data-theme="dark"] .inventory-restock__custom input,
+html[data-theme="dark"] .inventory-restock__cancel { border-color: #475569; background: #1e293b; color: #e2e8f0; }
+html[data-theme="dark"] .inventory-restock__stock-summary { border-color: #334155; background: #0f172a; }
+html[data-theme="dark"] .inventory-restock__new-stock strong { color: #86efac; }
+html[data-theme="dark"] .inventory-restock__label,
+html[data-theme="dark"] .inventory-restock__custom > span { color: #cbd5e1; }
+html[data-theme="dark"] .inventory-restock__presets button.is-selected { border-color: #22c55e; background: #123524; color: #86efac; }
+html[data-theme="dark"] .inventory-restock__footer { border-color: #334155; background: #0f172a; }
+
+@keyframes inventory-restock-fade { from { opacity: 0; } }
+@keyframes inventory-restock-rise { from { opacity: 0; transform: translateY(9px) scale(.985); } }
+@keyframes inventory-restock-spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 640px) {
+  .inventory-restock__stock-summary { grid-template-columns: 1fr 20px 1fr; }
+  .inventory-restock__stock-summary > div:last-child { grid-column: 1 / -1; padding-top: 9px; border-top: 1px solid #e2e8f0; }
+  .inventory-restock__presets { grid-template-columns: repeat(3, 1fr); }
+  .inventory-restock__presets button:last-child { grid-column: 1 / -1; }
+  .inventory-restock__footer { display: grid; grid-template-columns: 1fr 1.4fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inventory-restock__backdrop,
+  .inventory-restock,
+  .inventory-restock .is-spinning { animation: none; }
 }

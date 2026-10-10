@@ -30,7 +30,7 @@ export const ShoppingHome: React.FC = () => {
         type="search"
         value={searchTerm}
         onChange={(event) => setSearchTerm(event.target.value)}
-        placeholder="Search products, category, barcode, or aisle..."
+        placeholder="Search product"
         autoComplete="off"
       />
       {searchTerm && <button type="button" onClick={() => setSearchTerm('')} aria-label="Clear product search"><X /></button>}

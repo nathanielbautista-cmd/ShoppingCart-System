@@ -1,12 +1,17 @@
-/* Direct CSS declarations. Edit these values without Tailwind @apply. */
+
 
 .app__item-1 {
   flex: 1;
+  min-width: 0;
+  min-height: 0;
   overflow: hidden;
 }
 
 .app__item-5 {
   flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
   position: relative;
   overflow: hidden;
 }
@@ -18,6 +23,8 @@
 
 .kiosk-customer-content {
   min-width: 0;
+  min-height: 0;
+  height: 100%;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -27,13 +34,15 @@
 
 .kiosk-customer-page {
   min-height: 0;
+  height: 100%;
   flex: 1;
+  position: relative;
   overflow: hidden;
   background: #020617;
 }
 
-/* Every customer screen must cover the available kiosk viewport. Page-specific
-   content can still constrain its inner controls without exposing side gutters. */
+
+
 .kiosk-customer-page > * {
   width: 100%;
   max-width: none;
@@ -41,22 +50,283 @@
   box-sizing: border-box;
 }
 
-.admin-layout,
-.admin-page {
-  min-width: 0;
-  background: #020617;
+.kiosk-cart-view {
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(300px, 1fr) clamp(390px, 44vw, 480px);
+  overflow: hidden;
+  background: #f6f8fb;
 }
 
-/* Admin screens use the entire content area instead of exposing the shell
-   behind their page-specific max-width containers. */
-.admin-page > * {
+.kiosk-cart-view > .kiosk-home {
+  min-width: 0;
+}
+
+.kiosk-cart-view .kiosk-home__catalog {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.kiosk-cart-panel {
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+  border-left: 1px solid #d6e0e9;
+  background: #fff;
+  box-shadow: -12px 0 30px rgba(24,43,70,.14);
+  animation: customer-cart-slide-in .22s ease-out;
+}
+
+@keyframes customer-cart-slide-in {
+  from { opacity: 0; transform: translateX(28px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@media (max-width: 760px) {
+  .kiosk-cart-view {
+    display: block;
+    position: relative;
+  }
+
+  .kiosk-cart-panel {
+    position: absolute;
+    inset: 0 0 0 auto;
+    width: min(88%, 430px);
+    z-index: 20;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kiosk-cart-panel { animation: none; }
+}
+
+.admin-layout {
   width: 100%;
+  height: 100%;
+  max-height: 100%;
+  min-width: 0;
+  min-height: 0;
+  align-items: stretch;
+  display: flex;
+  overflow: hidden;
+  background: #0d1726;
+}
+
+.admin-page {
+  height: 100%;
+  max-height: 100%;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+  background: #f4f7f5;
+}
+
+
+
+.admin-layout .admin-page > * {
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
   max-width: none;
-  min-height: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 24px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  background: #f4f7f5;
   box-sizing: border-box;
 }
 
-/* Customer theme overrides controlled by the quick Settings menu. */
+
+
+
+.admin-theme-dark {
+  color-scheme: dark;
+  --color-white: #111c2d;
+  --color-slate-50: #0b1220;
+  --color-slate-100: #162235;
+  --color-slate-200: #263449;
+  --color-slate-300: #3b4b61;
+  --color-slate-400: #94a3b8;
+  --color-slate-500: #a7b3c4;
+  --color-slate-600: #cbd5e1;
+  --color-slate-700: #e2e8f0;
+  --color-slate-800: #edf2f7;
+  --color-slate-900: #f8fafc;
+  --color-emerald-50: #0b2b23;
+  --color-emerald-100: #103b2d;
+  --color-emerald-200: #176047;
+  --color-emerald-300: #34d399;
+  --color-emerald-600: #34d399;
+  --color-emerald-700: #6ee7b7;
+  --color-emerald-800: #a7f3d0;
+  --color-amber-50: #35230b;
+  --color-amber-200: #785313;
+  --color-amber-800: #fcd34d;
+  --color-rose-50: #35131d;
+  --color-rose-200: #7f2943;
+  --color-rose-600: #fb7185;
+  --color-rose-700: #fda4af;
+  --color-blue-200: #254c86;
+  --color-sky-50: #102b3c;
+  --color-sky-700: #7dd3fc;
+  --color-teal-700: #5eead4;
+}
+
+.admin-layout,
+.admin-layout .admin-page,
+.admin-layout .admin-page > *,
+.admin-nav,
+.admin-nav__profile,
+.admin-nav__link {
+  transition: color .18s ease, background-color .18s ease, border-color .18s ease;
+}
+
+.admin-layout.admin-theme-dark,
+.admin-layout.admin-theme-dark .admin-page,
+.admin-layout.admin-theme-dark .admin-page > * {
+  background: #0b1220 !important;
+  color: #e2e8f0;
+}
+
+
+.admin-theme-light .admin-nav {
+  border-right-color: #dce5df;
+  background: #fff;
+  color: #334155;
+  box-shadow: 8px 0 28px rgba(15, 23, 42, .06);
+}
+
+.admin-theme-light .admin-nav__brand,
+.admin-theme-light .admin-nav__profile,
+.admin-theme-light .admin-nav__footer { border-color: #e2e8f0; }
+.admin-theme-light .admin-nav__brand strong,
+.admin-theme-light .admin-nav__identity h3 { color: #0f172a; }
+.admin-theme-light .admin-nav__identity span { color: #64748b; }
+.admin-theme-light .admin-nav__avatar { border-color: #86efac; background: #dcfce7; color: #15803d; }
+.admin-theme-light .admin-nav__profile:hover,
+.admin-theme-light .admin-nav__link:hover { border-color: #dce5df; background: #f1f5f9; color: #0f172a; }
+.admin-theme-light .admin-nav__link { color: #475569; }
+.admin-theme-light .admin-nav__link.is-active { border-color: rgba(21, 128, 61, .18); background: linear-gradient(90deg, #16a34a, #0d9488); color: #fff; }
+.admin-theme-light .admin-nav__item-12:hover { background: #fff1f2; color: #dc2626; }
+
+
+.admin-theme-dark .admin-dashboard,
+.admin-theme-dark .admin-products,
+.admin-theme-dark .admin-reports { background: #0b1220 !important; color: #e2e8f0 !important; }
+
+.admin-theme-dark .dashboard-metric,
+.admin-theme-dark .dashboard-panel,
+.admin-theme-dark .dashboard-error,
+.admin-theme-dark .admin-products__search-input,
+.admin-theme-dark .admin-products__list-category-filter select,
+.admin-theme-dark .admin-products__table-wrapper,
+.admin-theme-dark .admin-products__category-menu,
+.admin-theme-dark .admin-products__category-option,
+.admin-theme-dark .admin-reports__summary-card,
+.admin-theme-dark .admin-reports__details-card {
+  border-color: #263449;
+  background: #111c2d;
+  color: #e2e8f0;
+}
+
+.admin-theme-dark .dashboard-heading h1,
+.admin-theme-dark .dashboard-panel__heading h2,
+.admin-theme-dark .dashboard-metric__content > strong,
+.admin-theme-dark .dashboard-stock__legend strong,
+.admin-theme-dark .dashboard-stock__legend b,
+  .admin-theme-dark .dashboard-product-bars__label strong,
+.admin-theme-dark .dashboard-table strong,
+.admin-theme-dark .dashboard-empty strong,
+.admin-theme-dark .admin-products__title,
+.admin-theme-dark .admin-products__name,
+.admin-theme-dark .admin-products__stock,
+.admin-theme-dark .admin-products__form-label,
+.admin-theme-dark .admin-products__image-field > label:first-child,
+.admin-theme-dark .admin-reports__title,
+.admin-theme-dark .admin-reports__card-value,
+.admin-theme-dark .admin-reports__item-name { color: #f8fafc; }
+
+.admin-theme-dark .dashboard-last-updated,
+.admin-theme-dark .dashboard-metric__label,
+.admin-theme-dark .dashboard-metric__helper,
+.admin-theme-dark .dashboard-stock__legend small,
+.admin-theme-dark .dashboard-chart__day > span,
+  .admin-theme-dark .dashboard-product-bars__label span,
+.admin-theme-dark .dashboard-table td,
+.admin-theme-dark .dashboard-empty,
+.admin-theme-dark .dashboard-error p,
+.admin-theme-dark .admin-products__barcode,
+.admin-theme-dark .admin-products__category,
+.admin-theme-dark .admin-products__weight,
+.admin-theme-dark .admin-reports__card-heading,
+.admin-theme-dark .admin-reports__details-heading,
+.admin-theme-dark .admin-reports__item-quantity,
+.admin-theme-dark .admin-reports__item-stock { color: #a7b3c4; }
+
+.admin-theme-dark .dashboard-panel__heading,
+.admin-theme-dark .dashboard-stock__legend > div,
+  .admin-theme-dark .dashboard-product-bars li,
+.admin-theme-dark .dashboard-table th,
+.admin-theme-dark .dashboard-table td,
+.admin-theme-dark .admin-products__header,
+.admin-theme-dark .admin-products__table-body > :not(:last-child),
+.admin-theme-dark .admin-products__form-actions,
+.admin-theme-dark .admin-reports__header,
+.admin-theme-dark .admin-reports__list > :not(:last-child) { border-color: #263449; }
+
+.admin-theme-dark .dashboard-refresh,
+.admin-theme-dark .dashboard-panel__heading > button,
+.admin-theme-dark .dashboard-period-select select,
+.admin-theme-dark .admin-products__form-input,
+.admin-theme-dark .admin-products__image-upload {
+  border-color: #3b4b61;
+  background: #0f1929;
+  color: #dbeafe;
+}
+
+.admin-theme-dark .dashboard-table th,
+.admin-theme-dark .admin-products__table-head { background: #162235; color: #a7b3c4; }
+.admin-theme-dark .dashboard-table tbody tr:hover,
+.admin-theme-dark .admin-products__table-row:hover,
+.admin-theme-dark .admin-products__category-option:hover,
+.admin-theme-dark .admin-products__category-option[aria-selected="true"] { background: #172337; }
+.admin-theme-dark .dashboard-donut::before { background: #111c2d; box-shadow: inset 0 0 0 1px #263449; }
+.admin-theme-dark .dashboard-donut__center strong { color: #f8fafc; }
+.admin-theme-dark .dashboard-chart__grid span { border-color: #334155; }
+  .admin-theme-dark .dashboard-product-bars__track { background: #202d40; color: #cbd5e1; }
+.admin-theme-dark .dashboard-skeleton { background: #263449; }
+.admin-theme-dark .dashboard-skeleton::after { background: linear-gradient(90deg, transparent, rgba(148,163,184,.16), transparent); }
+
+.admin-theme-dark .admin-settings__theme-button.is-active {
+  background: #334155;
+  color: #fff;
+}
+
+.admin-theme-dark [class~="bg-slate-900"],
+.admin-theme-dark [class~="bg-slate-800"] { background-color: #1e293b !important; color: #fff !important; }
+.admin-theme-dark [class~="text-white"],
+.admin-theme-dark .modal__item-3 { color: #fff !important; }
+
+html[data-theme="light"] .modal__item-1 > div {
+  border-color: #cbd5e1 !important;
+  background: #fff !important;
+  color: #0f172a !important;
+}
+
+html[data-theme="light"] .modal__item-2 { border-color: #e2e8f0; }
+html[data-theme="light"] .modal__item-3 { color: #0f172a; }
+html[data-theme="light"] .modal__item-4 { background: #f1f5f9; color: #64748b; }
+html[data-theme="light"] .modal__item-4:hover { background: #e2e8f0; color: #0f172a; }
+
+@media (max-width: 1180px) {
+  .admin-layout .admin-page > * { padding: 20px; }
+}
+
+
 .customer-theme-dark .customer-topbar {
   border-color: #1e293b;
   background: #0f172a;

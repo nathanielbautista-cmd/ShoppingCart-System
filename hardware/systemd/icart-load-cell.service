@@ -1,0 +1,18 @@
+[Unit]
+Description=iCart HX711 Load-Cell Service
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=icart
+Group=icart
+SupplementaryGroups=gpio
+WorkingDirectory=/home/icart/icart/hardware
+ExecStart=/usr/bin/python3 /home/icart/icart/hardware/load_cell_service.py --api-url http://127.0.0.1:5000
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

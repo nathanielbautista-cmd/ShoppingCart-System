@@ -1,4 +1,4 @@
-/* Direct CSS declarations. Edit these values without Tailwind @apply. */
+
 
 .admin-settings__item-1 {
   height: 100%;
@@ -520,6 +520,28 @@
 .admin-settings__item-44,.admin-settings__item-45 {
   height: calc(var(--spacing,.25rem) * 3.5);
   width: calc(var(--spacing,.25rem) * 3.5);
+}
+
+.admin-settings__theme-button {
+  display: flex;
+  align-items: center;
+  gap: .375rem;
+  padding: .375rem .625rem;
+  border: 0;
+  border-radius: .5rem;
+  background: transparent;
+  color: var(--color-slate-500, #64748b);
+  cursor: pointer;
+  font-size: .75rem;
+  font-weight: 700;
+  transition: color .15s ease, background-color .15s ease, box-shadow .15s ease;
+}
+
+.admin-settings__theme-button:hover { color: var(--color-slate-900, #0f172a); }
+.admin-settings__theme-button.is-active {
+  background: var(--color-white, #fff);
+  color: var(--color-sky-700, #0369a1);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, .14);
 }
 
 .admin-settings__item-44,.admin-settings__item-45 {

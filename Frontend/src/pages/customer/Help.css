@@ -1,4 +1,4 @@
-/* Direct CSS declarations. Edit these values without Tailwind @apply. */
+
 
 .help__item-1 {
   height: calc(var(--spacing,.25rem) * 4);

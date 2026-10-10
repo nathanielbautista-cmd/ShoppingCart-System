@@ -1,15 +1,15 @@
 import { Product } from '../types';
 
-/**
- * Barcode Service for iCart
- *
- * HARDWARE TARGET:
- * OJ-MP6300 USB Barcode Scanner (or compatible USB HID / virtual COM barcode scanner)
- *
- * NOTE:
- * Hardware integration (USB scanner listener / serial port / keyboard emulation)
- * will be hooked into this module in the next phase.
- */
+
+
+
+
+
+
+
+
+
+
 
 export interface BarcodeScanResult {
   success: boolean;
@@ -18,10 +18,10 @@ export interface BarcodeScanResult {
   errorMessage?: string;
 }
 
-/**
- * Placeholder function for processing incoming barcode strings from
- * the OJ-MP6300 scanner.
- */
+
+
+
+
 export function handleBarcodeDetected(
   barcode: string,
   productCatalog: Product[]

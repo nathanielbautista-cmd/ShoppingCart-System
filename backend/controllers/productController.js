@@ -1,16 +1,16 @@
 const Product = require('../models/Product');
 
-/**
- * @desc    Get all products (with optional search, category filter, active filter)
- * @route   GET /api/products
- * @access  Public
- */
+
+
+
+
+
 const getProducts = async (req, res, next) => {
   try {
     const { keyword, category, active } = req.query;
     const query = {};
 
-    // Search keyword in name, description, or barcode
+
     if (keyword) {
       query.$or = [
         { name: { $regex: keyword, $options: 'i' } },
@@ -39,11 +39,11 @@ const getProducts = async (req, res, next) => {
   }
 };
 
-/**
- * @desc    Get single product by MongoDB ID
- * @route   GET /api/products/:id
- * @access  Public
- */
+
+
+
+
+
 const getProductById = async (req, res, next) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -64,12 +64,12 @@ const getProductById = async (req, res, next) => {
   }
 };
 
-/**
- * @desc    Get product by Barcode (Used by Logicowl OJ-MP6300 scanner)
- * @route   GET /api/products/barcode/:barcode
- * @access  Public
- * @note    Example: Scanner reads 4800012345678 -> Backend searches Product.barcode
- */
+
+
+
+
+
+
 const getProductByBarcode = async (req, res, next) => {
   try {
     const { barcode } = req.params;
@@ -108,8 +108,9 @@ const getProductByBarcode = async (req, res, next) => {
         category: product.category,
         price: product.price,
         stock: product.stock,
+        minimumStock: product.minimumStock,
         unit: product.unit,
-        weight: product.weight, // expected weight in grams for HX711 verification
+        weight: product.weight,
         image: product.image,
         isActive: product.isActive
       }
@@ -119,16 +120,16 @@ const getProductByBarcode = async (req, res, next) => {
   }
 };
 
-/**
- * @desc    Create new product
- * @route   POST /api/products
- * @access  Private/Admin
- */
+
+
+
+
+
 const createProduct = async (req, res, next) => {
   try {
-    const { barcode, name, description, category, price, stock, unit, weight, image, isActive } = req.body;
+    const { barcode, name, description, category, price, stock, minimumStock, unit, weight, image, isActive } = req.body;
 
-    // Check if barcode already exists
+
     const existing = await Product.findOne({ barcode: barcode.trim() });
     if (existing) {
       return res.status(400).json({
@@ -144,6 +145,7 @@ const createProduct = async (req, res, next) => {
       category: category.trim(),
       price: Number(price),
       stock: Number(stock) || 0,
+      minimumStock: minimumStock === undefined ? 5 : Number(minimumStock),
       unit: unit || 'piece',
       weight: Number(weight),
       image: image || '',
@@ -160,11 +162,11 @@ const createProduct = async (req, res, next) => {
   }
 };
 
-/**
- * @desc    Update product
- * @route   PUT /api/products/:id
- * @access  Private/Admin
- */
+
+
+
+
+
 const updateProduct = async (req, res, next) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -176,7 +178,7 @@ const updateProduct = async (req, res, next) => {
       });
     }
 
-    // If barcode is being updated, check uniqueness
+
     if (req.body.barcode && req.body.barcode !== product.barcode) {
       const barcodeExists = await Product.findOne({ barcode: req.body.barcode });
       if (barcodeExists) {
@@ -187,7 +189,7 @@ const updateProduct = async (req, res, next) => {
       }
     }
 
-    // Ensure stock cannot be negative
+
     if (req.body.stock !== undefined && req.body.stock < 0) {
       return res.status(400).json({
         success: false,
@@ -211,11 +213,11 @@ const updateProduct = async (req, res, next) => {
   }
 };
 
-/**
- * @desc    Delete product
- * @route   DELETE /api/products/:id
- * @access  Private/Admin
- */
+
+
+
+
+
 const deleteProduct = async (req, res, next) => {
   try {
     const product = await Product.findById(req.params.id);

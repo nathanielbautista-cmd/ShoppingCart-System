@@ -6,7 +6,8 @@ const userSchema = new mongoose.Schema(
     name: {
       type: String,
       required: [true, 'Please provide a name'],
-      trim: true
+      trim: true,
+      maxlength: [100, 'Name cannot exceed 100 characters']
     },
     email: {
       type: String,
@@ -14,20 +15,49 @@ const userSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
-      match: [
-        /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
-        'Please provide a valid email address'
-      ]
+      match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Please provide a valid email address']
+    },
+    phoneNumber: {
+      type: String,
+      required: [true, 'Please provide a phone number'],
+      trim: true,
+      match: [/^\+?[0-9]{7,15}$/, 'Please provide a valid phone number']
     },
     password: {
       type: String,
       required: [true, 'Please provide a password'],
-      minlength: [6, 'Password must be at least 6 characters']
+      minlength: [8, 'Password must be at least 8 characters'],
+      maxlength: [128, 'Password cannot exceed 128 characters'],
+      validate: {
+        validator: (value) => /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])/.test(value),
+        message: 'Password must include uppercase, lowercase, number, and special character'
+      }
     },
     role: {
       type: String,
       enum: ['admin', 'cashier'],
       default: 'admin'
+    },
+    isEmailVerified: {
+      type: Boolean,
+      default: false
+    },
+    emailVerificationToken: {
+      type: String,
+      select: false
+    },
+    emailVerificationExpires: {
+      type: Date,
+      select: false
+    },
+    emailVerificationAttempts: {
+      type: Number,
+      default: 0,
+      select: false
+    },
+    emailVerificationLastSentAt: {
+      type: Date,
+      select: false
     }
   },
   {
@@ -35,7 +65,7 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Hash password before saving
+
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) {
     return next();
@@ -46,7 +76,7 @@ userSchema.pre('save', async function (next) {
   next();
 });
 
-// Compare entered password with hashed password
+
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };

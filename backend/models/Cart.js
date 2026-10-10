@@ -29,13 +29,13 @@ const cartItemSchema = new mongoose.Schema(
       min: [1, 'Quantity must be at least 1'],
       default: 1
     },
-    // Expected total weight for this item (single weight * quantity) in grams
+
     expectedWeight: {
       type: Number,
       required: true,
       min: 0
     },
-    // Actual measured weight from HX711 load-cell sensors in grams
+
     verifiedWeight: {
       type: Number,
       default: 0,
@@ -88,7 +88,7 @@ const cartSchema = new mongoose.Schema(
       min: 0
     },
     items: [cartItemSchema],
-    // Weight anomaly flag (Situation B: weight detected inside cart without scanned product)
+
     hasWeightAnomaly: {
       type: Boolean,
       default: false
@@ -103,7 +103,7 @@ const cartSchema = new mongoose.Schema(
   }
 );
 
-// Method to recalculate cart subtotal and total
+
 cartSchema.methods.recalculateTotals = function () {
   this.subtotal = Number(
     this.items.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)

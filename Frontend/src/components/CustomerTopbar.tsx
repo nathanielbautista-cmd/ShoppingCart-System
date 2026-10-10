@@ -8,6 +8,7 @@ export const CustomerTopbar: React.FC = () => {
   const {
     cartItems,
     currentTotal,
+    customerScreen,
     settings,
     setCustomerScreen,
     toggleVoice,
@@ -37,7 +38,7 @@ export const CustomerTopbar: React.FC = () => {
     };
   }, [isSettingsOpen]);
 
-  const goTo = (screen: 'CART' | 'BUDGET' | 'HELP') => {
+  const goTo = (screen: 'CART' | 'BUDGET' | 'HELP' | 'SHOPPING_HOME') => {
     soundService.playKeyClick();
     setIsSettingsOpen(false);
     setCustomerScreen(screen);
@@ -61,7 +62,14 @@ export const CustomerTopbar: React.FC = () => {
   return <header className="customer-topbar">
     <div className="customer-topbar__title"><strong>Shop products</strong><small>Choose a category</small></div>
     <nav aria-label="Customer actions">
-      <button className="customer-topbar__cart" onClick={() => goTo('CART')}><ShoppingCart /><span>My Cart</span>{quantity > 0 && <b>{quantity}</b>}<em>{settings.currencySymbol}{currentTotal.toFixed(2)}</em></button>
+      <button
+        className={`customer-topbar__cart ${customerScreen === 'CART' ? 'customer-topbar__cart--open' : ''}`}
+        onClick={() => goTo(customerScreen === 'CART' ? 'SHOPPING_HOME' : 'CART')}
+        aria-expanded={customerScreen === 'CART'}
+        aria-controls="customer-cart-sidebar"
+      >
+        <ShoppingCart /><span>My Cart</span>{quantity > 0 && <b>{quantity}</b>}<em>{settings.currencySymbol}{currentTotal.toFixed(2)}</em>
+      </button>
       <button className="customer-topbar__budget" onClick={() => goTo('BUDGET')}><Wallet /><span>My Budget</span></button>
       <button className="customer-topbar__help" onClick={() => goTo('HELP')}><CircleHelp /><span>Help</span></button>
       <div className="customer-topbar__settings-wrap" ref={settingsRef}>

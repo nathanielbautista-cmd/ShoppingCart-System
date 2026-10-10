@@ -5,6 +5,9 @@ import { CheckCircle, RefreshCw, Wifi, WifiOff } from 'lucide-react';
 import { Button } from '../../components/Button';
 import { getWaitingCarts } from '../../services/cartApi';
 
+const HIDDEN_CART_IDS = new Set(['ICART-001', 'ICART-002', 'ICART-003', 'ICART-004']);
+const isHiddenCart = (cartId: unknown) => HIDDEN_CART_IDS.has(String(cartId ?? '').trim().toUpperCase());
+
 export const AdminCartMonitoring: React.FC = () => {
   const {
     monitoredCarts,
@@ -27,7 +30,11 @@ export const AdminCartMonitoring: React.FC = () => {
     setError('');
     try {
       const response: any = await getWaitingCarts();
-      setLiveWaitingCarts(Array.isArray(response?.carts) ? response.carts : []);
+      setLiveWaitingCarts(
+        Array.isArray(response?.carts)
+          ? response.carts.filter((cart: any) => !isHiddenCart(cart?.cartId))
+          : []
+      );
     } catch (err) {
       console.error('Could not load cashier queue', err);
       setError('Cashier queue is unavailable. Check the backend connection.');
@@ -69,7 +76,8 @@ export const AdminCartMonitoring: React.FC = () => {
     lastActive: cart.updatedAt ? new Date(cart.updatedAt).toLocaleTimeString() : 'Just now',
   }));
   const liveCartIds = new Set(liveCarts.map((cart) => cart.cartId));
-  const allCarts = [...liveCarts, ...mockCarts.filter((cart) => !liveCartIds.has(cart.cartId))];
+  const allCarts = [...liveCarts, ...mockCarts.filter((cart) => !liveCartIds.has(cart.cartId))]
+    .filter((cart) => !isHiddenCart(cart.cartId));
 
   const filteredCarts = allCarts.filter((c) => {
     if (filter === 'ACTIVE') return c.status === 'SHOPPING';
@@ -79,13 +87,13 @@ export const AdminCartMonitoring: React.FC = () => {
 
   return (
     <div className="admin-cart-monitoring__item-1">
-      {/* Header */}
+
       <div className="admin-cart-monitoring__item-2">
         <div>
           <h2 className="admin-cart-monitoring__item-3">Cart Monitoring & Cashier Desk</h2>
         </div>
 
-        {/* Filter buttons */}
+
         <div className="admin-cart-monitoring__item-4">
           {(['ALL', 'ACTIVE', 'WAITING'] as const).map((tab) => (
             <button
@@ -112,7 +120,7 @@ export const AdminCartMonitoring: React.FC = () => {
 
       {error && <p className="admin-cart-monitoring__item-6">{error}</p>}
 
-      {/* Cart Grid */}
+
       <div className="admin-cart-monitoring__item-7">
         {filteredCarts.map((cart) => {
           const isCurrentUnit = cart.cartId === currentUnitCartId;
@@ -149,7 +157,7 @@ export const AdminCartMonitoring: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Connection Status */}
+
                 <div className="admin-cart-monitoring__item-15">
                   {cart.connectionStatus === 'ONLINE' ? (
                     <span className="admin-cart-monitoring__item-16">
@@ -165,7 +173,7 @@ export const AdminCartMonitoring: React.FC = () => {
                 </div>
               </div>
 
-              {/* Status and Total */}
+
               <div className="admin-cart-monitoring__item-20">
                 <div>
                   <span className="admin-cart-monitoring__item-21">
@@ -194,7 +202,7 @@ export const AdminCartMonitoring: React.FC = () => {
                 </div>
               </div>
 
-              {/* Cashier Actions */}
+
               {isWaitingCashier && (
                 <div className="admin-cart-monitoring__item-25">
                   <Button

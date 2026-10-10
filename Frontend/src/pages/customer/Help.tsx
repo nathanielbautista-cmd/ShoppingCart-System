@@ -30,7 +30,7 @@ export const Help: React.FC = () => {
     {
       num: '1',
       title: 'Scan product barcode',
-      desc: 'Stay on the shopping screen and point the barcode at the scanner. iCart reads it automatically—no product button is needed. Wait for the green “detected” message before putting the item in the basket.',
+      desc: 'Stay on the shopping screen and point the barcode at the scanner. iCart reads it automatically—no product button is needed. Wait for the scale-ready prompt before putting the item in the basket.',
       icon: <Scan className="help__item-1" />,
     },
     {
@@ -55,7 +55,7 @@ export const Help: React.FC = () => {
 
   return (
     <div className="help__item-5">
-      {/* Header */}
+
       <div className="help__item-6">
         <div className="help__item-7">
           <HelpCircle className="help__item-8" />
@@ -65,7 +65,7 @@ export const Help: React.FC = () => {
         </div>
       </div>
 
-      {/* Customer guide */}
+
       <div className="help__item-10">
         <div className="help__item-11">
           {steps.map((step) => (
@@ -91,7 +91,7 @@ export const Help: React.FC = () => {
           <div className="help__item-17">
             <MinusCircle className="help__item-18" />
             <span>
-              <strong className="help__item-19">Remove an item:</strong> Open My Cart, tap the trash icon, remove the selected item, then wait for the verification check to finish.
+              <strong className="help__item-19">Remove an item:</strong> Open My Cart, tap the trash icon, start the scale check, then remove the selected item when prompted.
             </span>
           </div>
           <div className="help__item-20">
@@ -104,7 +104,7 @@ export const Help: React.FC = () => {
         </div>
       </div>
 
-      {/* Back Button (Section 13) */}
+
       <div className="help__item-23">
         <Button
           variant="secondary"

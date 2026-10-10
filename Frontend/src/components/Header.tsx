@@ -17,6 +17,7 @@ export const Header: React.FC = () => {
     cartItems,
     settings,
     hasSetBudget,
+    adminUser,
   } = useCart();
 
   const totalQuantity = cartItems.reduce((acc, item) => acc + item.quantity, 0);
@@ -60,7 +61,7 @@ export const Header: React.FC = () => {
 
   return (
     <header className="header__item-1">
-      {/* Left zone: Brand and Cart ID */}
+
       <div className="header__item-2">
         {showBackButton && (
           <button
@@ -89,7 +90,7 @@ export const Header: React.FC = () => {
         </div>
       </div>
 
-      {/* Right zone: Live Budget / Subtotal & Controls */}
+
       <div className="header__item-12">
         {userMode === 'CUSTOMER' && !isWelcome && hasSetBudget && (
           <button
@@ -116,7 +117,7 @@ export const Header: React.FC = () => {
           </button>
         )}
 
-        {/* Live Cart Quick Button */}
+
         {userMode === 'CUSTOMER' && !isWelcome && hasSetBudget && customerScreen !== 'CART' && customerScreen !== 'SHOPPING_HOME' && (
           <button
             onClick={handleOpenCart}
@@ -127,7 +128,7 @@ export const Header: React.FC = () => {
           </button>
         )}
 
-        {/* Search button for customers */}
+
         {userMode === 'CUSTOMER' && !isWelcome && hasSetBudget && customerScreen !== 'SEARCH_PRODUCTS' && (
           <button
             onClick={handleOpenSearch}
@@ -138,7 +139,7 @@ export const Header: React.FC = () => {
           </button>
         )}
 
-        {/* Help button for customers */}
+
         {userMode === 'CUSTOMER' && hasSetBudget && customerScreen !== 'HELP' && (
           <button
             onClick={handleOpenHelp}
@@ -149,11 +150,11 @@ export const Header: React.FC = () => {
           </button>
         )}
 
-        {/* Admin mode badge */}
+
         {userMode === 'ADMIN' && (
           <div className="header__item-23">
             <Shield className="header__item-24" />
-            <span>ADMIN MODE</span>
+            <span>{adminUser?.name || 'ADMIN MODE'}</span>
           </div>
         )}
       </div>

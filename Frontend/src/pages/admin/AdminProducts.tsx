@@ -1,6 +1,6 @@
 import './AdminProducts.css';
 import React, { useMemo, useRef, useState } from 'react';
-import { Plus, Edit2, Trash2, Search, Check, AlertCircle, Image as ImageIcon, X } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, Check, AlertCircle, ChevronDown, Image as ImageIcon, X } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { Button } from '../../components/Button';
 import { Modal } from '../../components/Modal';
@@ -9,6 +9,7 @@ import { Product } from '../../types';
 export const AdminProducts: React.FC = () => {
   const { products, saveProduct, deleteProduct, settings } = useCart();
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
@@ -25,13 +26,14 @@ export const AdminProducts: React.FC = () => {
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const categoryOptions = useMemo(() => {
-    const defaultCategories = ['Beverages', 'Bakery', 'Dairy', 'Snacks', 'Pantry', 'Personal Care', 'Household'];
-    return Array.from(new Set([...defaultCategories, ...products.map((product) => product.category.trim()).filter(Boolean)]));
+    return Array.from(
+      new Set(products.map((product) => product.category.trim()).filter(Boolean))
+    ).sort((first, second) => first.localeCompare(second));
   }, [products]);
 
   const openAddModal = () => {
     setEditingProduct(null);
-    setBarcode(`48000${Math.floor(1000000 + Math.random() * 9000000)}`);
+    setBarcode('');
     setName('');
     setCategory('');
     setDescription('');
@@ -102,19 +104,21 @@ export const AdminProducts: React.FC = () => {
     setFormError('');
   };
 
-  const filteredProducts = products.filter(
-    (p) =>
+  const filteredProducts = products.filter((p) => {
+    const matchesSearch =
       p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.barcode.includes(searchTerm) ||
-      p.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+      p.category.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'ALL' || p.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
   const matchingCategoryOptions = categoryOptions.filter((categoryOption) =>
     categoryOption.toLowerCase().includes(category.trim().toLowerCase())
   );
 
   return (
     <div className="admin-products">
-      {/* Top action row */}
+
       <div className="admin-products__header">
         <div>
           <h2 className="admin-products__title">Product Catalog</h2>
@@ -130,7 +134,7 @@ export const AdminProducts: React.FC = () => {
         </Button>
       </div>
 
-      {/* Search box */}
+
       <div className="admin-products__search-section">
         <div className="admin-products__search-box">
           <Search className="admin-products__search-icon" />
@@ -138,13 +142,26 @@ export const AdminProducts: React.FC = () => {
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search by product name, barcode, or category..."
+            placeholder="Search product"
             className="admin-products__search-input"
           />
         </div>
+        <div className="admin-products__list-category-filter">
+          <select
+            value={selectedCategory}
+            onChange={(event) => setSelectedCategory(event.target.value)}
+            aria-label="Filter products by category"
+          >
+            <option value="ALL">All Categories</option>
+            {categoryOptions.map((categoryOption) => (
+              <option key={categoryOption} value={categoryOption}>{categoryOption}</option>
+            ))}
+          </select>
+          <ChevronDown aria-hidden="true" />
+        </div>
       </div>
 
-      {/* Table */}
+
       <div className="admin-products__table-wrapper">
         <table className="admin-products__table">
           <thead className="admin-products__table-head">
@@ -217,7 +234,7 @@ export const AdminProducts: React.FC = () => {
         </table>
       </div>
 
-      {/* Modal */}
+
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -253,7 +270,6 @@ export const AdminProducts: React.FC = () => {
                   onFocus={() => setIsCategoryMenuOpen(true)}
                   onBlur={() => setIsCategoryMenuOpen(false)}
                   className="admin-products__form-input"
-                  placeholder="Select or type a new category"
                   autoComplete="off"
                   required
                 />
@@ -285,7 +301,6 @@ export const AdminProducts: React.FC = () => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="admin-products__form-input"
-              placeholder="e.g., Coca-Cola 500ml"
               required
             />
           </div>
@@ -297,7 +312,6 @@ export const AdminProducts: React.FC = () => {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="admin-products__form-input"
-              placeholder="Brief product notes"
             />
           </div>
 

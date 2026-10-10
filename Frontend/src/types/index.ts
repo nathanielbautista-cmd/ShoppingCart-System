@@ -49,14 +49,15 @@ export type AdminScreen =
   | 'TRANSACTIONS'
   | 'REPORTS'
   | 'CART_MONITORING'
+  | 'CASHIERS'
   | 'SETTINGS';
 
 export interface StoreSettings {
   storeName: string;
   currency: string;
   currencySymbol: string;
-  budgetWarningThreshold: number; // e.g. 80 (meaning 80%)
-  weightToleranceGrams: number; // e.g. 15g
+  budgetWarningThreshold: number;
+  weightToleranceGrams: number;
   voiceEnabled: boolean;
   theme: 'DARK' | 'LIGHT';
 }

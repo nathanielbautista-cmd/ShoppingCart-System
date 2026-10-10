@@ -20,6 +20,11 @@ export const AdminSettings: React.FC = () => {
   const [theme, setTheme] = useState(settings.theme);
   const [savedNotice, setSavedNotice] = useState(false);
 
+  const selectTheme = (nextTheme: 'LIGHT' | 'DARK') => {
+    setTheme(nextTheme);
+    updateSettings({ theme: nextTheme });
+  };
+
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     updateSettings({
@@ -39,7 +44,7 @@ export const AdminSettings: React.FC = () => {
 
   return (
     <div className="admin-settings__item-1">
-      {/* Header */}
+
       <div className="admin-settings__item-2">
         <h2 className="admin-settings__item-3">Settings</h2>
       </div>
@@ -51,9 +56,9 @@ export const AdminSettings: React.FC = () => {
         </div>
       )}
 
-      {/* Form */}
+
       <form onSubmit={handleSave} className="admin-settings__item-6">
-        {/* Store & Currency */}
+
         <div className="admin-settings__item-7">
           <h3 className="admin-settings__item-8">
             <Store className="admin-settings__item-9" />
@@ -96,7 +101,7 @@ export const AdminSettings: React.FC = () => {
           </div>
         </div>
 
-        {/* Budget & Weight Thresholds */}
+
         <div className="admin-settings__item-18">
           <h3 className="admin-settings__item-19">
             <Scale className="admin-settings__item-20" />
@@ -140,7 +145,7 @@ export const AdminSettings: React.FC = () => {
           </div>
         </div>
 
-        {/* Voice Assistant Toggle */}
+
         <div className="admin-settings__item-30">
           <div className="admin-settings__item-31">
             <div className="admin-settings__item-32">
@@ -162,7 +167,7 @@ export const AdminSettings: React.FC = () => {
           </label>
         </div>
 
-        {/* Appearance */}
+
         <div className="admin-settings__item-38">
           <div className="admin-settings__item-39">
             <div className="admin-settings__item-40">
@@ -173,8 +178,8 @@ export const AdminSettings: React.FC = () => {
             </div>
           </div>
           <div className="admin-settings__item-43">
-            <button type="button" onClick={() => setTheme('LIGHT')} className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition ${theme === 'LIGHT' ? 'bg-white text-sky-700 shadow-sm' : 'text-slate-500'}`}><Sun className="admin-settings__item-44" />White</button>
-            <button type="button" onClick={() => setTheme('DARK')} className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition ${theme === 'DARK' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500'}`}><Moon className="admin-settings__item-45" />Dark</button>
+            <button type="button" onClick={() => selectTheme('LIGHT')} aria-pressed={theme === 'LIGHT'} className={`admin-settings__theme-button ${theme === 'LIGHT' ? 'is-active' : ''}`}><Sun className="admin-settings__item-44" />White</button>
+            <button type="button" onClick={() => selectTheme('DARK')} aria-pressed={theme === 'DARK'} className={`admin-settings__theme-button ${theme === 'DARK' ? 'is-active' : ''}`}><Moon className="admin-settings__item-45" />Dark</button>
           </div>
         </div>
 

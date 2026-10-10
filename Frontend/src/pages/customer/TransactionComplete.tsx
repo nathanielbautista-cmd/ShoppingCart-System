@@ -13,7 +13,7 @@ export const TransactionComplete: React.FC = () => {
 
   return (
     <div className="transaction-complete__item-1">
-      {/* Top Banner */}
+
       <div className="transaction-complete__item-2">
         <span className="transaction-complete__item-3">
           <Sparkles className="transaction-complete__item-4" />
@@ -21,7 +21,7 @@ export const TransactionComplete: React.FC = () => {
         </span>
       </div>
 
-      {/* Main Success Container */}
+
       <div className="transaction-complete__item-5">
         <div className="transaction-complete__item-6">
           <CheckCircle2 className="transaction-complete__item-7" />
@@ -31,7 +31,7 @@ export const TransactionComplete: React.FC = () => {
           ✓ SHOPPING COMPLETE
         </h2>
 
-        {/* Transaction Summary Card */}
+
         <div className="transaction-complete__item-9">
           <div className="transaction-complete__item-10">
             <span>Cart ID:</span>
@@ -52,7 +52,7 @@ export const TransactionComplete: React.FC = () => {
         </div>
       </div>
 
-      {/* Done Button (Section 15) */}
+
       <div className="transaction-complete__item-17">
         <Button
           variant="glow"

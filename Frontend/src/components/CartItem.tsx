@@ -32,7 +32,7 @@ export const CartItemRow: React.FC<CartItemProps> = ({ item }) => {
 
   return (
     <div className="cart-item__item-1">
-      {/* Product Details */}
+
       <div className="cart-item__item-2">
         <div className="cart-item__item-3">
           <Package className="cart-item__item-4" />
@@ -58,7 +58,7 @@ export const CartItemRow: React.FC<CartItemProps> = ({ item }) => {
         </div>
       </div>
 
-      {/* Quantity & Actions */}
+
       <div className="cart-item__item-11">
         <div className="cart-item__item-12">
           <div className="cart-item__item-13">
@@ -69,7 +69,7 @@ export const CartItemRow: React.FC<CartItemProps> = ({ item }) => {
           </div>
         </div>
 
-        {/* Stepper Buttons */}
+
         <div className="cart-item__item-15">
           <button
             onClick={handleDecrease}
@@ -92,7 +92,7 @@ export const CartItemRow: React.FC<CartItemProps> = ({ item }) => {
           </button>
         </div>
 
-        {/* Remove Button */}
+
         <button
           onClick={handleRemove}
           aria-label={`Remove ${product.name} from cart`}

@@ -1,0 +1,125 @@
+.admin-cashiers {
+  color: #172033;
+}
+
+.admin-cashiers__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 18px;
+}
+
+.admin-cashiers__header h1 { margin: 6px 0 4px; color: #0f172a; font-size: 1.55rem; letter-spacing: -.035em; }
+.admin-cashiers__header p { margin: 0; color: #64748b; font-size: .78rem; }
+.admin-cashiers__eyebrow { display: flex; align-items: center; gap: 6px; color: #15803d; font-size: .65rem; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
+.admin-cashiers__eyebrow svg { width: 14px; height: 14px; }
+
+.admin-cashiers__count {
+  min-width: 150px;
+  display: grid;
+  grid-template-columns: 36px auto;
+  grid-template-rows: auto auto;
+  column-gap: 10px;
+  align-items: center;
+  padding: 13px 16px;
+  border: 1px solid #dbe4ec;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, .04);
+}
+.admin-cashiers__count > svg { grid-row: 1 / 3; width: 36px; height: 36px; padding: 8px; border-radius: 10px; background: #e8f7ed; color: #15803d; }
+.admin-cashiers__count strong { color: #0f172a; font-size: 1.05rem; line-height: 1; }
+.admin-cashiers__count span { color: #64748b; font-size: .62rem; }
+
+.admin-cashiers__message { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; padding: 11px 13px; border: 1px solid; border-radius: 10px; font-size: .74rem; font-weight: 700; }
+.admin-cashiers__message svg { width: 17px; height: 17px; flex: 0 0 17px; }
+.admin-cashiers__message--success { border-color: #bbf7d0; background: #f0fdf4; color: #15803d; }
+.admin-cashiers__message--error { border-color: #fecaca; background: #fef2f2; color: #b91c1c; }
+
+.admin-cashiers__grid { display: grid; grid-template-columns: minmax(390px, .9fr) minmax(360px, 1.1fr); gap: 18px; align-items: start; }
+.admin-cashiers__panel { overflow: hidden; border: 1px solid #dbe4ec; border-radius: 16px; background: #fff; box-shadow: 0 10px 28px rgba(15, 23, 42, .045); }
+.admin-cashiers__section-heading { display: flex; align-items: center; gap: 11px; padding: 17px 18px; border-bottom: 1px solid #e2e8f0; background: #fbfcfd; }
+.admin-cashiers__section-heading > span { width: 38px; height: 38px; flex: 0 0 38px; display: grid; place-items: center; border-radius: 10px; background: #e8f7ed; color: #15803d; }
+.admin-cashiers__section-heading > span svg { width: 18px; height: 18px; }
+.admin-cashiers__section-heading h2 { margin: 0; color: #0f172a; font-size: .94rem; }
+.admin-cashiers__section-heading p { margin: 3px 0 0; color: #64748b; font-size: .66rem; }
+.admin-cashiers__section-heading--list > button { width: 36px; height: 36px; margin-left: auto; display: grid; place-items: center; border: 1px solid #dbe4ec; border-radius: 9px; background: #fff; color: #64748b; cursor: pointer; }
+.admin-cashiers__section-heading--list > button:hover { background: #f1f5f9; color: #15803d; }
+.admin-cashiers__section-heading--list > button:disabled { cursor: wait; opacity: .6; }
+.admin-cashiers__section-heading--list > button svg { width: 16px; height: 16px; }
+
+.admin-cashiers__form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; padding: 18px; }
+.admin-cashiers__form label { min-width: 0; color: #475569; font-size: .69rem; font-weight: 750; }
+.admin-cashiers__form label > span { display: block; margin-bottom: 6px; }
+.admin-cashiers__form input { width: 100%; height: 42px; padding: 0 11px; border: 1px solid #cbd5e1; border-radius: 9px; outline: none; background: #fff; color: #0f172a; font: inherit; font-size: .76rem; transition: border-color .16s ease, box-shadow .16s ease; }
+.admin-cashiers__form input:focus { border-color: #22c55e; box-shadow: 0 0 0 3px rgba(34, 197, 94, .13); }
+.admin-cashiers__form input::placeholder { color: #a7b2c1; }
+.admin-cashiers__wide { grid-column: 1 / -1; }
+.admin-cashiers__password { position: relative; }
+.admin-cashiers__password input { padding-right: 42px; }
+.admin-cashiers__password button { position: absolute; top: 0; right: 0; width: 42px; height: 42px; display: grid; place-items: center; border: 0; background: transparent; color: #64748b; cursor: pointer; }
+.admin-cashiers__password button svg { width: 17px; height: 17px; }
+.admin-cashiers__requirements { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 12px; margin: -2px 0 0; padding: 0; list-style: none; color: #94a3b8; font-size: .63rem; }
+.admin-cashiers__requirements li { display: flex; align-items: center; gap: 5px; }
+.admin-cashiers__requirements svg { width: 13px; height: 13px; }
+.admin-cashiers__requirements .is-valid { color: #16a34a; }
+.admin-cashiers__submit { min-height: 43px; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 3px; border: 1px solid #16a34a; border-radius: 10px; background: linear-gradient(135deg, #16a34a, #0f8a68); color: #fff; cursor: pointer; font-size: .73rem; font-weight: 800; box-shadow: 0 8px 17px rgba(22, 163, 74, .18); }
+.admin-cashiers__submit:hover { filter: brightness(.97); }
+.admin-cashiers__submit:disabled { cursor: wait; opacity: .65; }
+.admin-cashiers__submit svg { width: 17px; height: 17px; }
+
+.admin-cashiers__accounts { max-height: min(535px, calc(100vh - 235px)); padding: 10px; overflow-y: auto; }
+.admin-cashiers__account { display: flex; align-items: flex-start; gap: 12px; padding: 13px; border: 1px solid transparent; border-radius: 12px; }
+.admin-cashiers__account + .admin-cashiers__account { border-top-color: #edf1f5; border-radius: 0; }
+.admin-cashiers__account:hover { border-color: #d7eee0; border-radius: 12px; background: #f7fcf9; }
+.admin-cashiers__avatar { width: 42px; height: 42px; flex: 0 0 42px; display: grid; place-items: center; border-radius: 12px; background: linear-gradient(145deg, #16a34a, #0f766e); color: #fff; font-size: .72rem; font-weight: 850; }
+.admin-cashiers__account-info { min-width: 0; flex: 1; }
+.admin-cashiers__account-info > div { display: flex; align-items: center; gap: 8px; }
+.admin-cashiers__account-info h3 { min-width: 0; margin: 0; overflow: hidden; color: #1e293b; font-size: .8rem; text-overflow: ellipsis; white-space: nowrap; }
+.admin-cashiers__account-info > div span { display: inline-flex; align-items: center; gap: 3px; padding: 3px 6px; border-radius: 20px; background: #e8f7ed; color: #15803d; font-size: .54rem; font-weight: 850; text-transform: uppercase; }
+.admin-cashiers__account-info > div span svg { width: 10px; height: 10px; }
+.admin-cashiers__account-info p { display: flex; align-items: center; gap: 5px; margin: 6px 0 0; overflow-wrap: anywhere; color: #64748b; font-size: .66rem; }
+.admin-cashiers__account-info p svg { width: 12px; height: 12px; flex: 0 0 12px; color: #94a3b8; }
+.admin-cashiers__empty { min-height: 235px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; padding: 30px; color: #94a3b8; text-align: center; font-size: .7rem; }
+.admin-cashiers__empty > svg { width: 34px; height: 34px; padding: 7px; border-radius: 10px; background: #f1f5f9; color: #16a34a; }
+.admin-cashiers__empty strong { color: #475569; font-size: .8rem; }
+.is-spinning { animation: admin-cashiers-spin .8s linear infinite; }
+@keyframes admin-cashiers-spin { to { transform: rotate(360deg); } }
+
+html[data-theme="dark"] .admin-cashiers { color: #e2e8f0; }
+html[data-theme="dark"] .admin-cashiers__header h1,
+html[data-theme="dark"] .admin-cashiers__count strong,
+html[data-theme="dark"] .admin-cashiers__section-heading h2,
+html[data-theme="dark"] .admin-cashiers__account-info h3 { color: #f8fafc; }
+html[data-theme="dark"] .admin-cashiers__header p,
+html[data-theme="dark"] .admin-cashiers__count span,
+html[data-theme="dark"] .admin-cashiers__section-heading p,
+html[data-theme="dark"] .admin-cashiers__account-info p { color: #94a3b8; }
+html[data-theme="dark"] .admin-cashiers__count,
+html[data-theme="dark"] .admin-cashiers__panel { border-color: #334155; background: #111c2d; }
+html[data-theme="dark"] .admin-cashiers__section-heading { border-color: #334155; background: #101a2a; }
+html[data-theme="dark"] .admin-cashiers__section-heading--list > button { border-color: #475569; background: #1e293b; color: #cbd5e1; }
+html[data-theme="dark"] .admin-cashiers__form label { color: #cbd5e1; }
+html[data-theme="dark"] .admin-cashiers__form input { border-color: #475569; background: #0f172a; color: #f8fafc; }
+html[data-theme="dark"] .admin-cashiers__account + .admin-cashiers__account { border-top-color: #263449; }
+html[data-theme="dark"] .admin-cashiers__account:hover { border-color: #1f5d43; background: #10251f; }
+html[data-theme="dark"] .admin-cashiers__empty > svg { background: #1e293b; }
+html[data-theme="dark"] .admin-cashiers__empty strong { color: #cbd5e1; }
+
+@media (max-width: 1050px) {
+  .admin-cashiers__grid { grid-template-columns: 1fr; }
+  .admin-cashiers__accounts { max-height: none; }
+}
+
+@media (max-width: 640px) {
+  .admin-cashiers__header { align-items: flex-start; flex-direction: column; }
+  .admin-cashiers__count { width: 100%; }
+  .admin-cashiers__form { grid-template-columns: 1fr; }
+  .admin-cashiers__wide { grid-column: auto; }
+  .admin-cashiers__requirements { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .is-spinning { animation: none; }
+}

@@ -1,9 +1,9 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-/**
- * Protect routes - verifies JWT Bearer token
- */
+
+
+
 const protect = async (req, res, next) => {
   let token;
 
@@ -21,6 +21,14 @@ const protect = async (req, res, next) => {
         return res.status(401).json({
           success: false,
           message: 'User no longer exists'
+        });
+      }
+
+      if (req.user.role === 'admin' && !req.user.isEmailVerified) {
+        return res.status(403).json({
+          success: false,
+          code: 'EMAIL_NOT_VERIFIED',
+          message: 'Please verify your email before accessing admin features'
         });
       }
 
@@ -42,9 +50,9 @@ const protect = async (req, res, next) => {
   }
 };
 
-/**
- * Restrict to Admin only
- */
+
+
+
 const adminOnly = (req, res, next) => {
   if (req.user && req.user.role === 'admin') {
     next();

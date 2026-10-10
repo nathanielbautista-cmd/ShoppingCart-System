@@ -14,9 +14,16 @@ const isSupportedBarcode = (value: string) => (
   value.length <= MAX_BARCODE_LENGTH
 );
 
-// Dedicated scanner input component for 'keyboard' HID mode
+
 export default function ScannerInput() {
-  const { handleBarcodeScan, startProductVerification, userMode, hasSetBudget } = useCart();
+  const {
+    handleBarcodeScan,
+    startProductVerification,
+    userMode,
+    hasSetBudget,
+    pendingProduct,
+    verificationStatus,
+  } = useCart();
   const bufferRef = useRef('');
   const lastScanRef = useRef(0);
   const lastKeyTimeRef = useRef(0);
@@ -57,11 +64,11 @@ export default function ScannerInput() {
       }
 
       if (e.key.length === 1) {
-        // A held keyboard key produces repeat events. It must never become a barcode.
+
         if (e.repeat) return;
 
-        // The current inventory uses retail UPC/EAN/ITF numeric barcodes. Ignoring
-        // other characters prevents normal keyboard shortcuts from triggering lookups.
+
+
         if (!/^\d$/.test(e.key)) {
           resetBuffer();
           return;
@@ -86,11 +93,11 @@ export default function ScannerInput() {
         if (clearBufferTimerRef.current) {
           window.clearTimeout(clearBufferTimerRef.current);
         }
-        // Some hardware profiles do not send an Enter/Tab suffix. A scanner
-        // enters digits as one rapid burst, so submit it once that burst ends.
+
+
         clearBufferTimerRef.current = window.setTimeout(submitBufferedBarcode, SCAN_END_DELAY_MS);
       } else if (e.key === 'Enter' || e.key === 'Tab') {
-        // OJ-MP6300 units are commonly configured with either Enter or Tab as a suffix.
+
         const barcode = bufferRef.current.trim();
         resetBuffer();
         if (!isSupportedBarcode(barcode)) return;
@@ -107,13 +114,23 @@ export default function ScannerInput() {
       window.removeEventListener('keydown', onKeyDown);
       resetBuffer();
     };
-  }, [userMode, hasSetBudget, handleBarcodeScan, startProductVerification]);
+  }, [userMode, hasSetBudget, handleBarcodeScan, startProductVerification, pendingProduct, verificationStatus]);
 
   async function handleBarcode(barcode: string) {
     if (!barcode) return;
+    if (pendingProduct && (verificationStatus === 'VERIFYING' || verificationStatus === 'VERIFIED')) {
+      setMessage({
+        text: verificationStatus === 'VERIFIED'
+          ? 'Finish the verified item before scanning another product.'
+          : `Wait while ${pendingProduct.name} is being checked by the load cells.`,
+        isError: true,
+      });
+      window.setTimeout(() => setMessage(null), 3000);
+      return;
+    }
     const result = handleBarcodeScan(barcode);
     if (!result.success || !result.product) {
-      // Query the authoritative catalog too, so a scan works even while the initial product list is loading.
+
       try {
         const response = await getProductByBarcode(barcode);
         const item = response.product;
@@ -125,7 +142,7 @@ export default function ScannerInput() {
           price: item.price,
           expectedWeightGrams: item.weight || 0,
           stock: item.stock || 0,
-          minimumStock: 5,
+          minimumStock: item.minimumStock ?? 5,
           description: item.description || '',
         };
         setMessage({ text: `${product.name} detected. Checking item weight…`, isError: false });

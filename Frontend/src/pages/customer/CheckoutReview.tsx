@@ -21,7 +21,7 @@ export const CheckoutReview: React.FC = () => {
 
   return (
     <div className="checkout-review__item-1">
-      {/* Title */}
+
       <div className="checkout-review__item-2">
         <h2 className="checkout-review__item-3">
           <ReceiptText className="checkout-review__item-4" />
@@ -29,7 +29,7 @@ export const CheckoutReview: React.FC = () => {
         </h2>
       </div>
 
-      {/* Itemized Receipt Style List */}
+
       <div className="checkout-review__item-5">
         <div className="checkout-review__item-6">
           <span>Item & Qty</span>
@@ -78,7 +78,7 @@ export const CheckoutReview: React.FC = () => {
         </div>
       </div>
 
-      {/* Buttons */}
+
       <div className="checkout-review__item-17">
         <Button
           variant="secondary"
