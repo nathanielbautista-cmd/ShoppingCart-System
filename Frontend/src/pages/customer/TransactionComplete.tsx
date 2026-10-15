@@ -1,11 +1,24 @@
 import './TransactionComplete.css';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { CheckCircle2, ShoppingCart, Sparkles, Check } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { Button } from '../../components/Button';
 
 export const TransactionComplete: React.FC = () => {
   const { cartId, currentTotal, transactions, resetShoppingSession, settings } = useCart();
+  const [secondsUntilReset, setSecondsUntilReset] = useState(5);
+
+  useEffect(() => {
+    const countdownId = window.setInterval(() => {
+      setSecondsUntilReset((seconds) => Math.max(0, seconds - 1));
+    }, 1000);
+    const resetId = window.setTimeout(resetShoppingSession, 5000);
+
+    return () => {
+      window.clearInterval(countdownId);
+      window.clearTimeout(resetId);
+    };
+  }, [resetShoppingSession]);
 
   const latestTx = transactions.find((transaction) => transaction.cartId === cartId) || null;
   const receiptCartId = latestTx?.cartId || cartId;
@@ -54,6 +67,9 @@ export const TransactionComplete: React.FC = () => {
 
 
       <div className="transaction-complete__item-17">
+        <p className="transaction-complete__next-customer">
+          Returning to Start Shopping for the next customer in {secondsUntilReset}s...
+        </p>
         <Button
           variant="glow"
           size="lg"
@@ -61,7 +77,7 @@ export const TransactionComplete: React.FC = () => {
           icon={<Check className="transaction-complete__item-19" />}
           onClick={resetShoppingSession}
         >
-          DONE
+          DONE NOW
         </Button>
       </div>
     </div>

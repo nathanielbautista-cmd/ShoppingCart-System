@@ -131,6 +131,12 @@ Sends a replacement verification code with `{ "email": "..." }`.
 
 Configure `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, and `EMAIL_FROM` in `.env` to send verification emails. Verification codes are never returned by the API or exposed in the frontend.
 
+#### `POST /api/auth/forgot-password`
+Sends a 6-digit password reset code using `{ "email": "...", "role": "admin" }` or role `cashier`. Codes expire after 10 minutes and requests have a 60-second resend cooldown.
+
+#### `POST /api/auth/reset-password`
+Resets the password using `{ "email": "...", "role": "admin", "code": "123456", "newPassword": "..." }`. New passwords must meet the same strength rules as account creation.
+
 #### `POST /api/auth/login`
 Authenticates an administrator or cashier.
 * **Request:**

@@ -5,10 +5,11 @@ import { useCart } from '../../context/CartContext';
 
 interface AdminLoginProps {
   onSignup: () => void;
+  onForgotPassword: (email: string) => void;
   onNeedsVerification: (email: string, password: string, message: string) => void;
 }
 
-export const AdminLogin: React.FC<AdminLoginProps> = ({ onSignup, onNeedsVerification }) => {
+export const AdminLogin: React.FC<AdminLoginProps> = ({ onSignup, onForgotPassword, onNeedsVerification }) => {
   const { loginAdmin } = useCart();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -50,6 +51,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onSignup, onNeedsVerific
             </button>
           </div>
         </label>
+        <button type="button" className="admin-auth-link admin-auth-forgot-link" onClick={() => onForgotPassword(email)}>Forgot password?</button>
         <Button type="submit" variant="glow" size="md" className="admin-auth-primary" icon={<KeyRound />} disabled={isSubmitting}>
           {isSubmitting ? 'Signing in...' : 'Login to Admin'}
         </Button>

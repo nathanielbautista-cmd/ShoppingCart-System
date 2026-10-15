@@ -9,6 +9,16 @@ export interface WeightReading {
   sensorCount: number;
   measuredAt: string;
   receivedAt: string;
+  sensorIds?: string[];
+  deviceId?: string;
+}
+
+export interface LoadCellStatus {
+  connected: boolean;
+  ageMs: number | null;
+  message: string;
+  maxAgeMs: number;
+  reading: WeightReading | null;
 }
 
 export interface WeightVerificationResult {
@@ -18,6 +28,13 @@ export interface WeightVerificationResult {
   differenceGrams: number;
   toleranceGrams: number;
   reason?: 'MISMATCH' | 'TIMEOUT' | 'HARDWARE_UNAVAILABLE';
+}
+
+export interface WeightDecreaseResult {
+  detected: boolean;
+  decreaseGrams: number;
+  differenceGrams: number;
+  reason?: 'TIMEOUT' | 'MISMATCH';
 }
 
 type WeightDirection = 'increase' | 'decrease';
@@ -39,6 +56,19 @@ export async function getCurrentWeight(): Promise<WeightReading> {
     ...response.reading,
     grams: Number(response.reading.grams),
     stable: response.reading.stable === true,
+  };
+}
+
+export async function getLoadCellStatus(): Promise<LoadCellStatus> {
+  const response: any = await api.get('/hardware/weight-status');
+  return {
+    connected: response?.connected === true,
+    ageMs: response?.ageMs !== null && Number.isFinite(Number(response?.ageMs))
+      ? Number(response.ageMs)
+      : null,
+    message: String(response?.message || 'Load-cell status is unavailable.'),
+    maxAgeMs: Number(response?.maxAgeMs) || 5000,
+    reading: response?.reading || null,
   };
 }
 
@@ -140,6 +170,79 @@ export async function verifyProductWeight(
     detectedWeightGrams: lastDetected,
     differenceGrams: Number(Math.abs(lastDetected - expectedWeightGrams).toFixed(1)),
     toleranceGrams,
+    reason: 'TIMEOUT',
+  };
+}
+
+/**
+ * Arm the scale from a stable basket baseline and accept only a sustained
+ * decrease that matches the selected product's catalog weight. Two similar
+ * readings prevent a single load-cell spike from removing an item in software.
+ */
+export async function waitForWeightDecrease(
+  expectedDecreaseGrams: number,
+  toleranceGrams: number,
+  onBaselineCaptured?: () => void
+): Promise<WeightDecreaseResult> {
+  let baseline: WeightReading;
+  try {
+    baseline = await getStableBaseline();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'HX711 load cells are unavailable.';
+    throw new Error(`Load-cell removal detection unavailable: ${message}`);
+  }
+
+  onBaselineCaptured?.();
+  const deadline = Date.now() + CHANGE_TIMEOUT_MS;
+  // Stay above normal empty-basket drift while remaining low enough to catch
+  // the lightest catalog items as a definite (but potentially wrong) removal.
+  const threshold = Math.max(10, Math.min(15, expectedDecreaseGrams * 0.25));
+  const agreementTolerance = Math.max(5, toleranceGrams * 0.25);
+  let previousCandidate: number | null = null;
+  let matchingReadings = 0;
+  let largestDecrease = 0;
+
+  while (Date.now() < deadline) {
+    await delay(POLL_INTERVAL_MS);
+    let reading: WeightReading;
+    try {
+      reading = await getCurrentWeight();
+    } catch {
+      continue;
+    }
+    if (!reading.stable || reading.receivedAt === baseline.receivedAt) continue;
+
+    const decrease = Math.max(0, Number((baseline.grams - reading.grams).toFixed(1)));
+    largestDecrease = Math.max(largestDecrease, decrease);
+    if (decrease < threshold) {
+      previousCandidate = null;
+      matchingReadings = 0;
+      continue;
+    }
+
+    if (previousCandidate !== null && Math.abs(decrease - previousCandidate) <= agreementTolerance) {
+      matchingReadings += 1;
+    } else {
+      matchingReadings = 1;
+    }
+    previousCandidate = decrease;
+
+    if (matchingReadings >= 2) {
+      const differenceGrams = Number(Math.abs(decrease - expectedDecreaseGrams).toFixed(1));
+      const detected = differenceGrams <= toleranceGrams;
+      return {
+        detected,
+        decreaseGrams: decrease,
+        differenceGrams,
+        reason: detected ? undefined : 'MISMATCH',
+      };
+    }
+  }
+
+  return {
+    detected: false,
+    decreaseGrams: largestDecrease,
+    differenceGrams: Number(Math.abs(largestDecrease - expectedDecreaseGrams).toFixed(1)),
     reason: 'TIMEOUT',
   };
 }

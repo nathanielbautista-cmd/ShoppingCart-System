@@ -10,6 +10,7 @@ export interface Product {
   description?: string;
   aisleLocation?: string;
   image?: string;
+  expirationDate?: string;
 }
 
 export interface CartItem {
@@ -21,7 +22,12 @@ export type BudgetState = 'NORMAL' | 'WARNING' | 'EXCEEDED';
 
 export type VerificationStatus = 'WAITING' | 'VERIFYING' | 'VERIFIED' | 'FAILED';
 
-export type RemovalStatus = 'WAITING_FOR_REMOVAL' | 'VERIFYING_REMOVAL' | 'REMOVED' | 'REMOVAL_FAILED';
+export type RemovalStatus =
+  | 'WAITING_FOR_REMOVAL'
+  | 'VERIFYING_REMOVAL'
+  | 'REMOVED'
+  | 'REMOVAL_FAILED'
+  | 'REMOVAL_MISMATCH';
 
 export type CartStatus = 'ACTIVE' | 'CHECKOUT_READY' | 'WAITING_FOR_CASHIER' | 'COMPLETED' | 'CANCELLED';
 

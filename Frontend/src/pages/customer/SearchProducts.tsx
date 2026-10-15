@@ -16,6 +16,7 @@ import {
 import { useCart } from '../../context/CartContext';
 import { Button } from '../../components/Button';
 import { soundService } from '../../services/soundService';
+import { BARCODE_CAPTURED_EVENT } from '../../services/scannerEvents';
 
 export const SearchProducts: React.FC = () => {
   const { products, setCustomerScreen, settings } = useCart();
@@ -27,6 +28,12 @@ export const SearchProducts: React.FC = () => {
 
   useEffect(() => {
     inputRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    const clearScannedBarcode = () => setSearchTerm('');
+    window.addEventListener(BARCODE_CAPTURED_EVENT, clearScannedBarcode);
+    return () => window.removeEventListener(BARCODE_CAPTURED_EVENT, clearScannedBarcode);
   }, []);
 
   const categories = useMemo(() => {
@@ -115,6 +122,7 @@ export const SearchProducts: React.FC = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search product"
             className="search-products__item-11"
+            data-barcode-capture
           />
 
           {searchTerm && (

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import { Trash2, AlertTriangle, CheckCircle2, Loader2, ArrowLeft, Scale } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { Button } from '../../components/Button';
@@ -13,7 +13,11 @@ export const RemoveItem: React.FC = () => {
     settings,
   } = useCart();
 
-  const [hasConfirmed, setHasConfirmed] = useState(false);
+  useEffect(() => {
+    if (itemToRemove && removalStatus === 'WAITING_FOR_REMOVAL') {
+      void startItemRemovalVerification();
+    }
+  }, [itemToRemove, removalStatus, startItemRemovalVerification]);
 
   if (!itemToRemove) {
     return (
@@ -27,11 +31,6 @@ export const RemoveItem: React.FC = () => {
   }
 
   const { product, quantity } = itemToRemove;
-
-  const handleConfirmRemove = () => {
-    setHasConfirmed(true);
-    startItemRemovalVerification();
-  };
 
   return (
     <div className="remove-item">
@@ -59,23 +58,22 @@ export const RemoveItem: React.FC = () => {
           </div>
           <div className="remove-item__weight">
             <Scale className="remove-item__weight-icon" />
-            <span>Expected basket scale reduction: -{product.expectedWeightGrams * quantity}g</span>
+            <span>Selected-item weight matching is active</span>
           </div>
 
 
-          {hasConfirmed && (
-            <div className="remove-item__verification">
+          <div className="remove-item__verification">
               {removalStatus === 'WAITING_FOR_REMOVAL' && (
                 <div className="remove-item__status remove-item__status--waiting">
                   <AlertTriangle className="remove-item__status-icon" />
-                  <span>Press confirm, then remove the item from the basket.</span>
+                  <span>Preparing automatic removal detection...</span>
                 </div>
               )}
 
               {removalStatus === 'VERIFYING_REMOVAL' && (
                 <div className="remove-item__status remove-item__status--verifying">
                   <Loader2 className="remove-item__status-icon remove-item__spinner" />
-                  <span>Verifying weight deduction on scale...</span>
+                  <span>Scale armed. Remove the item from the basket now.</span>
                 </div>
               )}
 
@@ -89,11 +87,17 @@ export const RemoveItem: React.FC = () => {
               {removalStatus === 'REMOVAL_FAILED' && (
                 <div className="remove-item__status remove-item__status--failed">
                   <AlertTriangle className="remove-item__status-icon" />
-                  <span>Removal failed. Basket weight did not decrease.</span>
+                  <span>No stable decrease detected. Put the item back before retrying.</span>
+                </div>
+              )}
+
+              {removalStatus === 'REMOVAL_MISMATCH' && (
+                <div className="remove-item__status remove-item__status--failed" role="alert">
+                  <AlertTriangle className="remove-item__status-icon" />
+                  <span>Wrong item removed. Return it, then remove {product.name}.</span>
                 </div>
               )}
             </div>
-          )}
         </div>
       </div>
 
@@ -103,32 +107,21 @@ export const RemoveItem: React.FC = () => {
           variant="secondary"
           size="md"
           className="remove-item__button"
-          disabled={hasConfirmed && removalStatus === 'VERIFYING_REMOVAL'}
+          disabled={removalStatus === 'REMOVED'}
           icon={<ArrowLeft className="remove-item__button-icon" />}
           onClick={cancelItemRemoval}
         >
           CANCEL
         </Button>
 
-        {!hasConfirmed ? (
-          <Button
-            variant="danger"
-            size="md"
-            className="remove-item__button"
-            icon={<Trash2 className="remove-item__button-icon" />}
-            onClick={handleConfirmRemove}
-          >
-            START SCALE CHECK
-          </Button>
-        ) : (
+        {(removalStatus === 'REMOVAL_FAILED' || removalStatus === 'REMOVAL_MISMATCH') && (
           <Button
             variant="secondary"
             size="md"
             className="remove-item__button"
-            disabled={removalStatus === 'VERIFYING_REMOVAL'}
-            onClick={handleConfirmRemove}
+            onClick={() => void startItemRemovalVerification()}
           >
-            RE-CHECK SCALE
+            TRY AGAIN
           </Button>
         )}
       </div>

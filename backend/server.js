@@ -1,6 +1,12 @@
+const path = require('path');
+const dotenv = require('dotenv');
+
+// Always load the backend environment file regardless of whether Node is
+// started from /backend, the repository root, PM2, or a systemd unit.
+dotenv.config({ path: path.join(__dirname, '.env') });
+
 const express = require('express');
 const cors = require('cors');
-const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 
@@ -14,9 +20,6 @@ const cashierRoutes = require('./routes/cashierRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const hardwareRoutes = require('./routes/hardwareRoutes');
 const adminRoutes = require('./routes/adminRoutes');
-
-
-dotenv.config();
 
 
 connectDB();

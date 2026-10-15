@@ -61,25 +61,35 @@ class CartControlsTests(unittest.TestCase):
         self.controls.press('power')
         self.controls.press('power')
 
-        self.assertEqual(self.emitted_actions(), ['power_on', 'power_off'])
-        self.assertEqual(self.fake_gpio.outputs[-2:], [(25, 1), (25, 0)])
+        self.assertEqual(self.emitted_actions(), ['power_off', 'power_on'])
+        self.assertEqual(self.fake_gpio.outputs[-2:], [(25, 0), (25, 1)])
 
-    def test_add_and_delete_only_work_while_powered(self):
+    def test_add_and_delete_work_on_start_and_stop_when_powered_off(self):
         self.controls.press('add_product')
         self.controls.press('delete_product')
-        self.assertEqual(self.emitted_actions(), [])
+        self.assertEqual(self.emitted_actions(), ['add_product', 'delete_product'])
 
         self.controls.press('power')
         self.controls.press('add_product')
         self.controls.press('delete_product')
         self.assertEqual(
             self.emitted_actions(),
-            ['power_on', 'add_product', 'delete_product'],
+            ['add_product', 'delete_product', 'power_off'],
         )
 
     def test_restart_is_available_while_powered_off(self):
         self.controls.press('restart')
         self.assertEqual(self.emitted_actions(), ['restart'])
+
+    def test_red_alarm_led_blinks_only_while_powered_and_active(self):
+        self.controls.alarm_active = True
+        self.controls.update_alarm_led(2.0)
+        self.controls.update_alarm_led(2.25)
+        self.assertEqual(self.fake_gpio.outputs[-2:], [(18, True), (18, False)])
+
+        self.controls.press('power')
+        self.controls.update_alarm_led(3.0)
+        self.assertEqual(self.fake_gpio.outputs[-1], (18, 0))
 
 
 if __name__ == '__main__':

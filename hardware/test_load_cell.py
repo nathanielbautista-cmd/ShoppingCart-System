@@ -1,7 +1,9 @@
 import unittest
+from datetime import datetime
 from unittest.mock import patch
 
 import load_cell
+import load_cell_service
 
 
 class LoadCellFilteringTests(unittest.TestCase):
@@ -61,6 +63,29 @@ class LoadCellFilteringTests(unittest.TestCase):
         self.assertEqual(factor, 50.0)
         saved = save_mock.call_args.args[0]["hx711_1"]
         self.assertEqual(saved["calibration_signal_to_noise_ratio"], 2500.0)
+
+
+class LoadCellPublisherTests(unittest.TestCase):
+    def test_payload_identifies_device_and_active_sensor(self):
+        reading = load_cell.WeightReading(
+            grams=220.2,
+            stable=True,
+            sample_count=14,
+            spread_grams=2.1,
+        )
+        cell = type(
+            "FakeCell",
+            (),
+            {"sensor_id": "hx711_1", "read_weight": lambda self, count=3: reading},
+        )()
+
+        payload = load_cell_service.make_payload([cell], "cart-pi-01")
+
+        self.assertEqual(payload["grams"], 220.2)
+        self.assertTrue(payload["stable"])
+        self.assertEqual(payload["sensorIds"], ["hx711_1"])
+        self.assertEqual(payload["deviceId"], "cart-pi-01")
+        datetime.fromisoformat(payload["measuredAt"])
 
 
 if __name__ == "__main__":

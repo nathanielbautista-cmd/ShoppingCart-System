@@ -1,0 +1,50 @@
+.weight-anomaly {
+  position: fixed;
+  z-index: 200;
+  top: 10px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(620px, calc(100vw - 24px));
+  box-sizing: border-box;
+  padding: 10px 14px;
+  color: #fff1f2;
+  border: 1px solid rgba(251, 113, 133, 0.7);
+  border-radius: 12px;
+  background: #881337;
+  box-shadow: 0 12px 30px rgba(76, 5, 25, 0.35);
+  transform: translateX(-50%);
+}
+
+.weight-anomaly__icon { width: 21px; height: 21px; flex: 0 0 21px; color: #fecdd3; }
+.weight-anomaly__message { min-width: 0; flex: 1; }
+.weight-anomaly__message strong,
+.weight-anomaly__message span { display: block; }
+.weight-anomaly__message strong { font-size: 13px; font-weight: 900; }
+.weight-anomaly__message span { margin-top: 1px; overflow: hidden; color: #fecdd3; font-size: 10px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.weight-anomaly__reading { display: flex; align-items: center; gap: 5px; flex: 0 0 auto; padding-left: 10px; border-left: 1px solid rgba(254, 205, 211, 0.3); color: #fff; }
+.weight-anomaly__reading svg { width: 15px; height: 15px; }
+.weight-anomaly__reading strong { font: 800 12px/1 'JetBrains Mono', monospace; }
+
+.weight-anomaly--alarming {
+  border-color: #fda4af;
+  background: #be123c;
+  animation: weight-anomaly-pulse 0.95s ease-in-out infinite;
+}
+
+.weight-anomaly__bell { animation: weight-anomaly-ring 0.48s ease-in-out infinite alternate; }
+
+@keyframes weight-anomaly-pulse {
+  50% { box-shadow: 0 0 0 7px rgba(244, 63, 94, 0.24), 0 12px 30px rgba(76, 5, 25, 0.45); }
+}
+
+@keyframes weight-anomaly-ring {
+  from { transform: rotate(-12deg); }
+  to { transform: rotate(12deg); }
+}
+
+@media (max-width: 520px) {
+  .weight-anomaly__message span { display: none; }
+  .weight-anomaly { top: 8px; }
+}

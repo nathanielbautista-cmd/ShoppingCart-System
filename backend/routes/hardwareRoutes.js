@@ -17,8 +17,31 @@ let nextId = 1;
 let events = [];
 let latestWeight = null;
 let powered = null;
+let alarmActive = false;
+let alarmUpdatedAt = null;
 
 const MAX_WEIGHT_READING_AGE_MS = Number(process.env.HARDWARE_WEIGHT_MAX_AGE_MS) || 5000;
+
+const getWeightConnection = () => {
+  if (!latestWeight) {
+    return {
+      connected: false,
+      ageMs: null,
+      message: 'No HX711 reading is available. Start the load-cell service on the Raspberry Pi.'
+    };
+  }
+
+  const ageMs = Date.now() - Date.parse(latestWeight.receivedAt);
+  if (!Number.isFinite(ageMs) || ageMs > MAX_WEIGHT_READING_AGE_MS) {
+    return {
+      connected: false,
+      ageMs: Number.isFinite(ageMs) ? ageMs : null,
+      message: 'The HX711 reading is stale. Check the load-cell service connection.'
+    };
+  }
+
+  return { connected: true, ageMs, message: 'HX711 load-cell service is connected.' };
+};
 
 router.post('/events', (req, res) => {
   const { action } = req.body || {};
@@ -45,6 +68,22 @@ router.get('/events', (req, res) => {
   });
 });
 
+router.post('/alarm', (req, res) => {
+  if (typeof req.body?.active !== 'boolean') {
+    return res.status(400).json({ success: false, message: 'active must be a boolean' });
+  }
+
+  alarmActive = req.body.active;
+  alarmUpdatedAt = new Date().toISOString();
+  return res.status(202).json({ success: true, alarmActive, alarmUpdatedAt });
+});
+
+// Polled by the Raspberry Pi GPIO service. Keeping this separate from button
+// events makes browser-to-hardware state idempotent and safe to retry.
+router.get('/outputs', (_req, res) => {
+  return res.json({ success: true, alarmActive, alarmUpdatedAt });
+});
+
 
 
 
@@ -56,12 +95,22 @@ router.post('/weight', (req, res) => {
     return res.status(400).json({ success: false, message: 'grams must be a finite number' });
   }
 
+  const sensorCount = Number(req.body?.sensorCount);
+  const sampleCount = Number(req.body?.sampleCount);
+  const spreadGrams = Number(req.body?.spreadGrams);
+
   latestWeight = {
     grams: Number(grams.toFixed(1)),
     stable,
-    spreadGrams: Number(req.body?.spreadGrams) || 0,
-    sampleCount: Number(req.body?.sampleCount) || 0,
-    sensorCount: Number(req.body?.sensorCount) || 1,
+    spreadGrams: Number.isFinite(spreadGrams) ? Number(spreadGrams.toFixed(1)) : 0,
+    sampleCount: Number.isFinite(sampleCount) && sampleCount >= 0 ? Math.trunc(sampleCount) : 0,
+    sensorCount: Number.isFinite(sensorCount) && sensorCount > 0 ? Math.trunc(sensorCount) : 1,
+    sensorIds: Array.isArray(req.body?.sensorIds)
+      ? req.body.sensorIds.filter((value) => typeof value === 'string').slice(0, 8)
+      : [],
+    deviceId: typeof req.body?.deviceId === 'string'
+      ? req.body.deviceId.trim().slice(0, 80)
+      : '',
     measuredAt: req.body?.measuredAt || new Date().toISOString(),
     receivedAt: new Date().toISOString()
   };
@@ -70,22 +119,25 @@ router.post('/weight', (req, res) => {
 });
 
 router.get('/weight', (req, res) => {
-  if (!latestWeight) {
-    return res.status(503).json({
-      success: false,
-      message: 'No HX711 reading is available. Start the load-cell service on the Raspberry Pi.'
-    });
+  const connection = getWeightConnection();
+  if (!connection.connected) {
+    return res.status(503).json({ success: false, ...connection });
   }
 
-  const ageMs = Date.now() - Date.parse(latestWeight.receivedAt);
-  if (!Number.isFinite(ageMs) || ageMs > MAX_WEIGHT_READING_AGE_MS) {
-    return res.status(503).json({
-      success: false,
-      message: 'The HX711 reading is stale. Check the load-cell service connection.'
-    });
-  }
+  return res.json({ success: true, ageMs: connection.ageMs, reading: latestWeight });
+});
 
-  return res.json({ success: true, ageMs, reading: latestWeight });
+// Unlike GET /weight this endpoint always returns 200, allowing the kiosk to
+// show a useful online/offline badge without treating an unplugged scale as an
+// application error.
+router.get('/weight-status', (req, res) => {
+  const connection = getWeightConnection();
+  return res.json({
+    success: true,
+    ...connection,
+    maxAgeMs: MAX_WEIGHT_READING_AGE_MS,
+    reading: latestWeight
+  });
 });
 
 module.exports = router;

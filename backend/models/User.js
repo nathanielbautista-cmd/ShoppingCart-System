@@ -58,6 +58,23 @@ const userSchema = new mongoose.Schema(
     emailVerificationLastSentAt: {
       type: Date,
       select: false
+    },
+    passwordResetToken: {
+      type: String,
+      select: false
+    },
+    passwordResetExpires: {
+      type: Date,
+      select: false
+    },
+    passwordResetAttempts: {
+      type: Number,
+      default: 0,
+      select: false
+    },
+    passwordResetLastSentAt: {
+      type: Date,
+      select: false
     }
   },
   {

@@ -1,11 +1,19 @@
 import './ShoppingHome.css';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Image as ImageIcon, Package, Search, X } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
+import { BARCODE_CAPTURED_EVENT } from '../../services/scannerEvents';
 
 export const ShoppingHome: React.FC = () => {
   const { products, selectedProductCategory, settings } = useCart();
   const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    const clearScannedBarcode = () => setSearchTerm('');
+    window.addEventListener(BARCODE_CAPTURED_EVENT, clearScannedBarcode);
+    return () => window.removeEventListener(BARCODE_CAPTURED_EVENT, clearScannedBarcode);
+  }, []);
+
   const visibleProducts = useMemo(
     () => {
       const query = searchTerm.trim().toLowerCase();
@@ -32,6 +40,7 @@ export const ShoppingHome: React.FC = () => {
         onChange={(event) => setSearchTerm(event.target.value)}
         placeholder="Search product"
         autoComplete="off"
+        data-barcode-capture
       />
       {searchTerm && <button type="button" onClick={() => setSearchTerm('')} aria-label="Clear product search"><X /></button>}
     </section>

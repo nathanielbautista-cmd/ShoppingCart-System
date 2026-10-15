@@ -10,3 +10,8 @@ export const requestCashierCheckout = async (cartId: string) => api.post(`/check
 export const checkoutCart = async (cartId: string, payload?: any) => api.post(`/checkout/${encodeURIComponent(cartId)}`, payload || {});
 export const getWaitingCarts = async () => api.get('/checkout/waiting');
 export const getCartTransactions = async (cartId: string) => api.get(`/checkout/transactions?cartId=${encodeURIComponent(cartId)}&limit=1`);
+export const reportWeightAnomaly = async (cartId: string, anomalyWeight: number, note?: string) => api.post(
+  `/cart/${encodeURIComponent(cartId)}/weight-anomaly`,
+  { anomalyWeight, note: note || `Unexpected basket weight change (${anomalyWeight.toFixed(1)}g)` }
+);
+export const clearWeightAnomaly = async (cartId: string) => api.post(`/cart/${encodeURIComponent(cartId)}/clear-anomaly`);

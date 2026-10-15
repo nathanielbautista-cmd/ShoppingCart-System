@@ -25,9 +25,11 @@ import {
   checkoutCart,
   requestCashierCheckout,
   getCartTransactions,
+  reportWeightAnomaly,
+  clearWeightAnomaly,
 } from '../services/cartApi';
 import { handleBarcodeDetected } from '../services/barcodeService';
-import { verifyProductWeight } from '../services/sensorService';
+import { getCurrentWeight, verifyProductWeight, waitForWeightDecrease } from '../services/sensorService';
 import { speakMessage } from '../services/voiceService';
 import { syncCartToBackend } from '../services/cartService';
 import { AdminUser } from '../services/authService';
@@ -50,6 +52,8 @@ interface CartContextType {
   cartId: string;
   sessionError: string | null;
   cartStatus: CartStatus;
+  checkoutSubmitting: boolean;
+  checkoutError: string | null;
   budget: number;
   cartItems: CartItem[];
   currentTotal: number;
@@ -66,6 +70,7 @@ interface CartContextType {
 
   itemToRemove: CartItem | null;
   removalStatus: RemovalStatus;
+  weightAnomaly: { changeGrams: number; direction: 'increase' | 'decrease' } | null;
 
 
   settings: StoreSettings;
@@ -134,6 +139,46 @@ const loadStoredSettings = (): StoreSettings => {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+interface AutomaticRemovalMatch {
+  item: CartItem;
+  quantity: number;
+  differenceGrams: number;
+}
+
+const findAutomaticRemovalMatch = (
+  items: CartItem[],
+  decreaseGrams: number,
+  toleranceGrams: number
+): AutomaticRemovalMatch | null => {
+  const matches = items
+    .flatMap((item) => Array.from({ length: item.quantity }, (_, index) => {
+      const quantity = index + 1;
+      return {
+        item,
+        quantity,
+        differenceGrams: Math.abs(
+          decreaseGrams - item.product.expectedWeightGrams * quantity
+        ),
+      };
+    }))
+    .filter((match) => match.differenceGrams <= toleranceGrams)
+    .sort((first, second) => first.differenceGrams - second.differenceGrams);
+
+  if (matches.length === 0) return null;
+
+  // A load cell cannot distinguish two products with the same (or nearly the
+  // same) weight. Refuse to guess so the wrong cart line is never deducted.
+  const ambiguityMarginGrams = Math.max(2, toleranceGrams * 0.25);
+  if (
+    matches.length > 1 &&
+    Math.abs(matches[1].differenceGrams - matches[0].differenceGrams) <= ambiguityMarginGrams
+  ) {
+    return null;
+  }
+
+  return matches[0];
+};
+
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   const [userMode, setUserMode] = useState<UserMode>('CUSTOMER');
@@ -145,6 +190,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [cartId, setCartId] = useState<string>('');
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [cartStatus, setCartStatus] = useState<CartStatus>('ACTIVE');
+  const [checkoutSubmitting, setCheckoutSubmitting] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [budget, setBudget] = useState<number>(0);
   const [hasSetBudget, setHasSetBudget] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -175,6 +222,23 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [itemToRemove, setItemToRemove] = useState<CartItem | null>(null);
   const [removalStatus, setRemovalStatus] = useState<RemovalStatus>('WAITING_FOR_REMOVAL');
   const removalInProgressRef = useRef(false);
+  const removalAttemptRef = useRef(0);
+
+  const [weightAnomaly, setWeightAnomaly] = useState<{
+    changeGrams: number;
+    direction: 'increase' | 'decrease';
+  } | null>(null);
+  const weightAnomalyRef = useRef<{
+    changeGrams: number;
+    direction: 'increase' | 'decrease';
+  } | null>(null);
+  const backgroundBaselineRef = useRef<number | null>(null);
+  const backgroundBaselineSamplesRef = useRef<number[]>([]);
+  const backgroundReadingTimestampRef = useRef<string | null>(null);
+  const backgroundRemovalInProgressRef = useRef(false);
+  const increaseCandidateRef = useRef<{ grams: number; count: number } | null>(null);
+  const decreaseCandidateRef = useRef<{ grams: number; count: number } | null>(null);
+  const anomalyReturnCandidateRef = useRef(0);
 
 
   const [settings, setSettings] = useState<StoreSettings>(loadStoredSettings);
@@ -227,6 +291,252 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   }, []);
 
+  useEffect(() => {
+    const monitoringAllowed = (
+      userMode === 'CUSTOMER' &&
+      hasSetBudget &&
+      cartStatus === 'ACTIVE' &&
+      (pendingProduct === null || verificationStatus === 'VERIFIED') &&
+      itemToRemove === null &&
+      (customerScreen !== 'PRODUCT_VERIFICATION' || verificationStatus === 'VERIFIED') &&
+      customerScreen !== 'REMOVE_ITEM' &&
+      customerScreen !== 'CHECKOUT_REVIEW' &&
+      customerScreen !== 'WAITING_FOR_CASHIER' &&
+      customerScreen !== 'TRANSACTION_COMPLETE'
+    );
+
+    if (!monitoringAllowed) {
+      backgroundBaselineRef.current = null;
+      backgroundBaselineSamplesRef.current = [];
+      backgroundReadingTimestampRef.current = null;
+      backgroundRemovalInProgressRef.current = false;
+      increaseCandidateRef.current = null;
+      decreaseCandidateRef.current = null;
+      anomalyReturnCandidateRef.current = 0;
+      return;
+    }
+
+    let cancelled = false;
+    let timerId: number | undefined;
+    // React on the first newly published stable reading. Stability is already
+    // calculated from three raw HX711 samples on the Pi; the 15 g floor keeps
+    // ordinary empty-basket drift below the unscanned-item trigger.
+    const minimumIncreaseThresholdGrams = 15;
+    const baselineSampleCount = 1;
+    const requiredIncreaseConfirmations = 1;
+
+    const updateAnomaly = (value: {
+      changeGrams: number;
+      direction: 'increase' | 'decrease';
+    } | null) => {
+      weightAnomalyRef.current = value;
+      setWeightAnomaly(value);
+    };
+
+    const poll = async () => {
+      try {
+        if (backgroundRemovalInProgressRef.current) return;
+        const reading = await getCurrentWeight();
+        if (cancelled) return;
+
+        // The browser polls faster than the Raspberry Pi publishes. A repeated
+        // backend sample must never count as multiple confirmations. Keep
+        // unstable publications for anomaly recovery because a recently
+        // moved basket may take several seconds to be labelled STABLE.
+        const readingTimestamp = reading.receivedAt || reading.measuredAt;
+        if (readingTimestamp && readingTimestamp === backgroundReadingTimestampRef.current) return;
+        backgroundReadingTimestampRef.current = readingTimestamp;
+
+        const baseline = backgroundBaselineRef.current;
+        const activeAnomaly = weightAnomalyRef.current;
+        if (activeAnomaly && baseline !== null) {
+          // Use the configured product-weight tolerance, capped below half of
+          // the detected anomaly. A stable return clears immediately; two
+          // consecutive near-baseline raw readings also clear it so the UI is
+          // not held open by a slow STABLE flag from the HX711 publisher.
+          const returnToleranceGrams = Math.max(
+            10,
+            Math.min(settings.weightToleranceGrams, activeAnomaly.changeGrams * 0.45)
+          );
+          const returnedToBaseline = Math.abs(reading.grams - baseline) <= returnToleranceGrams;
+          anomalyReturnCandidateRef.current = returnedToBaseline
+            ? reading.stable
+              ? 2
+              : anomalyReturnCandidateRef.current + 1
+            : 0;
+
+          if (anomalyReturnCandidateRef.current >= 2) {
+            updateAnomaly(null);
+            backgroundBaselineRef.current = reading.grams;
+            backgroundBaselineSamplesRef.current = [];
+            increaseCandidateRef.current = null;
+            decreaseCandidateRef.current = null;
+            anomalyReturnCandidateRef.current = 0;
+            if (cartId) void clearWeightAnomaly(cartId).catch(() => undefined);
+            playVoice(activeAnomaly.direction === 'increase'
+              ? 'Unscanned item removed. You may continue shopping.'
+              : 'Removed item returned to the basket. Use My Cart if you want to remove it.');
+          }
+          return;
+        }
+
+        anomalyReturnCandidateRef.current = 0;
+        if (activeAnomaly || !reading.stable) return;
+
+        if (baseline === null) {
+          const baselineSamples = backgroundBaselineSamplesRef.current;
+          baselineSamples.push(reading.grams);
+          if (baselineSamples.length < baselineSampleCount) return;
+          const sortedSamples = [...baselineSamples].sort((first, second) => first - second);
+          backgroundBaselineRef.current = sortedSamples[Math.floor(sortedSamples.length / 2)];
+          backgroundBaselineSamplesRef.current = [];
+          return;
+        }
+
+        // Keep the trigger above observed HX711 noise. The lightest catalog
+        // products are around 30 g, so a 12-20 g threshold still detects them.
+        const increaseThresholdGrams = Math.max(
+          minimumIncreaseThresholdGrams,
+          Math.min(20, reading.spreadGrams * 1.5)
+        );
+        const candidateAgreementGrams = Math.max(5, increaseThresholdGrams * 0.5);
+
+        const delta = reading.grams - baseline;
+        if (delta >= increaseThresholdGrams) {
+          const candidate = increaseCandidateRef.current;
+          if (candidate && Math.abs(delta - candidate.grams) <= candidateAgreementGrams) {
+            candidate.grams = delta;
+            candidate.count += 1;
+          } else {
+            increaseCandidateRef.current = { grams: delta, count: 1 };
+          }
+          decreaseCandidateRef.current = null;
+
+          if ((increaseCandidateRef.current?.count || 0) >= requiredIncreaseConfirmations) {
+            const increaseGrams = Number(delta.toFixed(1));
+            anomalyReturnCandidateRef.current = 0;
+            updateAnomaly({ changeGrams: increaseGrams, direction: 'increase' });
+            soundService.playWarning();
+            playVoice('Unscanned item detected. Remove it from the basket, scan its barcode, then place it back.');
+            if (cartId) void reportWeightAnomaly(
+              cartId,
+              increaseGrams,
+              `Unscanned item detected (+${increaseGrams.toFixed(1)}g)`
+            ).catch(() => undefined);
+          }
+          return;
+        }
+
+        increaseCandidateRef.current = null;
+        const decreaseThresholdGrams = Math.max(15, increaseThresholdGrams);
+        if (delta <= -decreaseThresholdGrams) {
+          const candidate = decreaseCandidateRef.current;
+          if (candidate && Math.abs(reading.grams - candidate.grams) <= candidateAgreementGrams) {
+            candidate.grams = reading.grams;
+            candidate.count += 1;
+          } else {
+            decreaseCandidateRef.current = { grams: reading.grams, count: 1 };
+          }
+          if ((decreaseCandidateRef.current?.count || 0) >= 2) {
+            const decreaseGrams = Number(Math.abs(delta).toFixed(1));
+            decreaseCandidateRef.current = null;
+            const match = findAutomaticRemovalMatch(
+              cartItems,
+              decreaseGrams,
+              settings.weightToleranceGrams
+            );
+
+            if (!match) {
+              updateAnomaly({ changeGrams: decreaseGrams, direction: 'decrease' });
+              anomalyReturnCandidateRef.current = 0;
+              soundService.playWarning();
+              playVoice(
+                'The removed weight does not uniquely match an item in your cart. ' +
+                'Return it to the basket, then use My Cart to remove it.'
+              );
+              if (cartId) void reportWeightAnomaly(
+                cartId,
+                -decreaseGrams,
+                `Unmatched or ambiguous item removal (-${decreaseGrams.toFixed(1)}g)`
+              ).catch(() => undefined);
+              return;
+            }
+
+            backgroundRemovalInProgressRef.current = true;
+            try {
+              if (cartId) {
+                const response: any = match.quantity >= match.item.quantity
+                  ? await removeCartItem(cartId, match.item.product.barcode)
+                  : await updateCartItem(cartId, match.item.product.barcode, {
+                      quantity: match.item.quantity - match.quantity,
+                    });
+                if (!response?.cart) {
+                  throw new Error('The server did not return the updated cart.');
+                }
+                setCartItems(response.cart.items.map((item: any) => ({
+                  product: {
+                    id: item.productId,
+                    barcode: item.barcode,
+                    name: item.name,
+                    category: item.category || '',
+                    price: item.price,
+                    expectedWeightGrams: item.quantity ? item.expectedWeight / item.quantity : 0,
+                    stock: item.stock || 0,
+                    minimumStock: 0,
+                  },
+                  quantity: item.quantity,
+                })));
+              } else {
+                setCartItems((previousItems) => previousItems.flatMap((item) => {
+                  if (item.product.id !== match.item.product.id) return [item];
+                  const quantity = item.quantity - match.quantity;
+                  return quantity > 0 ? [{ ...item, quantity }] : [];
+                }));
+              }
+
+              backgroundBaselineRef.current = reading.grams;
+              soundService.playSuccessChime();
+              playVoice(
+                `${match.quantity > 1 ? `${match.quantity} units of ` : ''}` +
+                `${match.item.product.name} automatically removed from your cart.`
+              );
+            } catch (error) {
+              console.error('Automatic cart removal failed', error);
+              updateAnomaly({ changeGrams: decreaseGrams, direction: 'decrease' });
+              soundService.playWarning();
+              playVoice(
+                'The item was removed from the basket but could not be updated in your cart. ' +
+                'Return it to the basket and try again.'
+              );
+            } finally {
+              backgroundRemovalInProgressRef.current = false;
+            }
+          }
+          return;
+        }
+
+        decreaseCandidateRef.current = null;
+        // Follow normal slow load-cell drift without hiding a sudden item add.
+        backgroundBaselineRef.current = Number((baseline * 0.8 + reading.grams * 0.2).toFixed(1));
+      } catch {
+        // Scale availability is already displayed in the top bar.
+      } finally {
+        if (!cancelled) timerId = window.setTimeout(poll, 100);
+      }
+    };
+
+    void poll();
+    return () => {
+      cancelled = true;
+      if (timerId !== undefined) window.clearTimeout(timerId);
+      increaseCandidateRef.current = null;
+      decreaseCandidateRef.current = null;
+      anomalyReturnCandidateRef.current = 0;
+      backgroundBaselineSamplesRef.current = [];
+      backgroundReadingTimestampRef.current = null;
+    };
+  }, [cartId, cartItems, cartStatus, customerScreen, hasSetBudget, itemToRemove, pendingProduct, playVoice, settings.weightToleranceGrams, userMode, verificationStatus]);
+
   const updateSettings = useCallback((newSettings: Partial<StoreSettings>) => {
     setSettings((prev) => {
       const nextSettings = { ...prev, ...newSettings };
@@ -266,6 +576,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             description: p.description || '',
             aisleLocation: '',
             image: p.image || '',
+            expirationDate: p.expirationDate || '',
           }));
           setProducts(mapped);
         }
@@ -277,9 +588,40 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
 
+  const resetShoppingSession = useCallback(() => {
+    verificationAttemptRef.current += 1;
+    verificationInProgressRef.current = false;
+    removalInProgressRef.current = false;
+    setCartId('');
+    setSessionError(null);
+    setCartItems([]);
+    setBudget(0);
+    setPendingProduct(null);
+    setVerificationStatus('WAITING');
+    setDetectedWeight(null);
+    setScanError(null);
+    setItemToRemove(null);
+    setRemovalStatus('WAITING_FOR_REMOVAL');
+    weightAnomalyRef.current = null;
+    setWeightAnomaly(null);
+    backgroundBaselineRef.current = null;
+    setSelectedProductCategory('All');
+    setHasSetBudget(false);
+    setCartStatus('ACTIVE');
+    setCheckoutSubmitting(false);
+    setCheckoutError(null);
+    setUserMode('CUSTOMER');
+    setCustomerScreenState('WELCOME');
+  }, []);
+
+
 
   useEffect(() => {
-    if (customerScreen !== 'WAITING_FOR_CASHIER' || !cartId) return;
+    if (
+      customerScreen !== 'WAITING_FOR_CASHIER' ||
+      cartStatus !== 'WAITING_FOR_CASHIER' ||
+      !cartId
+    ) return;
 
     let stopped = false;
     let requestInFlight = false;
@@ -339,10 +681,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (stopped) return;
         stopped = true;
         if (intervalId !== undefined) window.clearInterval(intervalId);
-        setCartStatus('COMPLETED');
-        setCustomerScreenState('TRANSACTION_COMPLETE');
         soundService.playSuccessChime();
-        playVoice('Payment confirmed by cashier. Thank you for shopping with iCart!');
+        playVoice('Payment confirmed. Thank you for shopping with iCart. The cart is ready for the next customer.');
+        resetShoppingSession();
       } catch {
 
       } finally {
@@ -357,7 +698,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       stopped = true;
       if (intervalId !== undefined) window.clearInterval(intervalId);
     };
-  }, [cartId, customerScreen, playVoice]);
+  }, [cartId, cartStatus, customerScreen, playVoice, resetShoppingSession]);
 
 
   const startShoppingSession = useCallback(() => {
@@ -433,31 +774,36 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 
   const startProductVerification = useCallback(
-    async (product: Product, simulateFailure: boolean = false, simulateSuccess: boolean = false) => {
+    async (
+      product: Product,
+      simulateFailure: boolean = false,
+      simulateSuccess: boolean = false
+    ) => {
       if (verificationInProgressRef.current) return false;
       verificationInProgressRef.current = true;
       const attempt = ++verificationAttemptRef.current;
       setPendingProduct(product);
-      setCustomerScreen('PRODUCT_VERIFICATION');
       setVerificationStatus('WAITING');
       setDetectedWeight(null);
       setScanError(null);
-      setVerificationStatus('VERIFYING');
-      playVoice('Keep the basket still while the load cells capture its current weight.');
 
       try {
-        let result;
-        if (simulateSuccess) {
-          result = { verified: true, detectedWeightGrams: product.expectedWeightGrams, reason: '' };
-        } else {
-          result = await verifyProductWeight(
-            product.expectedWeightGrams,
-            settings.weightToleranceGrams,
-            simulateFailure,
-            'increase',
-            () => playVoice('Scale ready. Place the scanned item inside the cart now.')
-          );
-        }
+        const result = simulateSuccess
+          ? {
+              verified: true,
+              expectedWeightGrams: product.expectedWeightGrams,
+              detectedWeightGrams: product.expectedWeightGrams,
+              differenceGrams: 0,
+              toleranceGrams: settings.weightToleranceGrams,
+              reason: undefined,
+            }
+          : await verifyProductWeight(
+              product.expectedWeightGrams,
+              settings.weightToleranceGrams,
+              simulateFailure,
+              'increase',
+              () => setVerificationStatus('VERIFYING')
+            );
 
         if (attempt !== verificationAttemptRef.current) return false;
         setDetectedWeight(result.detectedWeightGrams);
@@ -469,7 +815,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             ? 'No matching weight change was detected. Remove the item and try again.'
             : 'Weight verification failed. Please remove extra items and try again.';
           setScanError(message);
-          playVoice(message);
           return false;
         }
 
@@ -477,18 +822,16 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (cartId) {
           const res: any = await addCartItem(cartId, { barcode: product.barcode, quantity: 1 });
           if (!res?.cart) throw new Error('The server did not return the updated cart.');
-          const formatted = res.cart.items.map((i: any) => ({
-            product: {
-              id: i.productId,
-              barcode: i.barcode,
-              name: i.name,
-              category: i.category || '',
-              price: i.price,
-              expectedWeightGrams: i.quantity ? i.expectedWeight / i.quantity : 0,
-              stock: i.stock || 0,
-              minimumStock: 0,
-            }, quantity: i.quantity
-          }));
+          const formatted = res.cart.items.map((i: any) => ({ product: {
+            id: i.productId,
+            barcode: i.barcode,
+            name: i.name,
+            category: i.category || '',
+            price: i.price,
+            expectedWeightGrams: i.quantity ? i.expectedWeight / i.quantity : 0,
+            stock: i.stock || 0,
+            minimumStock: 0,
+          }, quantity: i.quantity }));
           setCartItems(formatted);
           setCartStatus(res.cart.status || 'ACTIVE');
         } else {
@@ -504,16 +847,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         soundService.playSuccessChime();
         setVerificationStatus('VERIFIED');
-        playVoice(`${product.name} verified and added to cart.`);
-
-        if (simulateSuccess) {
-          setTimeout(() => {
-            setPendingProduct(null);
-            setVerificationStatus('WAITING');
-            setCustomerScreen('CART');
-          }, 1500);
-        }
-
         return true;
       } catch (error) {
         if (attempt !== verificationAttemptRef.current) return false;
@@ -522,7 +855,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setVerificationStatus('FAILED');
         const message = error instanceof Error ? error.message : 'The load cells could not verify this item.';
         setScanError(message);
-        playVoice(message);
         return false;
       } finally {
         if (attempt === verificationAttemptRef.current) {
@@ -530,7 +862,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
     },
-    [cartId, settings.weightToleranceGrams, playVoice]
+    [cartId, settings.weightToleranceGrams]
   );
 
   const retryVerification = useCallback(async () => {
@@ -582,118 +914,154 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     (item: CartItem, quantityToRemove: number = item.quantity) => {
       setItemToRemove({ ...item, quantity: Math.min(quantityToRemove, item.quantity) });
       setRemovalStatus('WAITING_FOR_REMOVAL');
-      setCustomerScreen('REMOVE_ITEM');
-      playVoice(`Remove ${item.product.name}? Confirm first, then remove the item from the basket.`);
     },
-    [playVoice]
+    []
   );
 
   const cancelItemRemoval = useCallback(() => {
+    removalAttemptRef.current += 1;
+    removalInProgressRef.current = false;
     setItemToRemove(null);
-    setCustomerScreen('CART');
   }, []);
 
   const startItemRemovalVerification = useCallback(async (simulateSuccess: boolean = false) => {
     if (!itemToRemove) {
-      setCustomerScreen('CART');
       playVoice('Select an item with the minus or trash button before pressing remove.');
       return false;
     }
-    if (removalInProgressRef.current) return false;
+    if (removalInProgressRef.current && !simulateSuccess) return false;
+    if (simulateSuccess) {
+      // Cancel a real load-cell wait that may have started automatically when
+      // the PC simulator button became visible.
+      removalAttemptRef.current += 1;
+      removalInProgressRef.current = false;
+    }
     removalInProgressRef.current = true;
-    setRemovalStatus('VERIFYING_REMOVAL');
-    playVoice('Keep the basket still while the load cells capture its current weight.');
+    const attempt = ++removalAttemptRef.current;
+    const targetItem = itemToRemove;
+    setRemovalStatus('WAITING_FOR_REMOVAL');
 
     try {
-      let weightCheck;
-      if (simulateSuccess) {
-        weightCheck = { verified: true, detectedWeightGrams: 0, reason: '' };
-      } else {
-        weightCheck = await verifyProductWeight(
-          itemToRemove.product.expectedWeightGrams * itemToRemove.quantity,
-          settings.weightToleranceGrams,
-          false,
-          'decrease',
-          () => playVoice('Scale ready. Remove the selected item from the basket now.')
-        );
-      }
+      const expectedDecrease = targetItem.product.expectedWeightGrams * targetItem.quantity;
+      const weightCheck = simulateSuccess
+        ? {
+            detected: true,
+            decreaseGrams: expectedDecrease,
+            differenceGrams: 0,
+            reason: undefined,
+          }
+        : await waitForWeightDecrease(
+            expectedDecrease,
+            settings.weightToleranceGrams,
+            () => setRemovalStatus('VERIFYING_REMOVAL')
+          );
 
-      if (!weightCheck.verified) {
+      if (attempt !== removalAttemptRef.current) return false;
+      if (!weightCheck.detected) {
         soundService.playWarning();
-        setRemovalStatus('REMOVAL_FAILED');
-        playVoice('Weight verification failed. Please remove the selected item from the cart and try again.');
+        if (weightCheck.reason === 'MISMATCH') {
+          setRemovalStatus('REMOVAL_MISMATCH');
+        } else {
+          setRemovalStatus('REMOVAL_FAILED');
+        }
         removalInProgressRef.current = false;
         return false;
       }
 
 
       if (cartId) {
-        const currentItem = cartItems.find((item) => item.product.id === itemToRemove.product.id);
+        const currentItem = cartItems.find((item) => item.product.id === targetItem.product.id);
         if (!currentItem) throw new Error('Item is no longer in the cart');
 
-        const res: any = itemToRemove.quantity >= currentItem.quantity
-          ? await removeCartItem(cartId, itemToRemove.product.barcode)
-          : await updateCartItem(cartId, itemToRemove.product.barcode, {
-            quantity: currentItem.quantity - itemToRemove.quantity,
-          });
+        const res: any = targetItem.quantity >= currentItem.quantity
+          ? await removeCartItem(cartId, targetItem.product.barcode)
+          : await updateCartItem(cartId, targetItem.product.barcode, {
+              quantity: currentItem.quantity - targetItem.quantity,
+            });
         if (res?.cart) {
-          const formatted = res.cart.items.map((i: any) => ({
-            product: {
-              id: i.productId,
-              barcode: i.barcode,
-              name: i.name,
-              category: i.category || '',
-              price: i.price,
-              expectedWeightGrams: i.quantity ? i.expectedWeight / i.quantity : 0,
-              stock: i.stock || 0,
-              minimumStock: 0,
-            }, quantity: i.quantity
-          }));
+          const formatted = res.cart.items.map((i: any) => ({ product: {
+            id: i.productId,
+            barcode: i.barcode,
+            name: i.name,
+            category: i.category || '',
+            price: i.price,
+            expectedWeightGrams: i.quantity ? i.expectedWeight / i.quantity : 0,
+            stock: i.stock || 0,
+            minimumStock: 0,
+          }, quantity: i.quantity }));
           setCartItems(formatted);
         }
       } else {
         setCartItems((prev) => prev.flatMap((item) => {
-          if (item.product.id !== itemToRemove.product.id) return [item];
-          const quantity = item.quantity - itemToRemove.quantity;
+          if (item.product.id !== targetItem.product.id) return [item];
+          const quantity = item.quantity - targetItem.quantity;
           return quantity > 0 ? [{ ...item, quantity }] : [];
         }));
       }
     } catch (err) {
+      if (attempt !== removalAttemptRef.current) return false;
       console.error('Remove cart item failed', err);
       setRemovalStatus('REMOVAL_FAILED');
-      playVoice('Item could not be removed from the cart. Please try again.');
       removalInProgressRef.current = false;
       return false;
     }
 
     setRemovalStatus('REMOVED');
+    // A verified product can remain pending if the user navigates directly to
+    // the cart and removes it without pressing Continue on the verification
+    // screen. Clear that stale state so the next barcode is never blocked.
+    setPendingProduct(null);
+    setVerificationStatus('WAITING');
+    setDetectedWeight(null);
+    setScanError(null);
     soundService.playSuccessChime();
-    playVoice(`${itemToRemove.product.name} has been removed from your cart.`);
 
 
     setTimeout(() => {
+      if (attempt !== removalAttemptRef.current) return;
       setItemToRemove(null);
-      setCustomerScreen('CART');
     }, 1000);
 
     removalInProgressRef.current = false;
     return true;
   }, [cartId, cartItems, itemToRemove, playVoice, settings.weightToleranceGrams]);
 
+  // Removal verification is a background operation. The customer stays on
+  // the cart/shopping screen while a compact feedback banner reports status.
+  useEffect(() => {
+    if (itemToRemove && removalStatus === 'WAITING_FOR_REMOVAL') {
+      void startItemRemovalVerification();
+    }
+  }, [itemToRemove, removalStatus, startItemRemovalVerification]);
+
 
   const confirmCheckout = useCallback(() => {
     if (!cartId) {
+      setCheckoutError('No active cart was found. Please return to the cart and try again.');
       playVoice('No active cart found. Please start a shopping session first.');
       return;
     }
+
+    // Show the cashier ticket immediately. The request continues in the
+    // background and any failure is displayed on the same screen with Retry.
+    setCheckoutError(null);
+    setCheckoutSubmitting(true);
+    setCartStatus('WAITING_FOR_CASHIER');
+    setCustomerScreenState('WAITING_FOR_CASHIER');
     requestCashierCheckout(cartId)
       .then((res: any) => {
         setCartStatus(res?.cart?.status || 'WAITING_FOR_CASHIER');
-        setCustomerScreen('WAITING_FOR_CASHIER');
+        setCheckoutSubmitting(false);
         playVoice('Checkout confirmed. Please proceed to any available cashier counter.');
       })
       .catch((err) => {
         console.error('Checkout failed', err);
+        setCartStatus('ACTIVE');
+        setCheckoutSubmitting(false);
+        setCheckoutError(err instanceof Error
+          ? err.message
+          : 'The cart could not be sent to the cashier. Please try again.');
+        soundService.playWarning();
         playVoice('Checkout failed. Please ask a staff member for assistance.');
       });
   }, [cartId, playVoice]);
@@ -702,9 +1070,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!cartId) return false;
 
     if (simulateSuccess) {
-      setTransactions((prev) => [{
-        id: 'SIM-TXN-' + Date.now(),
-        cartId: cartId,
+      setTransactions((previous) => [{
+        id: `SIM-TXN-${Date.now()}`,
+        cartId,
         date: new Date().toISOString(),
         items: cartItems,
         total: currentTotal,
@@ -713,14 +1081,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         paymentMethod: 'CASH',
         amountReceived: currentTotal,
         change: 0,
-        paymentStatus: 'COMPLETED',
+        paymentStatus: 'PAID',
         cashierName: 'SIMULATOR',
-      } as any, ...prev]);
-
+      }, ...previous]);
       soundService.playSuccessChime();
-      setCartStatus('COMPLETED');
-      setCustomerScreen('TRANSACTION_COMPLETE');
-      playVoice('Payment confirmed. Thank you for shopping with iCart!');
+      playVoice('Simulated payment confirmed. The cart is ready for the next customer.');
+      resetShoppingSession();
       return true;
     }
 
@@ -754,36 +1120,15 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }, ...prev]);
       }
       soundService.playSuccessChime();
-      setCartStatus('COMPLETED');
-      setCustomerScreen('TRANSACTION_COMPLETE');
-      playVoice('Payment confirmed by cashier. Thank you for shopping with iCart!');
+      playVoice('Payment confirmed. Thank you for shopping with iCart. The cart is ready for the next customer.');
+      resetShoppingSession();
       return true;
     } catch (err) {
       console.error('Cashier payment failed', err);
       playVoice('Payment could not be completed. Please ask the cashier for assistance.');
       return false;
     }
-  }, [cartId, cartItems, currentTotal, playVoice]);
-
-  const resetShoppingSession = useCallback(() => {
-    verificationAttemptRef.current += 1;
-    verificationInProgressRef.current = false;
-    removalInProgressRef.current = false;
-    setCartId('');
-    setSessionError(null);
-    setCartItems([]);
-    setBudget(0);
-    setPendingProduct(null);
-    setVerificationStatus('WAITING');
-    setDetectedWeight(null);
-    setScanError(null);
-    setItemToRemove(null);
-    setRemovalStatus('WAITING_FOR_REMOVAL');
-    setSelectedProductCategory('All');
-    setHasSetBudget(false);
-    setCartStatus('ACTIVE');
-    setCustomerScreenState('WELCOME');
-  }, []);
+  }, [cartId, cartItems, currentTotal, playVoice, resetShoppingSession]);
 
 
   const loginAdmin = useCallback(async (email: string, pass: string) => {
@@ -807,7 +1152,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setProducts(productRes.products.map((p: any) => ({
           id: p._id, barcode: p.barcode, name: p.name, category: p.category, price: p.price,
           expectedWeightGrams: p.weight || 0, stock: p.stock || 0, minimumStock: p.minimumStock ?? 5,
-          description: p.description || '', aisleLocation: '', image: p.image || ''
+          description: p.description || '', aisleLocation: '', image: p.image || '',
+          expirationDate: p.expirationDate || ''
         })));
       }
       if (transactionRes.transactions) {
@@ -817,10 +1163,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           amountReceived: tx.amountReceived, change: tx.change,
           paymentStatus: tx.paymentStatus, cashierName: tx.cashierId,
           items: tx.items.map((item: any) => ({
-            product: {
-              id: String(item.productId), barcode: item.barcode, name: item.name, category: '',
-              price: item.price, expectedWeightGrams: 0, stock: 0, minimumStock: 5
-            }, quantity: item.quantity
+            product: { id: String(item.productId), barcode: item.barcode, name: item.name, category: '',
+              price: item.price, expectedWeightGrams: 0, stock: 0, minimumStock: 5 }, quantity: item.quantity
           }))
         })));
       }
@@ -845,7 +1189,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       barcode: product.barcode, name: product.name, category: product.category,
       description: product.description || '', price: product.price, stock: product.stock,
       weight: product.expectedWeightGrams, minimumStock: product.minimumStock,
-      image: product.image || '', unit: 'piece', isActive: true,
+      image: product.image || '', expirationDate: product.expirationDate || null,
+      unit: 'piece', isActive: true,
     };
     const res: any = product.id.startsWith('prod-')
       ? await createProduct(payload)
@@ -908,6 +1253,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         cartId,
         sessionError,
         cartStatus,
+        checkoutSubmitting,
+        checkoutError,
         budget,
         cartItems,
         currentTotal,
@@ -920,6 +1267,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         scanError,
         itemToRemove,
         removalStatus,
+        weightAnomaly,
         settings,
         updateSettings,
         toggleVoice,

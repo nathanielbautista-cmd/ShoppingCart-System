@@ -22,6 +22,7 @@ export const AdminProducts: React.FC = () => {
   const [stock, setStock] = useState('');
   const [minimumStock, setMinimumStock] = useState('');
   const [image, setImage] = useState('');
+  const [expirationDate, setExpirationDate] = useState('');
   const [formError, setFormError] = useState('');
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -42,6 +43,7 @@ export const AdminProducts: React.FC = () => {
     setStock('');
     setMinimumStock('');
     setImage('');
+    setExpirationDate('');
     setIsCategoryMenuOpen(false);
     if (imageInputRef.current) imageInputRef.current.value = '';
     setFormError('');
@@ -59,6 +61,7 @@ export const AdminProducts: React.FC = () => {
     setStock(p.stock.toString());
     setMinimumStock(p.minimumStock.toString());
     setImage(p.image || '');
+    setExpirationDate(p.expirationDate ? p.expirationDate.slice(0, 10) : '');
     setIsCategoryMenuOpen(false);
     if (imageInputRef.current) imageInputRef.current.value = '';
     setFormError('');
@@ -83,6 +86,7 @@ export const AdminProducts: React.FC = () => {
       stock: parseInt(stock, 10) || 0,
       minimumStock: parseInt(minimumStock, 10) || 5,
       image,
+      expirationDate: expirationDate || undefined,
     };
 
     try {
@@ -311,6 +315,16 @@ export const AdminProducts: React.FC = () => {
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              className="admin-products__form-input"
+            />
+          </div>
+
+          <div>
+            <label className="admin-products__form-label">Expiration Date</label>
+            <input
+              type="date"
+              value={expirationDate}
+              onChange={(e) => setExpirationDate(e.target.value)}
               className="admin-products__form-input"
             />
           </div>

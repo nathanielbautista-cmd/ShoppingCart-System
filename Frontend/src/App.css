@@ -362,6 +362,22 @@ html[data-theme="light"] .modal__item-4:hover { background: #e2e8f0; color: #0f1
   box-shadow: 0 16px 38px rgba(0,0,0,.45);
 }
 
+.customer-theme-dark .customer-topbar__scale-details {
+  border-color: #334155;
+  color: #e2e8f0;
+  background: #0f172a;
+  box-shadow: 0 16px 38px rgba(0,0,0,.45);
+}
+
+.customer-theme-dark .customer-topbar__scale-details p,
+.customer-theme-dark .customer-topbar__scale-legend span {
+  color: #94a3b8;
+}
+
+.customer-theme-dark .customer-topbar__scale-legend {
+  border-color: #263449;
+}
+
 .customer-theme-dark .customer-topbar__settings-heading,
 .customer-theme-dark .customer-topbar__setting-row + .customer-topbar__setting-row {
   border-color: #263449;

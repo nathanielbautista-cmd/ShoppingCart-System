@@ -12,6 +12,11 @@ import { CustomerTopbar } from './components/CustomerTopbar';
 import ScannerInput from './components/ScannerInput';
 import { AdminNav } from './components/AdminNav';
 import { HardwareButtonBridge } from './components/HardwareButtonBridge';
+import { WeightAnomalyAlert } from './components/WeightAnomalyAlert';
+import { BudgetLimitAlert } from './components/BudgetLimitAlert';
+import { ProductVerificationFeedback } from './components/ProductVerificationFeedback';
+import { RemovalFeedback } from './components/RemovalFeedback';
+import { ScannedProductModal } from './components/ScannedProductModal';
 
 
 import { Welcome } from './pages/customer/Welcome';
@@ -114,6 +119,11 @@ const AppContent: React.FC = () => {
   return (
     <div className={`app-shell app-theme-${settings.theme.toLowerCase()} w-screen h-screen flex flex-col overflow-hidden font-sans select-none ${settings.theme === 'DARK' ? 'bg-slate-950 text-slate-100' : 'bg-slate-100 text-slate-900'} ${userMode === 'CUSTOMER' && settings.theme === 'DARK' ? 'customer-theme-dark' : ''}`}>
       <HardwareButtonBridge />
+      <WeightAnomalyAlert />
+      <BudgetLimitAlert />
+      <ProductVerificationFeedback />
+      <RemovalFeedback />
+      <ScannedProductModal />
       {!powered ? <div className="flex-1 grid place-items-center bg-black text-slate-500">iCart is powered off</div> : <>
 
       <main className={`flex-1 overflow-hidden ${settings.theme === 'DARK' ? 'bg-slate-950' : 'bg-slate-50'}`}>

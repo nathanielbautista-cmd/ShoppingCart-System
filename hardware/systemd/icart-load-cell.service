@@ -9,7 +9,10 @@ User=icart
 Group=icart
 SupplementaryGroups=gpio
 WorkingDirectory=/home/icart/icart/hardware
-ExecStart=/usr/bin/python3 /home/icart/icart/hardware/load_cell_service.py --api-url http://127.0.0.1:5000
+Environment=ICART_API_URL=http://127.0.0.1:5000
+Environment=ICART_DEVICE_ID=cart-pi-01
+EnvironmentFile=-/etc/default/icart-load-cell
+ExecStart=/usr/bin/python3 /home/icart/icart/hardware/load_cell_service.py --interval 0.10
 Restart=always
 RestartSec=5
 Environment=PYTHONUNBUFFERED=1

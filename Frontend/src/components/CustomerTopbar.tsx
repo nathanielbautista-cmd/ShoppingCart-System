@@ -2,6 +2,7 @@ import './CustomerTopbar.css';
 import React, { useEffect, useRef, useState } from 'react';
 import { CircleHelp, Moon, Settings, ShoppingCart, Volume2, Wallet } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { getLoadCellStatus } from '../services/sensorService';
 import { soundService } from '../services/soundService';
 
 export const CustomerTopbar: React.FC = () => {
@@ -15,28 +16,84 @@ export const CustomerTopbar: React.FC = () => {
     updateSettings,
   } = useCart();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isScaleDetailsOpen, setIsScaleDetailsOpen] = useState(false);
+  const [scaleConnected, setScaleConnected] = useState<boolean | null>(null);
+  const [scaleMessage, setScaleMessage] = useState('Checking load-cell connection...');
   const settingsRef = useRef<HTMLDivElement>(null);
+  const scaleRef = useRef<HTMLDivElement>(null);
   const quantity = cartItems.reduce((total, item) => total + item.quantity, 0);
+  const normalizedScaleMessage = scaleMessage.toLowerCase();
+  const scaleIndicatorState = scaleConnected === null
+    ? 'checking'
+    : scaleConnected
+      ? 'ready'
+      : normalizedScaleMessage.includes('stale')
+        ? 'stale'
+        : normalizedScaleMessage.includes('no hx711') ||
+            normalizedScaleMessage.includes('no load-cell') ||
+            normalizedScaleMessage.includes('no reading')
+          ? 'no-data'
+          : 'error';
+  const scaleStatusLabel = scaleIndicatorState === 'ready'
+    ? 'Scale ready'
+    : scaleIndicatorState === 'checking'
+      ? 'Checking scale connection'
+      : scaleIndicatorState === 'stale'
+        ? 'Scale reading is stale'
+        : scaleIndicatorState === 'no-data'
+          ? 'No scale data'
+          : 'Scale connection error';
 
   useEffect(() => {
-    if (!isSettingsOpen) return;
+    let cancelled = false;
 
-    const closeSettings = (event: PointerEvent) => {
-      if (!settingsRef.current?.contains(event.target as Node)) {
+    const refreshScaleStatus = async () => {
+      try {
+        const status = await getLoadCellStatus();
+        if (cancelled) return;
+        setScaleConnected(status.connected);
+        setScaleMessage(status.message);
+      } catch (error) {
+        if (cancelled) return;
+        setScaleConnected(false);
+        setScaleMessage(error instanceof Error ? error.message : 'Load-cell status is unavailable.');
+      }
+    };
+
+    void refreshScaleStatus();
+    const intervalId = window.setInterval(refreshScaleStatus, 2000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isSettingsOpen && !isScaleDetailsOpen) return;
+
+    const closePopovers = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (isSettingsOpen && !settingsRef.current?.contains(target)) {
         setIsSettingsOpen(false);
+      }
+      if (isScaleDetailsOpen && !scaleRef.current?.contains(target)) {
+        setIsScaleDetailsOpen(false);
       }
     };
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setIsSettingsOpen(false);
+      if (event.key === 'Escape') {
+        setIsSettingsOpen(false);
+        setIsScaleDetailsOpen(false);
+      }
     };
 
-    document.addEventListener('pointerdown', closeSettings);
+    document.addEventListener('pointerdown', closePopovers);
     document.addEventListener('keydown', closeOnEscape);
     return () => {
-      document.removeEventListener('pointerdown', closeSettings);
+      document.removeEventListener('pointerdown', closePopovers);
       document.removeEventListener('keydown', closeOnEscape);
     };
-  }, [isSettingsOpen]);
+  }, [isScaleDetailsOpen, isSettingsOpen]);
 
   const goTo = (screen: 'CART' | 'BUDGET' | 'HELP' | 'SHOPPING_HOME') => {
     soundService.playKeyClick();
@@ -46,7 +103,14 @@ export const CustomerTopbar: React.FC = () => {
 
   const handleSettingsToggle = () => {
     soundService.playKeyClick();
+    setIsScaleDetailsOpen(false);
     setIsSettingsOpen((open) => !open);
+  };
+
+  const handleScaleDetailsToggle = () => {
+    soundService.playKeyClick();
+    setIsSettingsOpen(false);
+    setIsScaleDetailsOpen((open) => !open);
   };
 
   const handleVoiceToggle = () => {
@@ -62,6 +126,35 @@ export const CustomerTopbar: React.FC = () => {
   return <header className="customer-topbar">
     <div className="customer-topbar__title"><strong>Shop products</strong><small>Choose a category</small></div>
     <nav aria-label="Customer actions">
+      <div className="customer-topbar__scale-wrap" ref={scaleRef}>
+        <button
+          type="button"
+          className={`customer-topbar__scale customer-topbar__scale--${scaleIndicatorState}`}
+          aria-label={`${scaleStatusLabel}. Tap for scale details.`}
+          aria-expanded={isScaleDetailsOpen}
+          aria-haspopup="dialog"
+          title={`${scaleStatusLabel}: ${scaleMessage}`}
+          onClick={handleScaleDetailsToggle}
+        >
+          <i className="customer-topbar__scale-indicator" aria-hidden="true" />
+        </button>
+        {isScaleDetailsOpen && (
+          <section className="customer-topbar__scale-details" role="dialog" aria-label="Scale status details">
+            <div className="customer-topbar__scale-details-heading">
+              <i className={`customer-topbar__legend-dot customer-topbar__legend-dot--${scaleIndicatorState}`} />
+              <strong>{scaleStatusLabel}</strong>
+            </div>
+            <p>{scaleMessage}</p>
+            <div className="customer-topbar__scale-legend" aria-label="Scale status color guide">
+              <span><i className="customer-topbar__legend-dot customer-topbar__legend-dot--ready" />Ready</span>
+              <span><i className="customer-topbar__legend-dot customer-topbar__legend-dot--checking" />Checking</span>
+              <span><i className="customer-topbar__legend-dot customer-topbar__legend-dot--stale" />Stale reading</span>
+              <span><i className="customer-topbar__legend-dot customer-topbar__legend-dot--no-data" />No data/service</span>
+              <span><i className="customer-topbar__legend-dot customer-topbar__legend-dot--error" />Connection error</span>
+            </div>
+          </section>
+        )}
+      </div>
       <button
         className={`customer-topbar__cart ${customerScreen === 'CART' ? 'customer-topbar__cart--open' : ''}`}
         onClick={() => goTo(customerScreen === 'CART' ? 'SHOPPING_HOME' : 'CART')}

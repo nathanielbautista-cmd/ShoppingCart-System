@@ -256,6 +256,13 @@
   flex-shrink: 0;
 }
 
+.transaction-complete__next-customer {
+  margin: 0 0 8px;
+  color: var(--color-slate-400, #94a3b8);
+  font-size: 11px;
+  font-weight: 700;
+}
+
 .transaction-complete__item-18 {
   width: 100%;
   padding-block: calc(var(--spacing,.25rem) * 3);

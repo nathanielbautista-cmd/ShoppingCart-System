@@ -240,6 +240,31 @@
   color: #94a3b8;
 }
 
+.admin-auth-forgot-link {
+  justify-self: end;
+  margin-top: -8px;
+}
+
+.admin-auth-hint {
+  margin: -4px 0 0;
+  color: #94a3b8;
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.admin-auth-complete {
+  justify-items: center;
+  text-align: center;
+}
+
+.admin-auth-complete > svg {
+  width: 48px;
+  height: 48px;
+  color: #6ee7b7;
+}
+
+.admin-auth-complete .admin-auth-message { width: 100%; margin: 0; justify-content: center; }
+
 .admin-auth-footer {
   margin-top: 18px;
   padding-top: 14px;

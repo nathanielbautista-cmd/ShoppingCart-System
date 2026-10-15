@@ -1,11 +1,14 @@
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const { sendVerificationEmail } = require('../services/emailService');
+const { sendVerificationEmail, sendPasswordResetEmail } = require('../services/emailService');
 
 const VERIFICATION_TTL_MS = 10 * 60 * 1000;
 const RESEND_COOLDOWN_MS = 60 * 1000;
 const MAX_VERIFICATION_ATTEMPTS = 5;
+const PASSWORD_RESET_TTL_MS = 10 * 60 * 1000;
+const PASSWORD_RESET_COOLDOWN_MS = 60 * 1000;
+const MAX_PASSWORD_RESET_ATTEMPTS = 5;
 const STRONG_PASSWORD = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -18,6 +21,10 @@ const generateToken = (id) => jwt.sign(
 const normalizePhoneNumber = (value = '') => value.trim().replace(/[\s()-]/g, '');
 const hashVerificationCode = (code) => crypto.createHash('sha256').update(code).digest('hex');
 const createVerificationCode = () => crypto.randomInt(100000, 1000000).toString();
+const maskEmail = (email) => {
+  const [localPart = '', domain = ''] = String(email).split('@');
+  return `${localPart.slice(0, 2) || '*'}***@${domain}`;
+};
 
 const publicUser = (user) => ({
   id: user._id,
@@ -54,6 +61,127 @@ const issueVerificationCode = async (user) => {
     user.emailVerificationLastSentAt = previousVerification.lastSentAt;
     await user.save({ validateBeforeSave: false }).catch(() => {});
     throw error;
+  }
+};
+
+const issuePasswordResetCode = async (user) => {
+  const code = createVerificationCode();
+  const previousReset = {
+    token: user.passwordResetToken,
+    expires: user.passwordResetExpires,
+    attempts: user.passwordResetAttempts,
+    lastSentAt: user.passwordResetLastSentAt
+  };
+
+  user.passwordResetToken = hashVerificationCode(code);
+  user.passwordResetExpires = new Date(Date.now() + PASSWORD_RESET_TTL_MS);
+  user.passwordResetAttempts = 0;
+  user.passwordResetLastSentAt = new Date();
+  await user.save({ validateBeforeSave: false });
+
+  try {
+    await sendPasswordResetEmail({
+      email: user.email,
+      name: user.name,
+      code,
+      role: user.role
+    });
+  } catch (error) {
+    user.passwordResetToken = previousReset.token;
+    user.passwordResetExpires = previousReset.expires;
+    user.passwordResetAttempts = previousReset.attempts;
+    user.passwordResetLastSentAt = previousReset.lastSentAt;
+    await user.save({ validateBeforeSave: false }).catch(() => {});
+    throw error;
+  }
+};
+
+const forgotPassword = async (req, res, next) => {
+  try {
+    const email = String(req.body.email || '').toLowerCase().trim();
+    const role = String(req.body.role || '').toLowerCase().trim();
+    if (!EMAIL_PATTERN.test(email) || !['admin', 'cashier'].includes(role)) {
+      return res.status(400).json({ success: false, message: 'A valid email and account type are required' });
+    }
+
+    const user = await User.findOne({ email, role }).select(
+      '+passwordResetToken +passwordResetExpires +passwordResetAttempts +passwordResetLastSentAt'
+    );
+    const genericMessage = 'If that account exists, a password reset code has been sent to its email.';
+    if (!user) {
+      console.warn(`[Auth] Password reset account mismatch: role=${role}, email=${maskEmail(email)}`);
+      return res.status(200).json({ success: true, message: genericMessage });
+    }
+
+    if (user.passwordResetLastSentAt &&
+        Date.now() - user.passwordResetLastSentAt.getTime() < PASSWORD_RESET_COOLDOWN_MS) {
+      return res.status(429).json({ success: false, message: 'Please wait 60 seconds before requesting another reset code.' });
+    }
+
+    await issuePasswordResetCode(user);
+    console.info(`[Auth] Password reset email sent: role=${role}, email=${maskEmail(email)}`);
+    return res.status(200).json({ success: true, message: genericMessage });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const resetPassword = async (req, res, next) => {
+  try {
+    const email = String(req.body.email || '').toLowerCase().trim();
+    const role = String(req.body.role || '').toLowerCase().trim();
+    const code = String(req.body.code || '').trim();
+    const newPassword = String(req.body.newPassword || '');
+
+    if (!EMAIL_PATTERN.test(email) || !['admin', 'cashier'].includes(role) || !/^\d{6}$/.test(code)) {
+      return res.status(400).json({ success: false, message: 'Email, account type, and a valid 6-digit code are required' });
+    }
+    if (newPassword.length > 128 || !STRONG_PASSWORD.test(newPassword)) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be at least 8 characters and include uppercase, lowercase, number, and special character'
+      });
+    }
+
+    const user = await User.findOne({ email, role }).select(
+      '+passwordResetToken +passwordResetExpires +passwordResetAttempts'
+    );
+    if (!user || !user.passwordResetToken || !user.passwordResetExpires ||
+        user.passwordResetExpires <= new Date()) {
+      return res.status(400).json({ success: false, message: 'Reset code is invalid or expired' });
+    }
+
+    const expected = Buffer.from(user.passwordResetToken, 'hex');
+    const received = Buffer.from(hashVerificationCode(code), 'hex');
+    if (expected.length !== received.length || !crypto.timingSafeEqual(expected, received)) {
+      user.passwordResetAttempts = (user.passwordResetAttempts || 0) + 1;
+      if (user.passwordResetAttempts >= MAX_PASSWORD_RESET_ATTEMPTS) {
+        user.passwordResetToken = undefined;
+        user.passwordResetExpires = undefined;
+      }
+      await user.save({ validateBeforeSave: false });
+      return res.status(400).json({
+        success: false,
+        message: user.passwordResetAttempts >= MAX_PASSWORD_RESET_ATTEMPTS
+          ? 'Too many incorrect codes. Request a new reset code.'
+          : 'Reset code is invalid or expired'
+      });
+    }
+
+    if (await user.matchPassword(newPassword)) {
+      return res.status(400).json({ success: false, message: 'New password must be different from your current password' });
+    }
+
+    user.password = newPassword;
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    user.passwordResetAttempts = 0;
+    user.passwordResetLastSentAt = undefined;
+    await user.save();
+
+    return res.status(200).json({ success: true, message: 'Password reset successfully. You can now sign in.' });
+  } catch (error) {
+    next(error);
   }
 };
 
@@ -272,4 +400,13 @@ const changePassword = async (req, res, next) => {
   }
 };
 
-module.exports = { login, register, verifyEmail, resendVerification, getMe, changePassword };
+module.exports = {
+  login,
+  register,
+  verifyEmail,
+  resendVerification,
+  forgotPassword,
+  resetPassword,
+  getMe,
+  changePassword
+};

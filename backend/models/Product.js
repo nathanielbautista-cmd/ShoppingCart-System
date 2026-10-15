@@ -56,6 +56,10 @@ const productSchema = new mongoose.Schema(
       type: String,
       default: ''
     },
+    expirationDate: {
+      type: Date,
+      default: null
+    },
     isActive: {
       type: Boolean,
       default: true

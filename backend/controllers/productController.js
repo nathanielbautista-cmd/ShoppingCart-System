@@ -112,6 +112,7 @@ const getProductByBarcode = async (req, res, next) => {
         unit: product.unit,
         weight: product.weight,
         image: product.image,
+        expirationDate: product.expirationDate,
         isActive: product.isActive
       }
     });
@@ -127,7 +128,7 @@ const getProductByBarcode = async (req, res, next) => {
 
 const createProduct = async (req, res, next) => {
   try {
-    const { barcode, name, description, category, price, stock, minimumStock, unit, weight, image, isActive } = req.body;
+    const { barcode, name, description, category, price, stock, minimumStock, unit, weight, image, expirationDate, isActive } = req.body;
 
 
     const existing = await Product.findOne({ barcode: barcode.trim() });
@@ -149,6 +150,7 @@ const createProduct = async (req, res, next) => {
       unit: unit || 'piece',
       weight: Number(weight),
       image: image || '',
+      expirationDate: expirationDate || null,
       isActive: isActive !== undefined ? isActive : true
     });
 

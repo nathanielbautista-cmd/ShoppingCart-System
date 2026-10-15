@@ -1,0 +1,20 @@
+[Unit]
+Description=iCart Physical Button Controller
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=icart
+Group=icart
+SupplementaryGroups=gpio
+WorkingDirectory=/home/icart/icart/hardware
+Environment=ICART_API_URL=http://127.0.0.1:5000
+EnvironmentFile=-/etc/default/icart-cart-controls
+ExecStart=/usr/bin/python3 /home/icart/icart/hardware/cart_controls.py
+Restart=always
+RestartSec=3
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

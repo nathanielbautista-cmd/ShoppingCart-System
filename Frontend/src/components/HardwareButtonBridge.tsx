@@ -1,11 +1,27 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import api from '../services/api';
 import { useCart } from '../context/CartContext';
 
 
 export const HardwareButtonBridge = () => {
   const after = useRef<number | null>(null);
-  const { confirmPendingProduct, startItemRemovalVerification } = useCart();
+  const messageTimer = useRef<number | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const {
+    cartItems,
+    confirmPendingProduct,
+    itemToRemove,
+    pendingProduct,
+    playVoice,
+    startItemRemovalVerification,
+    verificationStatus,
+  } = useCart();
+
+  const showMessage = (text: string) => {
+    setMessage(text);
+    if (messageTimer.current !== null) window.clearTimeout(messageTimer.current);
+    messageTimer.current = window.setTimeout(() => setMessage(null), 3500);
+  };
 
   useEffect(() => {
     let active = true;
@@ -29,9 +45,31 @@ export const HardwareButtonBridge = () => {
           if (event.action === 'power_on' || event.action === 'power_off' || event.action === 'restart') {
             window.dispatchEvent(new CustomEvent('icart-hardware', { detail: event.action }));
           } else if (event.action === 'add_product') {
-            void confirmPendingProduct();
+            if (!pendingProduct) {
+              const text = 'Add: scan a product first.';
+              showMessage(text);
+              playVoice(text);
+            } else if (verificationStatus === 'VERIFYING') {
+              showMessage(`Add: ${pendingProduct.name} is already being verified.`);
+            } else if (verificationStatus === 'VERIFIED') {
+              showMessage(`Add: ${pendingProduct.name} is already in your cart.`);
+            } else {
+              showMessage(`Add: checking ${pendingProduct.name}. Place it in the basket when prompted.`);
+              void confirmPendingProduct();
+            }
           } else if (event.action === 'delete_product' || event.action === 'remove_product') {
-            void startItemRemovalVerification();
+            if (itemToRemove) {
+              showMessage(`Remove: checking ${itemToRemove.product.name}.`);
+              void startItemRemovalVerification();
+            } else if (cartItems.length === 0) {
+              const text = 'Remove: your cart is empty.';
+              showMessage(text);
+              playVoice(text);
+            } else {
+              const text = 'Remove: take one scanned item out now. The scale will identify and deduct it automatically.';
+              showMessage(text);
+              playVoice(text);
+            }
           }
         }
       } catch {
@@ -41,7 +79,19 @@ export const HardwareButtonBridge = () => {
     };
     void poll();
     return () => { active = false; };
-  }, [confirmPendingProduct, startItemRemovalVerification]);
+  }, [cartItems, confirmPendingProduct, itemToRemove, pendingProduct, playVoice, startItemRemovalVerification, verificationStatus]);
 
-  return null;
+  useEffect(() => () => {
+    if (messageTimer.current !== null) window.clearTimeout(messageTimer.current);
+  }, []);
+
+  return message ? (
+    <div
+      role="status"
+      aria-live="polite"
+      className="fixed left-1/2 top-4 z-[180] w-[min(92vw,520px)] -translate-x-1/2 rounded-xl border border-cyan-400/60 bg-slate-950 px-4 py-3 text-center text-sm font-bold text-cyan-100 shadow-xl"
+    >
+      {message}
+    </div>
+  ) : null;
 };

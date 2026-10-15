@@ -16,6 +16,10 @@ HX711_SENSORS = {
 ACTIVE_SENSOR_IDS = ("hx711_1",)
 
 RAW_SAMPLE_COUNT = 15
+# Live publishing favors response time while tare/calibration continue using
+# the larger RAW_SAMPLE_COUNT for accuracy. Three samples keep the median/MAD
+# spike filter while allowing feedback on the next stable HX711 update.
+LIVE_SAMPLE_COUNT = 3
 RAW_READY_TIMEOUT_SECONDS = 2.0
 STABILITY_TOLERANCE_GRAMS = 10.0
 OUTLIER_MAD_MULTIPLIER = 3.5
@@ -32,6 +36,7 @@ BUTTON_PINS = {
     "delete_product": 27,
 }
 POWER_INDICATOR_LED_PIN = 25
+ALARM_LED_PIN = 18
 BUTTON_DEBOUNCE_SECONDS = 0.15
 
 
