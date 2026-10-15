@@ -84,16 +84,16 @@ interface CartContextType {
   applyBudget: (budgetAmount: number) => void;
   handleBarcodeScan: (barcode: string) => { success: boolean; product?: Product; error?: string };
   setPendingProduct: (product: Product | null) => void;
-  startProductVerification: (product: Product, simulateFailure?: boolean) => Promise<boolean>;
+  startProductVerification: (product: Product, simulateFailure?: boolean, simulateSuccess?: boolean) => Promise<boolean>;
   confirmPendingProduct: () => Promise<boolean>;
   retryVerification: () => Promise<boolean>;
   cancelVerification: () => void;
   updateItemQuantity: (productId: string, delta: number) => void;
   promptRemoveItem: (item: CartItem, quantityToRemove?: number) => void;
   cancelItemRemoval: () => void;
-  startItemRemovalVerification: () => Promise<boolean>;
+  startItemRemovalVerification: (simulateSuccess?: boolean) => Promise<boolean>;
   confirmCheckout: () => void;
-  markCashierComplete: () => Promise<boolean>;
+  markCashierComplete: (simulateSuccess?: boolean) => Promise<boolean>;
   resetShoppingSession: () => void;
 
 
@@ -433,7 +433,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 
   const startProductVerification = useCallback(
-    async (product: Product, simulateFailure: boolean = false) => {
+    async (product: Product, simulateFailure: boolean = false, simulateSuccess: boolean = false) => {
       if (verificationInProgressRef.current) return false;
       verificationInProgressRef.current = true;
       const attempt = ++verificationAttemptRef.current;
@@ -446,13 +446,18 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       playVoice('Keep the basket still while the load cells capture its current weight.');
 
       try {
-        const result = await verifyProductWeight(
-          product.expectedWeightGrams,
-          settings.weightToleranceGrams,
-          simulateFailure,
-          'increase',
-          () => playVoice('Scale ready. Place the scanned item inside the cart now.')
-        );
+        let result;
+        if (simulateSuccess) {
+          result = { verified: true, detectedWeightGrams: product.expectedWeightGrams, reason: '' };
+        } else {
+          result = await verifyProductWeight(
+            product.expectedWeightGrams,
+            settings.weightToleranceGrams,
+            simulateFailure,
+            'increase',
+            () => playVoice('Scale ready. Place the scanned item inside the cart now.')
+          );
+        }
 
         if (attempt !== verificationAttemptRef.current) return false;
         setDetectedWeight(result.detectedWeightGrams);
@@ -472,16 +477,18 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (cartId) {
           const res: any = await addCartItem(cartId, { barcode: product.barcode, quantity: 1 });
           if (!res?.cart) throw new Error('The server did not return the updated cart.');
-          const formatted = res.cart.items.map((i: any) => ({ product: {
-            id: i.productId,
-            barcode: i.barcode,
-            name: i.name,
-            category: i.category || '',
-            price: i.price,
-            expectedWeightGrams: i.quantity ? i.expectedWeight / i.quantity : 0,
-            stock: i.stock || 0,
-            minimumStock: 0,
-          }, quantity: i.quantity }));
+          const formatted = res.cart.items.map((i: any) => ({
+            product: {
+              id: i.productId,
+              barcode: i.barcode,
+              name: i.name,
+              category: i.category || '',
+              price: i.price,
+              expectedWeightGrams: i.quantity ? i.expectedWeight / i.quantity : 0,
+              stock: i.stock || 0,
+              minimumStock: 0,
+            }, quantity: i.quantity
+          }));
           setCartItems(formatted);
           setCartStatus(res.cart.status || 'ACTIVE');
         } else {
@@ -498,6 +505,15 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         soundService.playSuccessChime();
         setVerificationStatus('VERIFIED');
         playVoice(`${product.name} verified and added to cart.`);
+
+        if (simulateSuccess) {
+          setTimeout(() => {
+            setPendingProduct(null);
+            setVerificationStatus('WAITING');
+            setCustomerScreen('CART');
+          }, 1500);
+        }
+
         return true;
       } catch (error) {
         if (attempt !== verificationAttemptRef.current) return false;
@@ -577,7 +593,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCustomerScreen('CART');
   }, []);
 
-  const startItemRemovalVerification = useCallback(async () => {
+  const startItemRemovalVerification = useCallback(async (simulateSuccess: boolean = false) => {
     if (!itemToRemove) {
       setCustomerScreen('CART');
       playVoice('Select an item with the minus or trash button before pressing remove.');
@@ -589,13 +605,18 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     playVoice('Keep the basket still while the load cells capture its current weight.');
 
     try {
-      const weightCheck = await verifyProductWeight(
-        itemToRemove.product.expectedWeightGrams * itemToRemove.quantity,
-        settings.weightToleranceGrams,
-        false,
-        'decrease',
-        () => playVoice('Scale ready. Remove the selected item from the basket now.')
-      );
+      let weightCheck;
+      if (simulateSuccess) {
+        weightCheck = { verified: true, detectedWeightGrams: 0, reason: '' };
+      } else {
+        weightCheck = await verifyProductWeight(
+          itemToRemove.product.expectedWeightGrams * itemToRemove.quantity,
+          settings.weightToleranceGrams,
+          false,
+          'decrease',
+          () => playVoice('Scale ready. Remove the selected item from the basket now.')
+        );
+      }
 
       if (!weightCheck.verified) {
         soundService.playWarning();
@@ -613,19 +634,21 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const res: any = itemToRemove.quantity >= currentItem.quantity
           ? await removeCartItem(cartId, itemToRemove.product.barcode)
           : await updateCartItem(cartId, itemToRemove.product.barcode, {
-              quantity: currentItem.quantity - itemToRemove.quantity,
-            });
+            quantity: currentItem.quantity - itemToRemove.quantity,
+          });
         if (res?.cart) {
-          const formatted = res.cart.items.map((i: any) => ({ product: {
-            id: i.productId,
-            barcode: i.barcode,
-            name: i.name,
-            category: i.category || '',
-            price: i.price,
-            expectedWeightGrams: i.quantity ? i.expectedWeight / i.quantity : 0,
-            stock: i.stock || 0,
-            minimumStock: 0,
-          }, quantity: i.quantity }));
+          const formatted = res.cart.items.map((i: any) => ({
+            product: {
+              id: i.productId,
+              barcode: i.barcode,
+              name: i.name,
+              category: i.category || '',
+              price: i.price,
+              expectedWeightGrams: i.quantity ? i.expectedWeight / i.quantity : 0,
+              stock: i.stock || 0,
+              minimumStock: 0,
+            }, quantity: i.quantity
+          }));
           setCartItems(formatted);
         }
       } else {
@@ -675,8 +698,31 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
   }, [cartId, playVoice]);
 
-  const markCashierComplete = useCallback(async () => {
+  const markCashierComplete = useCallback(async (simulateSuccess: boolean = false) => {
     if (!cartId) return false;
+
+    if (simulateSuccess) {
+      setTransactions((prev) => [{
+        id: 'SIM-TXN-' + Date.now(),
+        cartId: cartId,
+        date: new Date().toISOString(),
+        items: cartItems,
+        total: currentTotal,
+        subtotal: currentTotal,
+        discount: 0,
+        paymentMethod: 'CASH',
+        amountReceived: currentTotal,
+        change: 0,
+        paymentStatus: 'COMPLETED',
+        cashierName: 'SIMULATOR',
+      } as any, ...prev]);
+
+      soundService.playSuccessChime();
+      setCartStatus('COMPLETED');
+      setCustomerScreen('TRANSACTION_COMPLETE');
+      playVoice('Payment confirmed. Thank you for shopping with iCart!');
+      return true;
+    }
 
     try {
       const res: any = await checkoutCart(cartId, {
@@ -771,8 +817,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           amountReceived: tx.amountReceived, change: tx.change,
           paymentStatus: tx.paymentStatus, cashierName: tx.cashierId,
           items: tx.items.map((item: any) => ({
-            product: { id: String(item.productId), barcode: item.barcode, name: item.name, category: '',
-              price: item.price, expectedWeightGrams: 0, stock: 0, minimumStock: 5 }, quantity: item.quantity
+            product: {
+              id: String(item.productId), barcode: item.barcode, name: item.name, category: '',
+              price: item.price, expectedWeightGrams: 0, stock: 0, minimumStock: 5
+            }, quantity: item.quantity
           }))
         })));
       }
