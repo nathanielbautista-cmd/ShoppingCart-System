@@ -401,3 +401,4 @@
   font-weight: 700;
   line-height: 1.4;
 }
+.waiting-for-cashier__void-reminder{display:flex;align-items:flex-start;gap:12px;width:min(520px,100%);margin:18px auto 0;padding:14px 16px;color:#7c3f00;background:#fff7e8;border:1px solid #f2cf91;border-radius:12px;text-align:left}.waiting-for-cashier__void-reminder>svg{flex:none;width:21px;height:21px;color:#c46a08}.waiting-for-cashier__void-reminder strong,.waiting-for-cashier__void-reminder span{display:block}.waiting-for-cashier__void-reminder span{margin-top:4px;font-size:12px;line-height:1.45}

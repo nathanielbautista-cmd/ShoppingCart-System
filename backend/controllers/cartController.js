@@ -16,11 +16,16 @@ const formatCartResponse = (cart) => {
   const totalItemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
   const totalExpectedWeight = cart.items.reduce((sum, item) => sum + item.expectedWeight, 0);
   const totalVerifiedWeight = cart.items.reduce((sum, item) => sum + (item.verifiedWeight || 0), 0);
+  const currentVoids = (cart.voidHistory || []).filter(
+    (entry) => entry.transactionId === cart.pendingTransactionId
+  );
+  const latestVoid = currentVoids.length ? currentVoids[currentVoids.length - 1] : null;
 
   return {
     _id: cart._id,
     cartId: cart.cartId,
     status: cart.status,
+    pendingTransactionId: cart.pendingTransactionId,
     items: cart.items,
     itemCount: totalItemCount,
     budget: cart.budget,
@@ -32,6 +37,12 @@ const formatCartResponse = (cart) => {
     totalVerifiedWeight,
     hasWeightAnomaly: cart.hasWeightAnomaly,
     anomalyNote: cart.anomalyNote,
+    lastVoid: latestVoid ? {
+      id: latestVoid._id,
+      productName: latestVoid.productName,
+      quantity: latestVoid.quantity,
+      voidedAt: latestVoid.voidedAt
+    } : null,
     createdAt: cart.createdAt,
     updatedAt: cart.updatedAt
   };
@@ -63,6 +74,7 @@ const createCart = async (req, res, next) => {
       }
 
       existing.status = CART_STATUS.ACTIVE;
+      existing.pendingTransactionId = null;
       existing.items = [];
       existing.subtotal = 0;
       existing.total = 0;

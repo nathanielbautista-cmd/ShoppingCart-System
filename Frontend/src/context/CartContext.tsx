@@ -54,6 +54,7 @@ interface CartContextType {
   cartStatus: CartStatus;
   checkoutSubmitting: boolean;
   checkoutError: string | null;
+  voidReminder: { id: string; productName: string; quantity: number } | null;
   budget: number;
   cartItems: CartItem[];
   currentTotal: number;
@@ -192,6 +193,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [cartStatus, setCartStatus] = useState<CartStatus>('ACTIVE');
   const [checkoutSubmitting, setCheckoutSubmitting] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [voidReminder, setVoidReminder] = useState<{ id: string; productName: string; quantity: number } | null>(null);
+  const lastSeenVoidRef = useRef<string | null>(null);
   const [budget, setBudget] = useState<number>(0);
   const [hasSetBudget, setHasSetBudget] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -610,6 +613,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCartStatus('ACTIVE');
     setCheckoutSubmitting(false);
     setCheckoutError(null);
+    setVoidReminder(null);
+    lastSeenVoidRef.current = null;
     setUserMode('CUSTOMER');
     setCustomerScreenState('WELCOME');
   }, []);
@@ -633,7 +638,36 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       try {
         const response: any = await getCart(cartId);
-        if (stopped || response?.cart?.status !== 'COMPLETED') return;
+        const remoteCart = response?.cart;
+        if (stopped || !remoteCart) return;
+
+        if (remoteCart.status === 'WAITING_FOR_CASHIER') {
+          setCartItems((remoteCart.items || []).map((item: any) => ({
+            product: {
+              id: String(item.productId),
+              barcode: item.barcode,
+              name: item.name,
+              category: item.category || '',
+              price: item.price,
+              expectedWeightGrams: item.quantity ? item.expectedWeight / item.quantity : 0,
+              stock: item.stock || 0,
+              minimumStock: 0,
+            },
+            quantity: item.quantity,
+          })));
+          const latestVoid = remoteCart.lastVoid;
+          const latestVoidId = latestVoid?.id ? String(latestVoid.id) : null;
+          if (latestVoidId && latestVoidId !== lastSeenVoidRef.current) {
+            lastSeenVoidRef.current = latestVoidId;
+            setVoidReminder({
+              id: latestVoidId,
+              productName: latestVoid.productName,
+              quantity: latestVoid.quantity,
+            });
+          }
+        }
+
+        if (remoteCart.status !== 'COMPLETED') return;
 
 
 
@@ -1255,6 +1289,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         cartStatus,
         checkoutSubmitting,
         checkoutError,
+        voidReminder,
         budget,
         cartItems,
         currentTotal,

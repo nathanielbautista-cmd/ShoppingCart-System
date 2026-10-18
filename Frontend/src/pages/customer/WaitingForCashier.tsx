@@ -11,6 +11,7 @@ export const WaitingForCashier: React.FC = () => {
     settings,
     checkoutSubmitting,
     checkoutError,
+    voidReminder,
     confirmCheckout,
   } = useCart();
   const totalItems = cartItems.reduce((total, item) => total + item.quantity, 0);
@@ -97,6 +98,15 @@ export const WaitingForCashier: React.FC = () => {
               <button type="button" onClick={confirmCheckout}>
                 <RefreshCw aria-hidden="true" /> Retry Checkout
               </button>
+            </div>
+          )}
+          {voidReminder && !checkoutError && (
+            <div className="waiting-for-cashier__void-reminder" role="status">
+              <AlertTriangle aria-hidden="true" />
+              <div>
+                <strong>Cashier voided {voidReminder.quantity} × {voidReminder.productName}</strong>
+                <span>Please remove the physical item from the basket if it is still inside.</span>
+              </div>
             </div>
           )}
           <p className="waiting-for-cashier__payment-note">

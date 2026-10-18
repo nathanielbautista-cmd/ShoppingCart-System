@@ -58,6 +58,31 @@ const cartItemSchema = new mongoose.Schema(
   }
 );
 
+const voidAuditSchema = new mongoose.Schema(
+  {
+    requestId: { type: String, required: true },
+    transactionId: { type: String, required: true, index: true },
+    cartId: { type: String, required: true },
+    lineItemId: { type: mongoose.Schema.Types.ObjectId, required: true },
+    productId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'Product' },
+    barcode: { type: String, required: true },
+    productName: { type: String, required: true },
+    quantity: { type: Number, required: true, min: 1 },
+    unitPrice: { type: Number, required: true, min: 0 },
+    subtotal: { type: Number, required: true, min: 0 },
+    reason: {
+      type: String,
+      required: true,
+      enum: ['CUSTOMER_CHANGED_MIND', 'INCORRECT_PRODUCT', 'DUPLICATE_SCAN', 'OTHER']
+    },
+    explanation: { type: String, default: '', maxlength: 200 },
+    cashierId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    cashierUsername: { type: String, required: true },
+    voidedAt: { type: Date, required: true, default: Date.now }
+  },
+  { _id: true }
+);
+
 const cartSchema = new mongoose.Schema(
   {
     cartId: {
@@ -71,6 +96,11 @@ const cartSchema = new mongoose.Schema(
       type: String,
       enum: Object.values(CART_STATUS),
       default: CART_STATUS.ACTIVE
+    },
+    pendingTransactionId: {
+      type: String,
+      default: null,
+      index: true
     },
     budget: {
       type: Number,
@@ -88,6 +118,7 @@ const cartSchema = new mongoose.Schema(
       min: 0
     },
     items: [cartItemSchema],
+    voidHistory: [voidAuditSchema],
 
     hasWeightAnomaly: {
       type: Boolean,

@@ -27,10 +27,6 @@ export default function ScannerInput() {
     verificationStatus,
     weightAnomaly,
     products,
-    itemToRemove,
-    startItemRemovalVerification,
-    cartItems,
-    markCashierComplete,
   } = useCart();
   const bufferRef = useRef('');
   const lastScanRef = useRef(0);
@@ -38,7 +34,6 @@ export default function ScannerInput() {
   const clearBufferTimerRef = useRef<number | null>(null);
   const scanStartedInSearchRef = useRef(false);
   const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
-  const [manualBarcode, setManualBarcode] = useState('');
 
   useEffect(() => {
     const resetBuffer = () => {
@@ -136,24 +131,12 @@ export default function ScannerInput() {
     };
   }, [userMode, customerScreen, hasSetBudget, handleBarcodeScan, startProductVerification, pendingProduct, verificationStatus, weightAnomaly, products]);
 
-  const handleManualSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!isSupportedBarcode(manualBarcode)) {
-      setMessage({ text: 'Invalid barcode. Enter 8 to 14 digits.', isError: true });
-      window.setTimeout(() => setMessage(null), 3000);
-      return;
-    }
-    void handleBarcode(manualBarcode, false, true);
-    setManualBarcode('');
-  };
-
   async function handleBarcode(
     barcode: string,
-    requiresAddConfirmation = false,
-    simulateSuccess = false
+    requiresAddConfirmation = false
   ) {
     if (!barcode) return;
-    if (!requiresAddConfirmation && !simulateSuccess && weightAnomaly) {
+    if (!requiresAddConfirmation && weightAnomaly) {
       setMessage({
         text: 'Remove the unscanned item first. Then scan its barcode before placing it back.',
         isError: true,
@@ -233,7 +216,7 @@ export default function ScannerInput() {
           image: item.image || '',
           expirationDate: item.expirationDate || '',
         };
-        await startProductVerification(product, false, simulateSuccess);
+        await startProductVerification(product);
         return;
       } catch (error) {
         const backendMessage = error instanceof Error ? error.message : '';
@@ -246,7 +229,7 @@ export default function ScannerInput() {
       }
     }
 
-    await startProductVerification(result.product, false, simulateSuccess);
+    await startProductVerification(result.product);
   }
 
   if (typeof window === 'undefined') return null;
@@ -266,43 +249,6 @@ export default function ScannerInput() {
           {message.text}
         </div>
       )}
-
-      <div className="fixed bottom-4 left-4 z-[100] rounded-lg border bg-white p-4 shadow-lg">
-        <p className="mb-2 text-xs font-bold text-gray-500">Simulator (No Scanner Needed)</p>
-        <form onSubmit={handleManualSubmit} className="flex gap-2">
-          <input
-            type="text"
-            inputMode="numeric"
-            placeholder="Type barcode..."
-            value={manualBarcode}
-            onChange={(event) => setManualBarcode(event.target.value.replace(/\D/g, ''))}
-            className="w-32 rounded border p-1 text-sm text-black"
-          />
-          <button type="submit" className="rounded bg-blue-600 px-3 py-1 text-sm text-white">
-            Scan
-          </button>
-        </form>
-
-        {itemToRemove && (
-          <button
-            type="button"
-            onClick={() => void startItemRemovalVerification(true)}
-            className="mt-2 w-full rounded bg-red-600 px-3 py-1 text-sm font-bold text-white hover:bg-red-700"
-          >
-            Simulate Weight Removal
-          </button>
-        )}
-
-        {cartItems.length > 0 && (
-          <button
-            type="button"
-            onClick={() => void markCashierComplete(true)}
-            className="mt-2 w-full rounded bg-green-600 px-3 py-1 text-sm font-bold text-white hover:bg-green-700"
-          >
-            Force Checkout Receipt
-          </button>
-        )}
-      </div>
     </>
   );
 }

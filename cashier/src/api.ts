@@ -13,6 +13,7 @@ export const cashierApi = {
   resetPassword: (email: string, code: string, newPassword: string) => request('/auth/reset-password', { method: 'POST', body: JSON.stringify({ email, role: 'cashier', code, newPassword }) }),
   waiting: () => request('/cashier/carts/waiting'),
   cart: (id: string) => request(`/cashier/carts/${encodeURIComponent(id)}`),
+  voidItem: (cartId: string, itemId: string, payload: { quantity: number; reason: string; explanation?: string; requestId: string }) => request(`/cashier/carts/${encodeURIComponent(cartId)}/items/${encodeURIComponent(itemId)}/void`, { method: 'POST', body: JSON.stringify(payload) }),
   pay: (id: string, amountReceived: number) => request(`/cashier/transactions/${encodeURIComponent(id)}`, { method: 'POST', body: JSON.stringify({ paymentMethod: 'CASH', amountReceived }) }),
   transactions: () => request('/cashier/transactions'),
   transaction: (id: string) => request(`/cashier/transactions/${encodeURIComponent(id)}`),

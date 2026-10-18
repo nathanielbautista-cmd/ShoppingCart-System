@@ -9,6 +9,7 @@ const {
   getTransactionById
 } = require('../controllers/checkoutController');
 const { CART_STATUS } = require('../config/constants');
+const { voidCartItem } = require('../controllers/cashierController');
 
 
 router.post('/login', async (req, res, next) => {
@@ -42,6 +43,8 @@ router.get('/carts/:cartId', async (req, res, next) => {
     res.json({ success: true, cart });
   } catch (error) { next(error); }
 });
+
+router.post('/carts/:cartId/items/:itemId/void', voidCartItem);
 
 router.post('/transactions/:cartId', (req, res, next) => {
   req.body.cashierId = req.user.name || req.user.email;

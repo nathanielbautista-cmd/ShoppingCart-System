@@ -31,6 +31,25 @@ const transactionItemSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const transactionVoidSchema = new mongoose.Schema(
+  {
+    lineItemId: mongoose.Schema.Types.ObjectId,
+    cartId: String,
+    productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
+    barcode: String,
+    productName: String,
+    quantity: Number,
+    unitPrice: Number,
+    subtotal: Number,
+    reason: String,
+    explanation: String,
+    cashierId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    cashierUsername: String,
+    voidedAt: Date
+  },
+  { _id: false }
+);
+
 const transactionSchema = new mongoose.Schema(
   {
     transactionId: {
@@ -45,6 +64,7 @@ const transactionSchema = new mongoose.Schema(
       index: true
     },
     items: [transactionItemSchema],
+    voids: [transactionVoidSchema],
     subtotal: {
       type: Number,
       required: true,
