@@ -129,7 +129,7 @@ Verifies a pending admin account with `{ "email": "...", "code": "123456" }`. Co
 #### `POST /api/auth/resend-verification`
 Sends a replacement verification code with `{ "email": "..." }`.
 
-Configure `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, and `EMAIL_FROM` in `.env` to send verification emails. Verification codes are never returned by the API or exposed in the frontend.
+Configure `RESEND_API_KEY` and `EMAIL_FROM` in `.env` to send verification emails through the Resend HTTPS API. For initial testing, `EMAIL_FROM=iCart <onboarding@resend.dev>` can send only to the email address associated with the Resend account. Verify a sending domain in Resend before emailing other recipients. SMTP remains available as a fallback through `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, and `SMTP_PASS` when `RESEND_API_KEY` is not set. `EMAIL_TIMEOUT_MS` defaults to 10 seconds. Verification codes are never returned by the API or exposed in the frontend.
 
 #### `POST /api/auth/forgot-password`
 Sends a 6-digit password reset code using `{ "email": "...", "role": "admin" }` or role `cashier`. Codes expire after 10 minutes and requests have a 60-second resend cooldown.
