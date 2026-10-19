@@ -9,6 +9,7 @@ const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
+const { getEmailProvider } = require('./services/emailService');
 
 
 const authRoutes = require('./routes/authRoutes');
@@ -40,6 +41,7 @@ app.get('/api/health', (req, res) => {
     status: 'online',
     system: 'iCart Smart Shopping Cart Backend API',
     version: '1.0.0',
+    emailProvider: getEmailProvider(),
     timestamp: new Date().toISOString()
   });
 });
@@ -63,6 +65,7 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`iCart backend running on port ${PORT}`);
+  console.log(`Email provider: ${getEmailProvider()}`);
 });
 
 module.exports = app;

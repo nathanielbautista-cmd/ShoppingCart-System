@@ -1,6 +1,10 @@
 const assert = require('node:assert/strict');
 const { afterEach, test } = require('node:test');
-const { sendVerificationEmail, sendPasswordResetEmail } = require('../services/emailService');
+const {
+  getEmailProvider,
+  sendVerificationEmail,
+  sendPasswordResetEmail
+} = require('../services/emailService');
 
 const originalFetch = global.fetch;
 const emailEnvironmentKeys = [
@@ -76,4 +80,18 @@ test('fails immediately when neither Resend nor SMTP is configured', async () =>
     sendVerificationEmail({ email: 'owner@example.com', name: 'Test User', code: '123456' }),
     /RESEND_API_KEY or valid SMTP settings/
   );
+});
+
+test('reports which email provider is configured without exposing credentials', () => {
+  for (const key of emailEnvironmentKeys) delete process.env[key];
+  assert.equal(getEmailProvider(), 'not-configured');
+
+  process.env.SMTP_HOST = 'smtp.example.com';
+  process.env.SMTP_PORT = '465';
+  process.env.SMTP_USER = 'user@example.com';
+  process.env.SMTP_PASS = 'secret';
+  assert.equal(getEmailProvider(), 'smtp');
+
+  process.env.RESEND_API_KEY = 're_secret';
+  assert.equal(getEmailProvider(), 'resend');
 });

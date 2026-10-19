@@ -35,6 +35,12 @@ const escapeHtml = (value) => String(value)
 const getFromAddress = () => process.env.EMAIL_FROM ||
   (process.env.RESEND_API_KEY ? 'iCart <onboarding@resend.dev>' : process.env.SMTP_USER);
 
+const getEmailProvider = () => {
+  if (process.env.RESEND_API_KEY) return 'resend';
+  if (getTransporter()) return 'smtp';
+  return 'not-configured';
+};
+
 const sendWithResend = async ({ to, subject, text, html }) => {
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -108,4 +114,4 @@ const sendPasswordResetEmail = async ({ email, name, code, role }) => {
   });
 };
 
-module.exports = { sendVerificationEmail, sendPasswordResetEmail };
+module.exports = { getEmailProvider, sendVerificationEmail, sendPasswordResetEmail };
