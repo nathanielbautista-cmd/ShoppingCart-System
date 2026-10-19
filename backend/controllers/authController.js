@@ -107,10 +107,9 @@ const forgotPassword = async (req, res, next) => {
     const user = await User.findOne({ email, role }).select(
       '+passwordResetToken +passwordResetExpires +passwordResetAttempts +passwordResetLastSentAt'
     );
-    const genericMessage = 'If that account exists, a password reset code has been sent to its email.';
     if (!user) {
       console.warn(`[Auth] Password reset account mismatch: role=${role}, email=${maskEmail(email)}`);
-      return res.status(200).json({ success: true, message: genericMessage });
+      return res.status(404).json({ success: false, message: 'User not found' });
     }
 
     if (user.passwordResetLastSentAt &&
@@ -120,7 +119,7 @@ const forgotPassword = async (req, res, next) => {
 
     await issuePasswordResetCode(user);
     console.info(`[Auth] Password reset email sent: role=${role}, email=${maskEmail(email)}`);
-    return res.status(200).json({ success: true, message: genericMessage });
+    return res.status(200).json({ success: true, message: 'A password reset code has been sent to your email.' });
   } catch (error) {
     next(error);
   }
@@ -146,7 +145,10 @@ const resetPassword = async (req, res, next) => {
     const user = await User.findOne({ email, role }).select(
       '+passwordResetToken +passwordResetExpires +passwordResetAttempts'
     );
-    if (!user || !user.passwordResetToken || !user.passwordResetExpires ||
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    if (!user.passwordResetToken || !user.passwordResetExpires ||
         user.passwordResetExpires <= new Date()) {
       return res.status(400).json({ success: false, message: 'Reset code is invalid or expired' });
     }

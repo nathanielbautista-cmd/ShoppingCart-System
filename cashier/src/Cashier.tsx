@@ -57,11 +57,11 @@ function Login({onLogin}:{onLogin:(user:{name:string;email:string})=>void}) {
     </>}
     {mode==='reset'&&<>
       <label>6-digit reset code<input autoFocus className="reset-code" type="text" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} value={code} onChange={e=>{setCode(e.target.value.replace(/\D/g,''));setError('');}} autoComplete="one-time-code" required/></label>
+      <button type="button" className="login-link resend-code" disabled={busy} onClick={()=>void requestReset()}>Resend code</button>
       <label>New password<input type="password" value={newPassword} onChange={e=>{setNewPassword(e.target.value);setError('');}} autoComplete="new-password" required/></label>
       <label>Confirm new password<input type="password" value={confirmPassword} onChange={e=>{setConfirmPassword(e.target.value);setError('');}} autoComplete="new-password" required/></label>
       <small className="password-hint">At least 8 characters with uppercase, lowercase, number, and special character.</small>
       <button disabled={busy||code.length!==6}>{busy?'Resetting password...':'Reset password'}</button>
-      <button type="button" className="login-link" disabled={busy} onClick={()=>void requestReset()}>Resend reset code</button>
       <button type="button" className="login-link muted" onClick={openLogin}>Back to login</button>
     </>}
     {mode==='done'&&<button type="button" onClick={openLogin}>Return to login</button>}
