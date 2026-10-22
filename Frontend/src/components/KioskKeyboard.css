@@ -1,0 +1,118 @@
+:root {
+  --kiosk-keyboard-height: 198px;
+}
+
+.kiosk-keyboard-open .app-shell {
+  padding-bottom: var(--kiosk-keyboard-height);
+}
+
+.kiosk-keyboard {
+  position: fixed;
+  z-index: 1000;
+  inset: auto 0 0;
+  display: grid;
+  grid-template-rows: repeat(4, 1fr);
+  gap: 6px;
+  width: 100%;
+  height: var(--kiosk-keyboard-height);
+  padding: 5px 4px;
+  background: #f5f5f5;
+  border-top: 1px solid #d5d5d5;
+  box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.16);
+  user-select: none;
+}
+
+.kiosk-keyboard__row {
+  display: grid;
+  gap: 8px;
+  min-height: 0;
+}
+
+.kiosk-keyboard__row--top {
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+}
+
+.kiosk-keyboard__row--middle {
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  padding-inline: 40px;
+}
+
+.kiosk-keyboard__row--middle.kiosk-keyboard__row--nine {
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+}
+
+.kiosk-keyboard__row--shift {
+  grid-template-columns: 1.55fr repeat(7, 1fr) 1.55fr;
+}
+
+.kiosk-keyboard__row--shift.kiosk-keyboard__row--eight {
+  grid-template-columns: 1.4fr repeat(8, 1fr) 1.4fr;
+}
+
+.kiosk-keyboard__row--bottom {
+  grid-template-columns: 1.65fr 0.9fr 4.4fr 0.9fr 1.65fr;
+}
+
+.kiosk-keyboard button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  color: #333333;
+  font: 400 16px/1 "Plus Jakarta Sans", sans-serif;
+  background: #e4e4e4;
+  border: 0;
+  border-radius: 5px;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.28);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.kiosk-keyboard button:active,
+.kiosk-keyboard button.is-active {
+  background: #c8c8c8;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.22);
+}
+
+.kiosk-keyboard button svg {
+  width: 21px;
+  height: 21px;
+  stroke-width: 2.8;
+}
+
+.kiosk-keyboard__modifier,
+.kiosk-keyboard__mode,
+.kiosk-keyboard__globe {
+  color: #151515 !important;
+  background: #d1d1d1 !important;
+}
+
+.kiosk-keyboard__space {
+  background: #e0e0e0 !important;
+}
+
+.kiosk-keyboard__return {
+  color: #f5f7f8 !important;
+  background: #8c9ba7 !important;
+}
+
+.kiosk-keyboard__return svg {
+  width: 25px !important;
+  height: 25px !important;
+}
+
+@media (max-width: 560px) {
+  .kiosk-keyboard__row {
+    gap: 4px;
+  }
+
+  .kiosk-keyboard__row--middle {
+    padding-inline: 22px;
+  }
+
+  .kiosk-keyboard button {
+    font-size: 14px;
+  }
+}
