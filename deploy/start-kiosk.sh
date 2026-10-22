@@ -11,6 +11,7 @@ done
 exec /usr/bin/chromium "$KIOSK_URL" \
   --kiosk \
   --start-maximized \
+  --ozone-platform=wayland \
   --noerrdialogs \
   --disable-infobars \
   --no-first-run \
