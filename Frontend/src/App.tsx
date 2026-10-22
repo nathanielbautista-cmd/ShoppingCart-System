@@ -17,6 +17,7 @@ import { BudgetLimitAlert } from './components/BudgetLimitAlert';
 import { ProductVerificationFeedback } from './components/ProductVerificationFeedback';
 import { RemovalFeedback } from './components/RemovalFeedback';
 import { ScannedProductModal } from './components/ScannedProductModal';
+import { VirtualKeyboard } from './components/VirtualKeyboard';
 
 
 import { Welcome } from './pages/customer/Welcome';
@@ -125,6 +126,7 @@ const AppContent: React.FC = () => {
       <ProductVerificationFeedback />
       <RemovalFeedback />
       <ScannedProductModal />
+      <VirtualKeyboard />
       {!powered ? <div className="flex-1 grid place-items-center bg-black text-slate-500">iCart is powered off</div> : <>
 
       <main className={`flex-1 overflow-hidden ${settings.theme === 'DARK' ? 'bg-slate-950' : 'bg-slate-50'}`}>

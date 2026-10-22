@@ -1,0 +1,141 @@
+:root {
+  --virtual-keyboard-height: 194px;
+}
+
+.virtual-keyboard-open .app-shell {
+  padding-bottom: var(--virtual-keyboard-height);
+}
+
+.virtual-keyboard {
+  position: fixed;
+  z-index: 1000;
+  inset: auto 0 0;
+  height: var(--virtual-keyboard-height);
+  padding: 5px 8px 7px;
+  color: #e2e8f0;
+  background: rgba(8, 15, 28, 0.98);
+  border-top: 1px solid #334155;
+  box-shadow: 0 -8px 24px rgba(2, 6, 23, 0.35);
+  user-select: none;
+}
+
+.virtual-keyboard button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  min-height: 28px;
+  padding: 2px 8px;
+  color: #f8fafc;
+  font: 700 12px/1 "Plus Jakarta Sans", sans-serif;
+  background: #243247;
+  border: 1px solid #41516a;
+  border-radius: 7px;
+  box-shadow: 0 2px 0 #0f172a;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.virtual-keyboard button:active,
+.virtual-keyboard button.is-active {
+  color: #052e2b;
+  background: #5eead4;
+  border-color: #99f6e4;
+  box-shadow: none;
+  transform: translateY(1px);
+}
+
+.virtual-keyboard button svg {
+  width: 15px;
+  height: 15px;
+}
+
+.virtual-keyboard__toolbar,
+.virtual-keyboard__row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.virtual-keyboard__toolbar {
+  justify-content: space-between;
+  height: 28px;
+  margin-bottom: 4px;
+}
+
+.virtual-keyboard__toolbar span {
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.virtual-keyboard__toolbar .virtual-keyboard__done {
+  gap: 4px;
+  color: #052e2b;
+  background: #5eead4;
+  border-color: #99f6e4;
+}
+
+.virtual-keyboard__letter-grid {
+  display: grid;
+  gap: 4px;
+}
+
+.virtual-keyboard__row button {
+  flex: 0 1 58px;
+}
+
+.virtual-keyboard__row--numbers button {
+  min-height: 24px;
+  color: #cbd5e1;
+  background: #192438;
+}
+
+.virtual-keyboard__row .virtual-keyboard__shift,
+.virtual-keyboard__row .virtual-keyboard__backspace {
+  flex-basis: 76px;
+}
+
+.virtual-keyboard__row--bottom .virtual-keyboard__space {
+  flex-basis: 300px;
+}
+
+.virtual-keyboard__number-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(42px, 1fr));
+  gap: 7px;
+  max-width: 620px;
+  margin: 8px auto 0;
+}
+
+.virtual-keyboard__number-grid button {
+  min-height: 48px;
+  font-size: 16px;
+}
+
+.virtual-keyboard__number-grid .virtual-keyboard__wide {
+  gap: 4px;
+}
+
+@media (max-width: 560px) {
+  .virtual-keyboard {
+    padding-inline: 4px;
+  }
+
+  .virtual-keyboard__row {
+    gap: 3px;
+  }
+
+  .virtual-keyboard button {
+    min-width: 26px;
+    padding-inline: 5px;
+  }
+
+  .virtual-keyboard__row .virtual-keyboard__shift,
+  .virtual-keyboard__row .virtual-keyboard__backspace {
+    flex-basis: 44px;
+  }
+}

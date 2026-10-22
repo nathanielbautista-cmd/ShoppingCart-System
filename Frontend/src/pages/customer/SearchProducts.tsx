@@ -23,7 +23,6 @@ export const SearchProducts: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [onlyInStock, setOnlyInStock] = useState(false);
-  const [showTouchKeypad, setShowTouchKeypad] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -64,16 +63,6 @@ export const SearchProducts: React.FC = () => {
     inputRef.current?.focus();
   };
 
-  const handleKeyTouch = (char: string) => {
-    soundService.playKeyClick();
-    setSearchTerm((prev) => prev + char);
-  };
-
-  const handleBackspaceTouch = () => {
-    soundService.playKeyClick();
-    setSearchTerm((prev) => prev.slice(0, -1));
-  };
-
   return (
     <div className="search-products__item-1">
 
@@ -97,19 +86,6 @@ export const SearchProducts: React.FC = () => {
             </div>
           </div>
 
-          <button
-            onClick={() => {
-              soundService.playKeyClick();
-              setShowTouchKeypad(!showTouchKeypad);
-            }}
-            className={`px-2.5 py-1 rounded-xl border text-[11px] font-bold transition-all cursor-pointer ${
-              showTouchKeypad
-                ? 'bg-emerald-500 text-slate-950 border-emerald-400'
-                : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
-            }`}
-          >
-            {showTouchKeypad ? 'Hide Keypad' : 'Touch Keypad'}
-          </button>
         </div>
 
 
@@ -171,7 +147,7 @@ export const SearchProducts: React.FC = () => {
       </div>
 
 
-      {showTouchKeypad && (
+      {/* Legacy inline keypad replaced by the automatic global keyboard.
         <div className="search-products__item-15">
           <div className="search-products__item-16">
             {['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'].map((k) => (
@@ -219,7 +195,7 @@ export const SearchProducts: React.FC = () => {
             </button>
           </div>
         </div>
-      )}
+      */}
 
 
       <div className="search-products__item-24">
