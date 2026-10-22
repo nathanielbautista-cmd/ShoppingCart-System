@@ -1,0 +1,17 @@
+[Unit]
+Description=Back up the iCart SQLite database
+After=icart-backend.service
+
+[Service]
+Type=oneshot
+User=icart
+Group=icart
+WorkingDirectory=/home/icart/icart/backend
+Environment=NODE_ENV=production
+Environment=SQLITE_DB_PATH=/home/icart/icart/backend/data/icart.db
+Environment=SQLITE_BACKUP_DIR=/home/icart/icart/backend/backups
+ExecStart=/usr/bin/node scripts/backupDatabase.js
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/home/icart/icart/backend/data /home/icart/icart/backend/backups

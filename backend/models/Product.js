@@ -1,73 +1,27 @@
-const mongoose = require('mongoose');
+const { createSqliteModel } = require('./sqliteModel');
 
-const productSchema = new mongoose.Schema(
-  {
-    barcode: {
-      type: String,
-      required: [true, 'Please provide a product barcode'],
-      unique: true,
-      trim: true,
-      index: true
-    },
-    name: {
-      type: String,
-      required: [true, 'Please provide product name'],
-      trim: true
-    },
-    description: {
-      type: String,
-      default: '',
-      trim: true
-    },
-    category: {
-      type: String,
-      required: [true, 'Please provide a category'],
-      trim: true,
-      index: true
-    },
-    price: {
-      type: Number,
-      required: [true, 'Please provide product price in PHP (₱)'],
-      min: [0, 'Price must be greater than or equal to 0']
-    },
-    stock: {
-      type: Number,
-      required: [true, 'Please provide product stock'],
-      min: [0, 'Stock cannot be negative'],
-      default: 0
-    },
-    minimumStock: {
-      type: Number,
-      min: [0, 'Minimum stock cannot be negative'],
-      default: 5
-    },
-    unit: {
-      type: String,
-      default: 'piece',
-      trim: true
-    },
+const required = (value, message) => {
+  if (value === undefined || value === null || String(value).trim() === '') throw new Error(message);
+};
 
-    weight: {
-      type: Number,
-      required: [true, 'Please provide expected weight in grams'],
-      min: [0, 'Weight must be greater than or equal to 0']
-    },
-    image: {
-      type: String,
-      default: ''
-    },
-    expirationDate: {
-      type: Date,
-      default: null
-    },
-    isActive: {
-      type: Boolean,
-      default: true
-    }
+module.exports = createSqliteModel({
+  collection: 'products',
+  uniqueFields: ['barcode'],
+  defaults: {
+    description: '',
+    stock: 0,
+    minimumStock: 5,
+    unit: 'piece',
+    image: '',
+    expirationDate: null,
+    isActive: true
   },
-  {
-    timestamps: true
+  validate(product) {
+    required(product.barcode, 'Please provide a product barcode');
+    required(product.name, 'Please provide product name');
+    required(product.category, 'Please provide a category');
+    if (!Number.isFinite(Number(product.price)) || Number(product.price) < 0) throw new Error('Price must be greater than or equal to 0');
+    if (!Number.isFinite(Number(product.stock)) || Number(product.stock) < 0) throw new Error('Stock cannot be negative');
+    if (!Number.isFinite(Number(product.weight)) || Number(product.weight) < 0) throw new Error('Weight must be greater than or equal to 0');
   }
-);
-
-module.exports = mongoose.model('Product', productSchema);
+});

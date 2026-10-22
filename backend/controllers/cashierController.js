@@ -1,4 +1,3 @@
-const mongoose = require('mongoose');
 const Cart = require('../models/Cart');
 const { CART_STATUS } = require('../config/constants');
 const { generateTransactionId } = require('../utils/transactionId');
@@ -19,7 +18,7 @@ const createVoidCartItem = (CartModel = Cart) => async (req, res, next) => {
     const explanation = String(req.body.explanation || '').trim();
     const quantity = Number(req.body.quantity);
 
-    if (!mongoose.isValidObjectId(itemId)) {
+    if (!/^[a-f\d]{24}$/i.test(itemId)) {
       return res.status(400).json({ success: false, message: 'A valid cart line item is required' });
     }
     if (!requestId || requestId.length > 100) {

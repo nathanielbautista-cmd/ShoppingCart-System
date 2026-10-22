@@ -41,6 +41,41 @@
   background: #020617;
 }
 
+/* Keep every kiosk surface touch-scrollable without showing browser scrollbars. */
+.kiosk-customer-layout,
+.kiosk-customer-layout *,
+.modal__item-6,
+.scanned-product-modal {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.kiosk-customer-layout::-webkit-scrollbar,
+.kiosk-customer-layout *::-webkit-scrollbar,
+.modal__item-6::-webkit-scrollbar,
+.scanned-product-modal::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.customer-sidebar__nav,
+.customer-topbar__settings-menu,
+.kiosk-home__catalog,
+.shop-home,
+.shopping-home__item-1,
+.budget__item-1,
+.cart__item-8,
+.checkout-review__item-5,
+.help__item-10,
+.search-products__item-24,
+.modal__item-6,
+.scanned-product-modal {
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+}
+
 
 
 .kiosk-customer-page > * {

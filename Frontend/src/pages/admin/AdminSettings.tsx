@@ -1,7 +1,7 @@
 import './AdminSettings.css';
 import React, { useState } from 'react';
 import { useCart } from '../../context/CartContext';
-import { Check, Volume2, Scale, Store, Moon, Sun } from 'lucide-react';
+import { Camera, Check, Volume2, Scale, Store, Moon, Sun } from 'lucide-react';
 import { Button } from '../../components/Button';
 
 export const AdminSettings: React.FC = () => {
@@ -181,6 +181,27 @@ export const AdminSettings: React.FC = () => {
             <button type="button" onClick={() => selectTheme('LIGHT')} aria-pressed={theme === 'LIGHT'} className={`admin-settings__theme-button ${theme === 'LIGHT' ? 'is-active' : ''}`}><Sun className="admin-settings__item-44" />White</button>
             <button type="button" onClick={() => selectTheme('DARK')} aria-pressed={theme === 'DARK'} className={`admin-settings__theme-button ${theme === 'DARK' ? 'is-active' : ''}`}><Moon className="admin-settings__item-45" />Dark</button>
           </div>
+        </div>
+
+        <div className="admin-settings__camera-test">
+          <div className="admin-settings__camera-test-copy">
+            <span className="admin-settings__camera-test-icon"><Camera /></span>
+            <div>
+              <strong>Cart Camera Diagnostic</strong>
+              <p>Check the live camera angle, permission, and snapshot quality before enabling item detection.</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="admin-settings__camera-test-button"
+            onClick={() => {
+              const url = new URL(window.location.href);
+              url.searchParams.set('camera-test', '1');
+              window.location.assign(`${url.pathname}${url.search}${url.hash}`);
+            }}
+          >
+            <Camera /> Test Camera
+          </button>
         </div>
 
         <div className="admin-settings__item-46">

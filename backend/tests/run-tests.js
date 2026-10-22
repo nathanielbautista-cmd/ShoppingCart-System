@@ -2,6 +2,7 @@ require('dotenv').config();
 
 
 const server = require('../server');
+const { closeDB } = require('../config/db');
 
 const BASE = `http://localhost:${process.env.PORT || 5000}/api`;
 
@@ -38,11 +39,15 @@ async function run() {
 
 
   let productsResp;
+  let testBarcode;
   try {
     productsResp = await fetchJson('/products');
     if (productsResp.status !== 200) throw new Error('Products endpoint did not return 200');
     const count = productsResp.body && (productsResp.body.count || (productsResp.body.products && productsResp.body.products.length));
     if (!count || count < 1) throw new Error('No sample products returned');
+    const testProduct = productsResp.body.products.find((product) => product.isActive !== false && product.stock >= 2);
+    if (!testProduct) throw new Error('No active product with enough stock is available for the cart tests');
+    testBarcode = testProduct.barcode;
     console.log('[PASS] Test 2 — Products list');
   } catch (e) {
     console.error('[FAIL] Test 2 — Products list:', e.message);
@@ -51,11 +56,11 @@ async function run() {
 
 
   try {
-    const r = await fetchJson('/products/barcode/4800012345678');
+    const r = await fetchJson(`/products/barcode/${encodeURIComponent(testBarcode)}`);
     if (r.status !== 200) throw new Error('Barcode lookup did not return 200');
     const product = r.body && (r.body.product || r.body);
     const barcode = product && (product.barcode || product.product && product.product.barcode);
-    if (!barcode || !barcode.includes('4800012345678')) throw new Error('Matching product not returned');
+    if (!barcode || barcode !== testBarcode) throw new Error('Matching product not returned');
     console.log('[PASS] Test 3 — Barcode search');
   } catch (e) {
     console.error('[FAIL] Test 3 — Barcode search:', e.message);
@@ -77,10 +82,10 @@ async function run() {
 
   let addedItemId = null;
   try {
-    const r = await fetchJson(`/cart/${CART_ID}/items`, { method: 'POST', body: JSON.stringify({ barcode: '4800012345678', quantity: 1 }) });
+    const r = await fetchJson(`/cart/${CART_ID}/items`, { method: 'POST', body: JSON.stringify({ barcode: testBarcode, quantity: 1 }) });
     if (r.status !== 200) throw new Error('Add item did not return 200');
     const cart = r.body && (r.body.cart || r.body);
-    const item = cart && cart.items && cart.items.find(i => i.barcode === '4800012345678');
+    const item = cart && cart.items && cart.items.find(i => i.barcode === testBarcode);
     if (!item) throw new Error('Product was not added to cart');
     addedItemId = item._id || item.id || item.productId || item.barcode;
     console.log('[PASS] Test 5 — Add product to cart');
@@ -95,7 +100,7 @@ async function run() {
     const r = await fetchJson(`/cart/${CART_ID}/items/${addedItemId}`, { method: 'PUT', body: JSON.stringify({ quantity: 2 }) });
     if (r.status !== 200) throw new Error('Update quantity did not return 200');
     const cart = r.body && (r.body.cart || r.body);
-    const item = cart && cart.items && cart.items.find(i => i.barcode === '4800012345678');
+    const item = cart && cart.items && cart.items.find(i => i.barcode === testBarcode);
     if (!item || item.quantity !== 2) throw new Error('Quantity not updated');
     console.log('[PASS] Test 6 — Update quantity');
   } catch (e) {
@@ -109,7 +114,7 @@ async function run() {
     const r = await fetchJson(`/cart/${CART_ID}/items/${addedItemId}`, { method: 'DELETE' });
     if (r.status !== 200) throw new Error('Delete item did not return 200');
     const cart = r.body && (r.body.cart || r.body);
-    const item = cart && cart.items && cart.items.find(i => i.barcode === '4800012345678');
+    const item = cart && cart.items && cart.items.find(i => i.barcode === testBarcode);
     if (item) throw new Error('Product still present after removal');
     console.log('[PASS] Test 7 — Remove product');
   } catch (e) {
@@ -130,12 +135,12 @@ async function run() {
 
 
   try {
-    await fetchJson(`/cart/${CART_ID}/items`, { method: 'POST', body: JSON.stringify({ barcode: '4800012345678', quantity: 1 }) });
+    await fetchJson(`/cart/${CART_ID}/items`, { method: 'POST', body: JSON.stringify({ barcode: testBarcode, quantity: 1 }) });
   } catch (e) {}
 
 
   try {
-    const r = await fetchJson(`/checkout/${CART_ID}`, { method: 'POST', body: JSON.stringify({ paymentMethod: 'CASH' }) });
+    const r = await fetchJson(`/checkout/${CART_ID}`, { method: 'POST', body: JSON.stringify({ paymentMethod: 'CASH', amountReceived: 1000000 }) });
     if (r.status !== 200) {
       console.error('Checkout response body:', r.body);
       throw new Error('Checkout did not return 200');
@@ -173,11 +178,12 @@ async function run() {
   console.log('---');
   if (failures === 0) {
     console.log('ALL TESTS PASSED');
-    process.exit(0);
   } else {
     console.error(`${failures} test(s) failed`);
-    process.exit(2);
+    process.exitCode = 2;
   }
+  await new Promise((resolve) => server.httpServer.close(resolve));
+  closeDB();
 }
 
 run().catch((err) => {

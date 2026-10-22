@@ -134,7 +134,19 @@
 
 .help__item-10 {
   padding-right: var(--spacing,.25rem);
+  overflow-x: hidden;
   overflow-y: auto;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.help__item-10::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .help__item-11 {

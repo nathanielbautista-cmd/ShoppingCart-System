@@ -31,6 +31,7 @@ import { WaitingForCashier } from './pages/customer/WaitingForCashier';
 import { TransactionComplete } from './pages/customer/TransactionComplete';
 import { Help } from './pages/customer/Help';
 import { SearchProducts } from './pages/customer/SearchProducts';
+import { CameraTest } from './pages/CameraTest';
 
 
 import { AdminAuth } from './pages/admin/AdminAuth';
@@ -159,6 +160,10 @@ const AppContent: React.FC = () => {
 };
 
 export default function App() {
+  if (new URLSearchParams(window.location.search).has('camera-test')) {
+    return <CameraTest />;
+  }
+
   return (
     <CartProvider>
       <AppContent />

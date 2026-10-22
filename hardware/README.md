@@ -73,26 +73,16 @@ Run the live load-cell publisher in a second terminal after calibration:
 python3 load_cell_service.py --api-url http://127.0.0.1:5000
 ```
 
-`127.0.0.1` works only when the Node backend is running on the same Raspberry
-Pi. If the backend/browser is running on another computer, use that computer's
-LAN address instead (not its `localhost`). For example, if the backend PC is
-`192.168.1.50`:
-
-```bash
-python3 load_cell_service.py --api-url http://192.168.1.50:5000 --once
-curl http://192.168.1.50:5000/api/hardware/weight-status
-```
-
-The first command takes one real HX711 reading and publishes it. The second
-must return `"connected":true`. The customer top bar will also show **Scale
-ready**. Ensure the backend PC allows TCP port 5000 through its firewall and
-that the Pi and PC are on the same network.
+The standalone deployment runs the Node backend on the same Raspberry Pi, so
+keep `127.0.0.1`. The kiosk continues working even when the laptop and Wi-Fi
+are off. The health endpoint remains local, and the customer top bar will show
+**Scale ready** after a load-cell reading is published.
 
 Instead of passing the address every time, set `ICART_API_URL` and an optional
 cart name:
 
 ```bash
-export ICART_API_URL=http://192.168.1.50:5000
+export ICART_API_URL=http://127.0.0.1:5000
 export ICART_DEVICE_ID=cart-pi-01
 python3 load_cell_service.py
 ```

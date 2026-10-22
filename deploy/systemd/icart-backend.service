@@ -1,0 +1,24 @@
+[Unit]
+Description=iCart local Node.js backend
+After=local-fs.target
+Before=nginx.service
+
+[Service]
+Type=simple
+User=icart
+Group=icart
+WorkingDirectory=/home/icart/icart/backend
+Environment=NODE_ENV=production
+Environment=PORT=5000
+Environment=SQLITE_DB_PATH=/home/icart/icart/backend/data/icart.db
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=3
+TimeoutStopSec=20
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/home/icart/icart/backend/data /home/icart/icart/backend/backups
+
+[Install]
+WantedBy=multi-user.target

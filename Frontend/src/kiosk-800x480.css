@@ -225,8 +225,9 @@
   }
 
   .help__item-10,
-  .search-products__item-13 {
+  .search-products__item-24 {
     overscroll-behavior: contain;
+    touch-action: pan-y;
     -webkit-overflow-scrolling: touch;
   }
 
@@ -492,6 +493,103 @@
 
   .admin-auth-shell {
     padding: 8px;
+  }
+
+  .admin-auth-card {
+    max-height: 100%;
+    padding: 12px 16px;
+    border-radius: 18px;
+  }
+
+  .admin-auth-header {
+    margin-bottom: 8px;
+  }
+
+  .admin-auth-icon {
+    width: 36px;
+    height: 36px;
+    margin-bottom: 6px;
+    border-radius: 11px;
+  }
+
+  .admin-auth-icon svg {
+    width: 19px;
+    height: 19px;
+  }
+
+  .admin-auth-header h1 {
+    font-size: 1.2rem;
+    line-height: 1.2;
+  }
+
+  .admin-auth-header p {
+    margin-top: 3px;
+    font-size: 0.7rem;
+  }
+
+  .admin-auth-form {
+    gap: 7px;
+  }
+
+  .admin-auth-grid {
+    gap: 10px;
+  }
+
+  .admin-auth-form label {
+    gap: 3px;
+  }
+
+  .admin-auth-form label > span {
+    font-size: 0.62rem;
+  }
+
+  .admin-auth-form input {
+    min-height: 38px;
+    padding-block: 7px;
+    border-radius: 10px;
+    font-size: 0.8rem;
+  }
+
+  .admin-auth-password-toggle {
+    width: 30px;
+    height: 30px;
+  }
+
+  .admin-password-rules {
+    gap: 3px 10px;
+    margin: 0;
+    font-size: 0.62rem;
+  }
+
+  .admin-auth-primary {
+    min-height: 38px;
+    padding-block: 5px;
+    font-size: 0.78rem;
+  }
+
+  .admin-auth-link {
+    font-size: 0.7rem;
+  }
+
+  .admin-auth-forgot-link {
+    margin-top: -3px;
+  }
+
+  .admin-auth-message {
+    margin-bottom: 7px;
+    padding: 7px 10px;
+    font-size: 0.7rem;
+  }
+
+  .admin-auth-footer {
+    margin-top: 8px;
+    padding-top: 7px;
+  }
+
+  .admin-auth-footer button {
+    min-height: 36px;
+    padding-block: 4px;
+    font-size: 0.72rem;
   }
 
   .admin-profile-modal__backdrop,

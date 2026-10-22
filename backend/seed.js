@@ -1,5 +1,6 @@
-const mongoose = require('mongoose');
 const dotenv = require('dotenv');
+const connectDB = require('./config/db');
+const { closeDB } = require('./config/db');
 const User = require('./models/User');
 const Product = require('./models/Product');
 const Cart = require('./models/Cart');
@@ -156,9 +157,8 @@ const sampleProducts = [
 
 const seedDatabase = async () => {
   try {
-    const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/icart';
-    await mongoose.connect(mongoUri);
-    console.log('Connected to MongoDB for database seeding...');
+    await connectDB();
+    console.log('Connected to SQLite for database seeding...');
 
 
     console.log('Clearing existing products and carts...');
@@ -245,11 +245,10 @@ const seedDatabase = async () => {
 
     console.log(`Sample cart created: ${sampleCart.cartId} (total: ₱${sampleCart.total}, budget: ₱${sampleCart.budget})`);
     console.log('Database seeding completed successfully!');
-    process.exit(0);
   } catch (error) {
     console.error('Seeding error:', error.message);
-    process.exit(1);
+    process.exitCode = 1;
   }
 };
 
-seedDatabase();
+seedDatabase().finally(closeDB);

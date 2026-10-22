@@ -62,7 +62,8 @@ class CartControlsTests(unittest.TestCase):
         self.controls.press('power')
 
         self.assertEqual(self.emitted_actions(), ['power_off', 'power_on'])
-        self.assertEqual(self.fake_gpio.outputs[-2:], [(25, 0), (25, 1)])
+        power_led_outputs = [output for output in self.fake_gpio.outputs if output[0] == 25]
+        self.assertEqual(power_led_outputs[-2:], [(25, 0), (25, 1)])
 
     def test_add_and_delete_work_on_start_and_stop_when_powered_off(self):
         self.controls.press('add_product')

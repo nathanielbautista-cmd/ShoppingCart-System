@@ -71,6 +71,36 @@
   margin-block: calc(var(--spacing,.25rem) * 2.5);
 }
 
+.admin-settings__camera-test {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px;
+  border: 1px solid #bbf7d0;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+}
+
+.admin-settings__camera-test-copy { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.admin-settings__camera-test-icon { width: 40px; height: 40px; flex: 0 0 40px; display: grid; place-items: center; border-radius: 11px; background: #dcfce7; color: #15803d; }
+.admin-settings__camera-test-icon svg { width: 20px; height: 20px; }
+.admin-settings__camera-test-copy strong { display: block; color: #14532d; font-size: .78rem; }
+.admin-settings__camera-test-copy p { margin: 3px 0 0; color: #4d7660; font-size: .67rem; line-height: 1.45; }
+.admin-settings__camera-test-button { min-height: 40px; flex: 0 0 auto; display: inline-flex; align-items: center; gap: 7px; padding: 0 14px; border: 1px solid #16a34a; border-radius: 10px; background: #16a34a; color: #fff; cursor: pointer; font: inherit; font-size: .7rem; font-weight: 800; box-shadow: 0 7px 16px rgba(22, 163, 74, .16); }
+.admin-settings__camera-test-button svg { width: 16px; height: 16px; }
+.admin-settings__camera-test-button:hover { background: #15803d; }
+
+html[data-theme="dark"] .admin-settings__camera-test { border-color: #166534; background: linear-gradient(135deg, #10291d, #0d2824); }
+html[data-theme="dark"] .admin-settings__camera-test-icon { background: #123524; color: #86efac; }
+html[data-theme="dark"] .admin-settings__camera-test-copy strong { color: #dcfce7; }
+html[data-theme="dark"] .admin-settings__camera-test-copy p { color: #91b59f; }
+
+@media (max-width: 640px) {
+  .admin-settings__camera-test { align-items: stretch; flex-direction: column; }
+  .admin-settings__camera-test-button { align-self: flex-start; }
+}
+
 :where(.admin-settings__item-6>:not(:last-child)) {
   --tw-space-y-reverse: 0;
   margin-block-start: calc(calc(var(--spacing,.25rem) * 3) * var(--tw-space-y-reverse));

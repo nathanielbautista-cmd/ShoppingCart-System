@@ -1,5 +1,6 @@
 require('dotenv').config();
-const mongoose = require('mongoose');
+const connectDB = require('../config/db');
+const { closeDB } = require('../config/db');
 const Product = require('../models/Product');
 const Transaction = require('../models/Transaction');
 const { getProductPerformance } = require('../controllers/reportController');
@@ -14,7 +15,7 @@ const dateKey = (date) => {
 };
 
 const run = async () => {
-  await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/icart');
+  await connectDB();
   const to = dateKey(new Date());
   const from = dateKey(new Date(Date.now() - 89 * DAY_IN_MS));
   let payload;
@@ -58,4 +59,4 @@ run()
     console.error(error.message);
     process.exitCode = 1;
   })
-  .finally(async () => mongoose.disconnect());
+  .finally(closeDB);

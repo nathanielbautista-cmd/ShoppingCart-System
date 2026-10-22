@@ -1,21 +1,21 @@
-# iCart — Phase 2: Backend + MongoDB API
+# iCart — Standalone Backend + SQLite API
 
 **Project Title:** iCart: A Smart Shopping Cart with Barcode Scanning, Voice Assistance, and Budget Monitoring  
-**Phase:** 2 — Backend REST API & MongoDB Database Architecture
+**Phase:** Standalone Raspberry Pi deployment
 
 ---
 
 ## 1. Overview
 
-The **iCart Backend** is a modular, high-performance Node.js / Express REST API connected to a MongoDB database. It is engineered specifically to support smart shopping cart kiosks running on hardware such as the **Raspberry Pi 3 Model B (1GB RAM)** with a **7-inch touchscreen**, **Logicowl OJ-MP6300 USB 2D barcode scanner**, and **HX711 4-load cell weight verification**.
+The **iCart Backend** is a Node.js / Express REST API with an embedded SQLite database. The frontend, API, hardware services, and database can all run on the **Raspberry Pi 3 Model B (1GB RAM)** without a laptop or MongoDB server.
 
 ---
 
 ## 2. Technology Stack
 
-* **Runtime:** Node.js (v18+)
+* **Runtime:** Node.js (v20+)
 * **Server Framework:** Express.js (v4.21+)
-* **Database:** MongoDB & Mongoose ODM (v8.9+)
+* **Database:** SQLite via `better-sqlite3` (WAL mode)
 * **Security & Auth:** JSON Web Tokens (`jsonwebtoken`) & `bcryptjs`
 * **Configuration:** `dotenv`
 * **CORS:** `cors`
@@ -28,7 +28,7 @@ The **iCart Backend** is a modular, high-performance Node.js / Express REST API 
 backend/
 │
 ├── config/
-│   ├── db.js             # Mongoose connection to MongoDB 'icart' database
+│   ├── db.js             # Embedded SQLite connection and schema
 │   └── constants.js      # Tolerances (±5g), status enums, budget logic
 │
 ├── controllers/
@@ -82,11 +82,11 @@ cp .env.example .env
 Default `.env` configuration:
 ```env
 PORT=5000
-MONGODB_URI=mongodb://localhost:27017/icart
+SQLITE_DB_PATH=./data/icart.db
 JWT_SECRET=icart_secret_jwt_key_2026_capstone
 WEIGHT_TOLERANCE_GRAMS=5
 ```
-*(Note: If using MongoDB Atlas, replace `MONGODB_URI` with your Atlas connection string).*
+The database is a local file; no separate database service is required.
 
 ### Step 3: Seed Database
 Populate the database with default accounts and 12 sample supermarket items:
@@ -110,7 +110,7 @@ npm run dev
 
 Server output on startup:
 ```text
-MongoDB connected successfully: 127.0.0.1/icart
+SQLite connected successfully: /path/to/backend/data/icart.db
 iCart backend running on port 5000
 ```
 
@@ -333,7 +333,7 @@ Transitions cart status to `WAITING_FOR_CASHIER` for cash payments or cashier re
 #### `POST /api/checkout/:cartId`
 Completes the transaction:
 1. Re-verifies inventory availability for all cart items.
-2. **Deducts inventory stock permanently** from each product in MongoDB.
+2. **Deducts inventory stock permanently** from each product in SQLite.
 3. Creates a `Transaction` audit record with unique `transactionId` (e.g., `TXN-20260928-4821`).
 4. Updates cart status to `COMPLETED`.
 5. Returns finalized receipt breakdown.

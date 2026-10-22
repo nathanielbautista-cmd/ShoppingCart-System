@@ -54,9 +54,11 @@ export const AdminAuth: React.FC = () => {
         {view === 'VERIFY' && <AdminEmailVerification email={pendingEmail} password={pendingPassword} initialMessage={verificationMessage} onLogin={() => setView('LOGIN')} />}
         {view === 'FORGOT' && <AdminForgotPassword initialEmail={pendingEmail} onLogin={() => setView('LOGIN')} />}
 
-        <footer className="admin-auth-footer">
-          <Button variant="ghost" size="sm" icon={<ArrowLeft />} onClick={returnToCustomer}>Return to Customer Screen</Button>
-        </footer>
+        {view !== 'SIGNUP' && (
+          <footer className="admin-auth-footer">
+            <Button variant="ghost" size="sm" icon={<ArrowLeft />} onClick={returnToCustomer}>Return to Customer Screen</Button>
+          </footer>
+        )}
       </section>
     </div>
   );
