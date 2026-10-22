@@ -8,9 +8,11 @@ until /usr/bin/curl --fail --silent --show-error --max-time 2 "$HEALTH_URL" >/de
   sleep 2
 done
 
-exec /usr/bin/chromium "$KIOSK_URL" \
-  --kiosk \
+exec /usr/bin/chromium \
+  --app="$KIOSK_URL" \
   --start-maximized \
+  --ozone-platform=wayland \
+  --enable-wayland-ime \
   --noerrdialogs \
   --disable-infobars \
   --no-first-run \
