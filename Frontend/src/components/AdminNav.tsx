@@ -14,27 +14,33 @@ import {
   UserRound,
   Mail,
   Phone,
-  ShieldCheck,
   X,
   LockKeyhole,
   Eye,
   EyeOff,
   CheckCircle2,
   AlertCircle,
-  Users,
+  Upload,
+  Trash2,
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { AdminScreen } from '../types';
 import { AdminUser } from '../services/authService';
 import { changeAdminPassword } from '../services/adminService';
 
+const MAX_PROFILE_IMAGE_SIZE = 1024 * 1024;
+const PROFILE_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+
 interface AdminProfileModalProps {
   admin: AdminUser;
-  initials: string;
   onClose: () => void;
 }
 
-const AdminProfileModal: React.FC<AdminProfileModalProps> = ({ admin, initials, onClose }) => {
+export const AdminProfileModal: React.FC<AdminProfileModalProps> = ({ admin, onClose }) => {
+  const { updateAdminProfileImage } = useCart();
+  const [profileImage, setProfileImage] = useState(admin.profileImage || '');
+  const [isProfileImageSaving, setIsProfileImageSaving] = useState(false);
+  const [profileImageMessage, setProfileImageMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -61,6 +67,49 @@ const AdminProfileModal: React.FC<AdminProfileModalProps> = ({ admin, initials, 
       window.removeEventListener('keydown', closeOnEscape);
     };
   }, [onClose]);
+
+  const saveProfileImage = async (nextImage: string) => {
+    setIsProfileImageSaving(true);
+    setProfileImageMessage(null);
+    try {
+      await updateAdminProfileImage(nextImage);
+      setProfileImage(nextImage);
+      setProfileImageMessage({
+        type: 'success',
+        text: nextImage ? 'Profile picture updated successfully.' : 'Profile picture removed.',
+      });
+    } catch (error) {
+      setProfileImageMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'Unable to update the profile picture.',
+      });
+    } finally {
+      setIsProfileImageSaving(false);
+    }
+  };
+
+  const handleProfileImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    if (!PROFILE_IMAGE_TYPES.has(file.type)) {
+      setProfileImageMessage({ type: 'error', text: 'Please upload a PNG, JPG, or WebP image.' });
+      return;
+    }
+    if (file.size > MAX_PROFILE_IMAGE_SIZE) {
+      setProfileImageMessage({ type: 'error', text: 'Profile picture must be 1 MB or smaller.' });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') void saveProfileImage(reader.result);
+      else setProfileImageMessage({ type: 'error', text: 'Unable to read the selected image.' });
+    };
+    reader.onerror = () => setProfileImageMessage({ type: 'error', text: 'Unable to read the selected image.' });
+    reader.readAsDataURL(file);
+  };
 
   const handlePasswordChange = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -108,11 +157,41 @@ const AdminProfileModal: React.FC<AdminProfileModalProps> = ({ admin, initials, 
 
         <div className="admin-profile-modal__body">
           <div className="admin-profile-summary">
-            <div className="admin-profile-summary__avatar">{initials}</div>
-            <div>
+            <div className={`admin-profile-summary__avatar ${profileImage ? 'has-profile-image' : ''}`} aria-hidden="true">
+              {profileImage ? <img src={profileImage} alt="" /> : <UserRound />}
+            </div>
+            <div className="admin-profile-summary__identity">
               <h3>{admin.name}</h3>
               <p>{admin.username}</p>
-              <span><ShieldCheck /> Administrator</span>
+              <div className="admin-profile-image-actions">
+                <label className="admin-profile-image-upload">
+                  <Upload aria-hidden="true" />
+                  <span>{isProfileImageSaving ? 'Uploading...' : profileImage ? 'Change Profile' : 'Upload Profile'}</span>
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    onChange={handleProfileImageUpload}
+                    disabled={isProfileImageSaving}
+                  />
+                </label>
+                {profileImage && (
+                  <button
+                    type="button"
+                    className="admin-profile-image-remove"
+                    onClick={() => void saveProfileImage('')}
+                    disabled={isProfileImageSaving}
+                    aria-label="Remove profile picture"
+                    title="Remove profile picture"
+                  >
+                    <Trash2 />
+                  </button>
+                )}
+              </div>
+              {profileImageMessage && (
+                <small className={`admin-profile-image-message admin-profile-image-message--${profileImageMessage.type}`} role="status">
+                  {profileImageMessage.text}
+                </small>
+              )}
             </div>
           </div>
 
@@ -129,16 +208,12 @@ const AdminProfileModal: React.FC<AdminProfileModalProps> = ({ admin, initials, 
               <Phone />
               <div><span>Phone number</span><strong>{admin.phoneNumber || 'Not provided'}</strong></div>
             </div>
-            <div className="admin-profile-detail">
-              <ShieldCheck />
-              <div><span>Account status</span><strong>{admin.isEmailVerified === false ? 'Email not verified' : 'Verified administrator'}</strong></div>
-            </div>
           </div>
 
           <div className="admin-password-panel">
             <div className="admin-password-panel__heading">
               <div className="admin-password-panel__icon"><LockKeyhole /></div>
-              <div><h3>Change password</h3><p>Use a strong password you do not use elsewhere.</p></div>
+              <div><h3>Change password</h3></div>
             </div>
 
             {message && (
@@ -191,15 +266,7 @@ const AdminProfileModal: React.FC<AdminProfileModalProps> = ({ admin, initials, 
 };
 
 export const AdminNav: React.FC = () => {
-  const { adminScreen, setAdminScreen, adminUser, logoutAdmin } = useCart();
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-
-  const initials = adminUser?.name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0].toUpperCase())
-    .join('') || 'AD';
+  const { adminScreen, setAdminScreen, logoutAdmin, settings } = useCart();
 
   const navItems: { screen: AdminScreen; label: string; icon: React.ReactNode }[] = [
     { screen: 'DASHBOARD', label: 'Dashboard', icon: <LayoutDashboard className="admin-nav__item-1" /> },
@@ -208,24 +275,17 @@ export const AdminNav: React.FC = () => {
     { screen: 'TRANSACTIONS', label: 'Transactions', icon: <Receipt className="admin-nav__item-4" /> },
     { screen: 'REPORTS', label: 'Reports', icon: <BarChart3 className="admin-nav__item-5" /> },
     { screen: 'CART_MONITORING', label: 'Carts Live', icon: <Radio className="admin-nav__item-6" /> },
-    { screen: 'CASHIERS', label: 'Cashiers', icon: <Users className="admin-nav__item-7" /> },
     { screen: 'SETTINGS', label: 'Settings', icon: <Settings className="admin-nav__item-7" /> },
   ];
 
   return (
     <aside className="admin-nav">
       <div className="admin-nav__brand">
-        <span className="admin-nav__brand-mark"><ShoppingCart /></span>
-        <strong>iCart</strong>
+        <span className={`admin-nav__brand-mark ${settings.storeLogo ? 'has-store-logo' : ''}`}>
+          {settings.storeLogo ? <img src={settings.storeLogo} alt="" /> : <ShoppingCart />}
+        </span>
+        <strong title={settings.storeName}>{settings.storeName}</strong>
       </div>
-
-      <button type="button" className="admin-nav__profile" onClick={() => setIsProfileOpen(true)} aria-haspopup="dialog" aria-label="Open admin profile">
-        <div className="admin-nav__avatar" aria-hidden="true">{initials}</div>
-        <div className="admin-nav__identity">
-          <h3 className="admin-nav__item-8">{adminUser?.name || 'Admin'}</h3>
-          <span title={adminUser?.username}>{adminUser?.username}</span>
-        </div>
-      </button>
 
       <nav className="admin-nav__item-9">
         {navItems.map((item) => {
@@ -257,9 +317,6 @@ export const AdminNav: React.FC = () => {
           <span>Logout</span>
         </button>
       </div>
-      {isProfileOpen && adminUser && (
-        <AdminProfileModal admin={adminUser} initials={initials} onClose={() => setIsProfileOpen(false)} />
-      )}
     </aside>
   );
 };

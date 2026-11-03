@@ -118,6 +118,7 @@ export const ScannedProductModal: React.FC = () => {
               <img
                 src={product.image}
                 alt={product.name}
+                draggable={false}
                 onError={() => setImageFailed(true)}
               />
             ) : (

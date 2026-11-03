@@ -1,6 +1,6 @@
 import './CheckoutReview.css';
 import React from 'react';
-import { ArrowLeft, Check, ReceiptText } from 'lucide-react';
+import { ArrowLeft, QrCode, ReceiptText, Loader2 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { Button } from '../../components/Button';
 
@@ -11,6 +11,8 @@ export const CheckoutReview: React.FC = () => {
     budget,
     remainingBudget,
     confirmCheckout,
+    checkoutSubmitting,
+    checkoutError,
     setCustomerScreen,
     settings,
   } = useCart();
@@ -25,7 +27,7 @@ export const CheckoutReview: React.FC = () => {
       <div className="checkout-review__item-2">
         <h2 className="checkout-review__item-3">
           <ReceiptText className="checkout-review__item-4" />
-          <span>CHECKOUT REVIEW</span>
+          <span>CHECKOUT</span>
         </h2>
       </div>
 
@@ -80,6 +82,7 @@ export const CheckoutReview: React.FC = () => {
 
 
       <div className="checkout-review__item-17">
+        {checkoutError && <p className="checkout-review__payment-error" role="alert">{checkoutError}</p>}
         <Button
           variant="secondary"
           size="md"
@@ -92,10 +95,11 @@ export const CheckoutReview: React.FC = () => {
         <Button
           variant="glow"
           size="md"
-          icon={<Check className="checkout-review__item-19" />}
+          icon={checkoutSubmitting ? <Loader2 className="checkout-review__item-19 checkout-review__spinner" /> : <QrCode className="checkout-review__item-19" />}
           onClick={confirmCheckout}
+          disabled={checkoutSubmitting}
         >
-          CONFIRM CHECKOUT
+          {checkoutSubmitting ? 'CREATING QR PH…' : 'PAY WITH QR PH'}
         </Button>
       </div>
     </div>

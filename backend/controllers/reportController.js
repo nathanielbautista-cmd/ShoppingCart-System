@@ -1,6 +1,10 @@
 const Transaction = require('../models/Transaction');
 const Product = require('../models/Product');
 const Cart = require('../models/Cart');
+const {
+  subscribeToDashboardUpdates,
+  getLatestDashboardEventId
+} = require('../services/dashboardEventService');
 
 const MANILA_TIME_ZONE = 'Asia/Manila';
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
@@ -295,7 +299,7 @@ const getDashboardOverview = async (req, res, next) => {
 
     const operations = carts.reduce((summary, cart) => {
       if (cart.status === 'ACTIVE' || cart.status === 'CHECKOUT') summary.activeCarts += 1;
-      if (cart.status === 'WAITING_FOR_CASHIER') summary.waitingForCashier += 1;
+      if (cart.status === 'WAITING_FOR_CASHIER' || cart.status === 'PAYMENT_PENDING') summary.waitingForCashier += 1;
       return summary;
     }, { activeCarts: 0, waitingForCashier: 0 });
 
@@ -341,4 +345,45 @@ const getDashboardOverview = async (req, res, next) => {
   }
 };
 
-module.exports = { getProductPerformance, getDashboardOverview };
+const streamDashboardEvents = (req, res) => {
+  res.status(200);
+  res.set({
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache, no-transform',
+    Connection: 'keep-alive',
+    'X-Accel-Buffering': 'no'
+  });
+  res.flushHeaders?.();
+
+  const writeEvent = (name, data, id) => {
+    if (id) res.write(`id: ${id}\n`);
+    res.write(`event: ${name}\n`);
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+  };
+
+  res.write('retry: 3000\n');
+  writeEvent('connected', {
+    connected: true,
+    occurredAt: new Date().toISOString()
+  }, getLatestDashboardEventId());
+
+  const unsubscribe = subscribeToDashboardUpdates((event) => {
+    writeEvent('dashboard-update', event, event.id);
+  });
+  const heartbeat = setInterval(() => {
+    res.write(`: keep-alive ${Date.now()}\n\n`);
+  }, 15_000);
+
+  let cleanedUp = false;
+  const cleanup = () => {
+    if (cleanedUp) return;
+    cleanedUp = true;
+    clearInterval(heartbeat);
+    unsubscribe();
+  };
+
+  req.on('aborted', cleanup);
+  res.on('close', cleanup);
+};
+
+module.exports = { getProductPerformance, getDashboardOverview, streamDashboardEvents };

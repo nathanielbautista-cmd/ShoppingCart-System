@@ -189,7 +189,7 @@ export const AdminProducts: React.FC = () => {
               return (
                 <tr key={p.id} className="admin-products__table-row">
                   <td className="admin-products__barcode">{p.barcode}</td>
-                  <td>{p.image ? <img className="product-thumbnail" src={p.image} alt="" onError={(event) => { event.currentTarget.style.display = 'none'; }} /> : <span className="product-thumbnail__placeholder" title="No product image"><ImageIcon aria-hidden="true" /></span>}</td>
+                  <td>{p.image ? <img className="product-thumbnail" src={p.image} alt="" draggable={false} onError={(event) => { event.currentTarget.style.display = 'none'; }} /> : <span className="product-thumbnail__placeholder" title="No product image"><ImageIcon aria-hidden="true" /></span>}</td>
                   <td className="admin-products__name">{p.name}</td>
                   <td className="admin-products__category">{p.category}</td>
                   <td className="admin-products__price">
@@ -335,7 +335,7 @@ export const AdminProducts: React.FC = () => {
               <input ref={imageInputRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={(e) => handleImageFile(e.target.files?.[0])} />
               <span>{image ? 'Change image' : 'Upload image'}</span>
             </label>
-            {image && <div className="admin-products__image-preview"><img src={image} alt="Product preview" onError={(event) => { event.currentTarget.style.display = 'none'; }} /><button className="admin-products__remove-image" type="button" title="Remove image" aria-label="Remove image" onClick={() => { setImage(''); if (imageInputRef.current) imageInputRef.current.value = ''; }}><X aria-hidden="true" /></button></div>}
+            {image && <div className="admin-products__image-preview"><img src={image} alt="Product preview" draggable={false} onError={(event) => { event.currentTarget.style.display = 'none'; }} /><button className="admin-products__remove-image" type="button" title="Remove image" aria-label="Remove image" onClick={() => { setImage(''); if (imageInputRef.current) imageInputRef.current.value = ''; }}><X aria-hidden="true" /></button></div>}
           </div>
 
           <div className="admin-products__metrics-grid">

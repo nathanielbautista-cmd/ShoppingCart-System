@@ -4,6 +4,7 @@ export interface AdminUser {
   role: 'ADMIN';
   name: string;
   phoneNumber?: string;
+  profileImage?: string;
   isEmailVerified?: boolean;
   createdAt?: string;
   updatedAt?: string;

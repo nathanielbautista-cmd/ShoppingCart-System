@@ -28,7 +28,7 @@ export const Header: React.FC = () => {
     userMode === 'CUSTOMER' &&
     customerScreen !== 'SHOPPING_HOME' &&
     customerScreen !== 'TRANSACTION_COMPLETE' &&
-    customerScreen !== 'WAITING_FOR_CASHIER';
+    customerScreen !== 'QR_PAYMENT';
 
   const handleBack = () => {
     soundService.playKeyClick();

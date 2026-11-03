@@ -12,6 +12,7 @@ import {
   StoreSettings,
   TransactionRecord,
   MonitoredCart,
+  PaymentIntent,
 } from '../types';
 import { INITIAL_CARTS } from '../data/mockCarts';
 import { getProducts, createProduct, updateProduct, removeProduct } from '../services/productService';
@@ -22,18 +23,22 @@ import {
   updateCartItem,
   removeCartItem,
   updateBudget,
-  checkoutCart,
-  requestCashierCheckout,
   getCartTransactions,
   reportWeightAnomaly,
   clearWeightAnomaly,
 } from '../services/cartApi';
+import {
+  createQrPhPayment,
+  getQrPhPayment,
+  cancelQrPhPayment as cancelQrPhPaymentRequest,
+  simulateQrPhSuccess,
+} from '../services/paymentApi';
 import { handleBarcodeDetected } from '../services/barcodeService';
 import { getCurrentWeight, verifyProductWeight, waitForWeightDecrease } from '../services/sensorService';
 import { speakMessage } from '../services/voiceService';
 import { syncCartToBackend } from '../services/cartService';
 import { AdminUser } from '../services/authService';
-import { loginAdmin as authenticateAdmin, logoutAdmin as clearAdminSession, adjustStock, getTransactions } from '../services/adminService';
+import { loginAdmin as authenticateAdmin, logoutAdmin as clearAdminSession, adjustStock, getTransactions, updateAdminProfileImage as saveAdminProfileImage } from '../services/adminService';
 import { soundService } from '../services/soundService';
 
 interface CartContextType {
@@ -54,6 +59,7 @@ interface CartContextType {
   cartStatus: CartStatus;
   checkoutSubmitting: boolean;
   checkoutError: string | null;
+  paymentIntent: PaymentIntent | null;
   voidReminder: { id: string; productName: string; quantity: number } | null;
   budget: number;
   cartItems: CartItem[];
@@ -99,20 +105,22 @@ interface CartContextType {
   cancelItemRemoval: () => void;
   startItemRemovalVerification: (simulateSuccess?: boolean) => Promise<boolean>;
   confirmCheckout: () => void;
-  markCashierComplete: (simulateSuccess?: boolean) => Promise<boolean>;
+  cancelQrPayment: () => Promise<void>;
+  simulateQrPayment: () => Promise<void>;
   resetShoppingSession: () => void;
 
 
   loginAdmin: (username: string, pass: string) => Promise<{ success: boolean; error?: string; needsVerification?: boolean }>;
+  updateAdminProfileImage: (profileImage: string) => Promise<void>;
   logoutAdmin: () => void;
   saveProduct: (product: Product) => Promise<void>;
   deleteProduct: (productId: string) => Promise<void>;
   adjustInventory: (productId: string, amount: number) => Promise<void>;
-  simulateCashierCompleteForCart: (cartId: string, amountReceived: number) => Promise<boolean>;
 }
 
 const DEFAULT_SETTINGS: StoreSettings = {
   storeName: 'Metro Supermarket',
+  storeLogo: '',
   currency: 'PHP',
   currencySymbol: '₱',
   budgetWarningThreshold: 80,
@@ -193,6 +201,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [cartStatus, setCartStatus] = useState<CartStatus>('ACTIVE');
   const [checkoutSubmitting, setCheckoutSubmitting] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [paymentIntent, setPaymentIntent] = useState<PaymentIntent | null>(null);
   const [voidReminder, setVoidReminder] = useState<{ id: string; productName: string; quantity: number } | null>(null);
   const lastSeenVoidRef = useRef<string | null>(null);
   const [budget, setBudget] = useState<number>(0);
@@ -304,7 +313,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       (customerScreen !== 'PRODUCT_VERIFICATION' || verificationStatus === 'VERIFIED') &&
       customerScreen !== 'REMOVE_ITEM' &&
       customerScreen !== 'CHECKOUT_REVIEW' &&
-      customerScreen !== 'WAITING_FOR_CASHIER' &&
+      customerScreen !== 'QR_PAYMENT' &&
       customerScreen !== 'TRANSACTION_COMPLETE'
     );
 
@@ -613,6 +622,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCartStatus('ACTIVE');
     setCheckoutSubmitting(false);
     setCheckoutError(null);
+    setPaymentIntent(null);
     setVoidReminder(null);
     lastSeenVoidRef.current = null;
     setUserMode('CUSTOMER');
@@ -622,11 +632,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 
   useEffect(() => {
-    if (
-      customerScreen !== 'WAITING_FOR_CASHIER' ||
-      cartStatus !== 'WAITING_FOR_CASHIER' ||
-      !cartId
-    ) return;
+    if (customerScreen !== 'QR_PAYMENT' || !paymentIntent?.paymentId || !cartId) return;
 
     let stopped = false;
     let requestInFlight = false;
@@ -635,61 +641,24 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const checkPaymentStatus = async () => {
       if (requestInFlight || stopped) return;
       requestInFlight = true;
-
       try {
-        const response: any = await getCart(cartId);
-        const remoteCart = response?.cart;
-        if (stopped || !remoteCart) return;
+        const response: any = await getQrPhPayment(paymentIntent.paymentId);
+        const currentPayment = response?.payment as PaymentIntent | undefined;
+        if (!currentPayment || stopped) return;
+        setPaymentIntent(currentPayment);
 
-        if (remoteCart.status === 'WAITING_FOR_CASHIER') {
-          setCartItems((remoteCart.items || []).map((item: any) => ({
-            product: {
-              id: String(item.productId),
-              barcode: item.barcode,
-              name: item.name,
-              category: item.category || '',
-              price: item.price,
-              expectedWeightGrams: item.quantity ? item.expectedWeight / item.quantity : 0,
-              stock: item.stock || 0,
-              minimumStock: 0,
-            },
-            quantity: item.quantity,
-          })));
-          const latestVoid = remoteCart.lastVoid;
-          const latestVoidId = latestVoid?.id ? String(latestVoid.id) : null;
-          if (latestVoidId && latestVoidId !== lastSeenVoidRef.current) {
-            lastSeenVoidRef.current = latestVoidId;
-            setVoidReminder({
-              id: latestVoidId,
-              productName: latestVoid.productName,
-              quantity: latestVoid.quantity,
-            });
-          }
-        }
-
-        if (remoteCart.status !== 'COMPLETED') return;
-
-
-
-        try {
+        if (currentPayment.status === 'PAID') {
           const transactionResponse: any = await getCartTransactions(cartId);
           const transaction = transactionResponse?.transactions?.[0];
-
-          if (!stopped && transaction) {
+          if (transaction) {
             const completedTransaction: TransactionRecord = {
               id: transaction.transactionId,
               cartId: transaction.cartId,
               date: transaction.createdAt,
               items: (transaction.items || []).map((item: any) => ({
                 product: {
-                  id: String(item.productId),
-                  barcode: item.barcode,
-                  name: item.name,
-                  category: '',
-                  price: item.price,
-                  expectedWeightGrams: 0,
-                  stock: 0,
-                  minimumStock: 0,
+                  id: String(item.productId), barcode: item.barcode, name: item.name, category: '',
+                  price: item.price, expectedWeightGrams: 0, stock: 0, minimumStock: 0,
                 },
                 quantity: item.quantity,
               })),
@@ -697,29 +666,37 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
               subtotal: transaction.subtotal,
               discount: transaction.discount,
               paymentMethod: transaction.paymentMethod,
+              paymentProvider: transaction.paymentProvider,
+              paymentReference: transaction.paymentReference,
+              invoiceNumber: transaction.invoiceNumber,
+              paidAt: transaction.paidAt,
               amountReceived: transaction.amountReceived,
               change: transaction.change,
               paymentStatus: transaction.paymentStatus,
               cashierName: transaction.cashierId,
             };
-
             setTransactions((previous) => [
               completedTransaction,
               ...previous.filter((item) => item.id !== completedTransaction.id),
             ]);
           }
-        } catch {
-
+          stopped = true;
+          if (intervalId !== undefined) window.clearInterval(intervalId);
+          setCartStatus('COMPLETED');
+          setPendingProduct(null);
+          setVerificationStatus('WAITING');
+          soundService.playSuccessChime();
+          playVoice('QR Ph payment verified. Your receipt is printing. Thank you for shopping with iCart.');
+          setCustomerScreenState('TRANSACTION_COMPLETE');
+          return;
         }
 
-        if (stopped) return;
-        stopped = true;
-        if (intervalId !== undefined) window.clearInterval(intervalId);
-        soundService.playSuccessChime();
-        playVoice('Payment confirmed. Thank you for shopping with iCart. The cart is ready for the next customer.');
-        resetShoppingSession();
-      } catch {
-
+        if (['FAILED', 'CANCELLED', 'REVIEW_REQUIRED'].includes(currentPayment.status)) {
+          setCartStatus(currentPayment.status === 'REVIEW_REQUIRED' ? 'PAYMENT_PENDING' : 'ACTIVE');
+          setCheckoutError(currentPayment.failureReason || 'Payment could not be completed.');
+        }
+      } catch (error) {
+        if (!stopped) setCheckoutError(error instanceof Error ? error.message : 'Unable to check payment status.');
       } finally {
         requestInFlight = false;
       }
@@ -727,12 +704,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     void checkPaymentStatus();
     intervalId = window.setInterval(checkPaymentStatus, 2000);
-
     return () => {
       stopped = true;
       if (intervalId !== undefined) window.clearInterval(intervalId);
     };
-  }, [cartId, cartStatus, customerScreen, playVoice, resetShoppingSession]);
+  }, [cartId, customerScreen, paymentIntent?.paymentId, playVoice]);
 
 
   const startShoppingSession = useCallback(() => {
@@ -762,6 +738,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const applyBudget = useCallback(
     (budgetAmount: number) => {
+      const budgetConfirmation = hasSetBudget
+        ? `Budget updated to ${settings.currencySymbol}${budgetAmount}.`
+        : `Budget set to ${settings.currencySymbol}${budgetAmount}. You are ready to shop.`;
       setBudget(budgetAmount);
       setHasSetBudget(true);
       if (cartId) {
@@ -771,7 +750,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setBudget(res.budget);
             }
             setCustomerScreenState('SHOPPING_HOME');
-            playVoice(`Budget set to ${settings.currencySymbol}${budgetAmount}. You are ready to shop.`);
+            playVoice(budgetConfirmation);
           })
           .catch((err) => {
             console.error('Failed to update budget', err);
@@ -779,10 +758,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
       } else {
         setCustomerScreenState('SHOPPING_HOME');
-        playVoice(`Budget set to ${settings.currencySymbol}${budgetAmount}. You are ready to shop.`);
+        playVoice(budgetConfirmation);
       }
     },
-    [playVoice, settings.currencySymbol]
+    [hasSetBudget, playVoice, settings.currencySymbol]
   );
 
 
@@ -1076,94 +1055,56 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
-    // Show the cashier ticket immediately. The request continues in the
-    // background and any failure is displayed on the same screen with Retry.
     setCheckoutError(null);
     setCheckoutSubmitting(true);
-    setCartStatus('WAITING_FOR_CASHIER');
-    setCustomerScreenState('WAITING_FOR_CASHIER');
-    requestCashierCheckout(cartId)
+    createQrPhPayment(cartId, {
+      storeName: settings.storeName,
+      storeLogo: settings.storeLogo,
+    })
       .then((res: any) => {
-        setCartStatus(res?.cart?.status || 'WAITING_FOR_CASHIER');
+        if (!res?.payment) throw new Error('The payment provider did not return a QR Ph payment.');
+        setPaymentIntent(res.payment);
+        setCartStatus('PAYMENT_PENDING');
+        setCustomerScreenState('QR_PAYMENT');
         setCheckoutSubmitting(false);
-        playVoice('Checkout confirmed. Please proceed to any available cashier counter.');
+        playVoice('QR Ph payment is ready. Scan the code using your preferred bank or electronic wallet.');
       })
       .catch((err) => {
-        console.error('Checkout failed', err);
+        console.error('QR Ph checkout failed', err);
         setCartStatus('ACTIVE');
         setCheckoutSubmitting(false);
         setCheckoutError(err instanceof Error
           ? err.message
-          : 'The cart could not be sent to the cashier. Please try again.');
+          : 'The QR Ph payment could not be created. Please try again.');
         soundService.playWarning();
-        playVoice('Checkout failed. Please ask a staff member for assistance.');
+        playVoice('QR Ph payment could not be created. Please try again or ask store staff for assistance.');
       });
-  }, [cartId, playVoice]);
+  }, [cartId, playVoice, settings.storeLogo, settings.storeName]);
 
-  const markCashierComplete = useCallback(async (simulateSuccess: boolean = false) => {
-    if (!cartId) return false;
-
-    if (simulateSuccess) {
-      setTransactions((previous) => [{
-        id: `SIM-TXN-${Date.now()}`,
-        cartId,
-        date: new Date().toISOString(),
-        items: cartItems,
-        total: currentTotal,
-        subtotal: currentTotal,
-        discount: 0,
-        paymentMethod: 'CASH',
-        amountReceived: currentTotal,
-        change: 0,
-        paymentStatus: 'PAID',
-        cashierName: 'SIMULATOR',
-      }, ...previous]);
-      soundService.playSuccessChime();
-      playVoice('Simulated payment confirmed. The cart is ready for the next customer.');
-      resetShoppingSession();
-      return true;
-    }
-
+  const cancelQrPayment = useCallback(async () => {
+    if (!paymentIntent?.paymentId) return;
     try {
-      const res: any = await checkoutCart(cartId, {
-        paymentMethod: 'CASH',
-        cashierId: 'CASHIER-DESK-1',
-        amountReceived: currentTotal,
-      });
-      const receipt = res?.receipt;
-      if (receipt) {
-        setTransactions((prev) => [{
-          id: receipt.transactionId,
-          cartId: receipt.cartId,
-          date: receipt.date,
-          items: receipt.items.map((item: any) => ({
-            product: {
-              id: String(item.productId), barcode: item.barcode, name: item.name, category: '',
-              price: item.price, expectedWeightGrams: 0, stock: 0, minimumStock: 0,
-            },
-            quantity: item.quantity,
-          })),
-          total: receipt.total,
-          subtotal: receipt.subtotal,
-          discount: receipt.discount,
-          paymentMethod: receipt.paymentMethod,
-          amountReceived: receipt.amountReceived,
-          change: receipt.change,
-          paymentStatus: receipt.paymentStatus,
-          cashierName: receipt.cashierId,
-        }, ...prev]);
-      }
-      soundService.playSuccessChime();
-      playVoice('Payment confirmed. Thank you for shopping with iCart. The cart is ready for the next customer.');
-      resetShoppingSession();
-      return true;
-    } catch (err) {
-      console.error('Cashier payment failed', err);
-      playVoice('Payment could not be completed. Please ask the cashier for assistance.');
-      return false;
+      await cancelQrPhPaymentRequest(paymentIntent.paymentId);
+      setPaymentIntent(null);
+      setCheckoutError(null);
+      setCartStatus('ACTIVE');
+      setCustomerScreenState('CHECKOUT_REVIEW');
+      playVoice('Payment cancelled. You may review your cart and try again.');
+    } catch (error) {
+      setCheckoutError(error instanceof Error ? error.message : 'Payment could not be cancelled.');
     }
-  }, [cartId, cartItems, currentTotal, playVoice, resetShoppingSession]);
+  }, [paymentIntent?.paymentId, playVoice]);
 
+  const simulateQrPayment = useCallback(async () => {
+    if (!paymentIntent?.paymentId || paymentIntent.providerMode !== 'mock') return;
+    setCheckoutError(null);
+    try {
+      const response: any = await simulateQrPhSuccess(paymentIntent.paymentId);
+      if (response?.payment) setPaymentIntent(response.payment);
+    } catch (error) {
+      setCheckoutError(error instanceof Error ? error.message : 'Demo payment could not be completed.');
+    }
+  }, [paymentIntent?.paymentId, paymentIntent?.providerMode]);
 
   const loginAdmin = useCallback(async (email: string, pass: string) => {
     try {
@@ -1173,6 +1114,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         username: res.user.email,
         name: res.user.name,
         phoneNumber: res.user.phoneNumber,
+        profileImage: res.user.profileImage || '',
         isEmailVerified: res.user.isEmailVerified,
         createdAt: res.user.createdAt,
         updatedAt: res.user.updatedAt,
@@ -1196,6 +1138,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           subtotal: tx.subtotal, discount: tx.discount, paymentMethod: tx.paymentMethod,
           amountReceived: tx.amountReceived, change: tx.change,
           paymentStatus: tx.paymentStatus, cashierName: tx.cashierId,
+          invoiceNumber: tx.invoiceNumber,
+          paymentReference: tx.paymentReference,
+          paymentProvider: tx.paymentProvider,
+          paidAt: tx.paidAt,
           items: tx.items.map((item: any) => ({
             product: { id: String(item.productId), barcode: item.barcode, name: item.name, category: '',
               price: item.price, expectedWeightGrams: 0, stock: 0, minimumStock: 5 }, quantity: item.quantity
@@ -1208,6 +1154,15 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const needsVerification = (error as any)?.body?.code === 'EMAIL_NOT_VERIFIED';
       return { success: false, error: message, needsVerification };
     }
+  }, []);
+
+  const updateAdminProfileImage = useCallback(async (profileImage: string) => {
+    const response = await saveAdminProfileImage(profileImage);
+    setAdminUser((current) => current ? {
+      ...current,
+      profileImage: response.user?.profileImage || '',
+      updatedAt: response.user?.updatedAt || current.updatedAt,
+    } : current);
   }, []);
 
   const logoutAdmin = useCallback(() => {
@@ -1248,30 +1203,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       : product));
   }, []);
 
-  const simulateCashierCompleteForCart = useCallback(
-    async (targetCartId: string, amountReceived: number) => {
-      if (targetCartId === cartId) {
-        return markCashierComplete();
-      } else {
-        try {
-          await checkoutCart(targetCartId, {
-            paymentMethod: 'CASH',
-            cashierId: 'CASHIER-DESK-1',
-            amountReceived,
-          });
-          setMonitoredCarts((prev) =>
-            prev.map((c) => (c.cartId === targetCartId ? { ...c, status: 'COMPLETED' } : c))
-          );
-          return true;
-        } catch (err) {
-          console.error('Cashier payment failed', err);
-          return false;
-        }
-      }
-    },
-    [cartId, markCashierComplete]
-  );
-
   return (
     <CartContext.Provider
       value={{
@@ -1289,6 +1220,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         cartStatus,
         checkoutSubmitting,
         checkoutError,
+        paymentIntent,
         voidReminder,
         budget,
         cartItems,
@@ -1324,14 +1256,15 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         cancelItemRemoval,
         startItemRemovalVerification,
         confirmCheckout,
-        markCashierComplete,
+        cancelQrPayment,
+        simulateQrPayment,
         resetShoppingSession,
         loginAdmin,
+        updateAdminProfileImage,
         logoutAdmin,
         saveProduct,
         deleteProduct,
         adjustInventory,
-        simulateCashierCompleteForCart,
       }}
     >
       {children}

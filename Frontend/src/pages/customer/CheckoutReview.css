@@ -245,6 +245,21 @@
   display: grid;
 }
 
+.checkout-review__payment-error {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 7px 10px;
+  border: 1px solid rgb(251 113 133 / 40%);
+  border-radius: 9px;
+  color: #fecdd3;
+  background: rgb(136 19 55 / 24%);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.checkout-review__spinner { animation: checkout-review-spin 1s linear infinite; }
+@keyframes checkout-review-spin { to { transform: rotate(360deg); } }
+
 @supports (color:color-mix(in lab, red, red)) {
   .checkout-review__item-17 {
     border-color: color-mix(in oklab, var(--color-slate-800,oklch(27.9% .041 260.031)) 80%, transparent);

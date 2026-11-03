@@ -16,7 +16,10 @@ router.post('/login', async (req, res, next) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email: String(email || '').trim().toLowerCase() });
-    if (!user || user.role !== 'cashier' || !(await user.matchPassword(password || ''))) {
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    if (user.role !== 'cashier' || !(await user.matchPassword(password || ''))) {
       return res.status(401).json({ success: false, message: 'Invalid cashier email or password' });
     }
 

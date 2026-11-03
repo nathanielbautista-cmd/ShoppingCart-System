@@ -3,6 +3,7 @@ const Product = require('../models/Product');
 const Transaction = require('../models/Transaction');
 const { CART_STATUS } = require('../config/constants');
 const { generateTransactionId } = require('../utils/transactionId');
+const { publishDashboardUpdate } = require('../services/dashboardEventService');
 
 
 
@@ -39,6 +40,8 @@ const requestCashierCheckout = async (req, res, next) => {
     cart.pendingTransactionId = cart.pendingTransactionId || generateTransactionId();
     await cart.save();
 
+    publishDashboardUpdate('cashier-checkout-requested', { cartId: cart.cartId });
+
     res.status(200).json({
       success: true,
       message: 'Cart submitted to Cashier counter. Please proceed to the cashier station.',
@@ -66,6 +69,12 @@ const processCheckout = async (req, res, next) => {
   try {
     const { cartId } = req.params;
     const { paymentMethod = 'CASH', discount = 0, cashierId = 'SYSTEM', cashierNotes = '', amountReceived } = req.body;
+    if (String(paymentMethod).trim().toUpperCase() === 'QRPH') {
+      return res.status(400).json({
+        success: false,
+        message: 'QR Ph payments must be completed through the verified payment webhook flow.'
+      });
+    }
     const normalizedCartId = cartId.trim().toUpperCase();
     const observedCart = await Cart.findOne({ cartId: normalizedCartId });
     if (!observedCart) throw Object.assign(new Error(`Cart with ID "${cartId}" not found`), { status: 404 });
@@ -182,6 +191,11 @@ const processCheckout = async (req, res, next) => {
       { $set: { status: CART_STATUS.COMPLETED } }
     );
     claimedCart = null;
+
+    publishDashboardUpdate('checkout-completed', {
+      cartId: cart.cartId,
+      transactionId: transaction.transactionId
+    });
 
     res.status(200).json({
       success: true,

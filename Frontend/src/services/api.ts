@@ -1,6 +1,8 @@
-const BASE = import.meta.env.VITE_API_URL || '/api';
+export const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 const TOKEN_KEY = 'icart_admin_token';
+
+export const getAuthToken = () => localStorage.getItem(TOKEN_KEY);
 
 export const setAuthToken = (token: string | null) => {
   if (token) localStorage.setItem(TOKEN_KEY, token);
@@ -8,12 +10,12 @@ export const setAuthToken = (token: string | null) => {
 };
 
 async function request(path: string, opts: RequestInit = {}) {
-  const url = `${BASE}${path}`;
+  const url = `${API_BASE}${path}`;
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(opts.headers as Record<string, string> || {}),
   };
-  const token = localStorage.getItem(TOKEN_KEY);
+  const token = getAuthToken();
   if (token) headers.Authorization = `Bearer ${token}`;
 
   const res = await fetch(url, { ...opts, headers });

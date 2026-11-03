@@ -12,9 +12,11 @@ import {
   RefreshCw,
   TrendingDown,
   TrendingUp,
+  UserRound,
 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
-import { getDashboardOverview } from '../../services/adminService';
+import { AdminProfileModal } from '../../components/AdminNav';
+import { getDashboardOverview, subscribeToDashboardEvents } from '../../services/adminService';
 import { AdminScreen } from '../../types';
 
 type StockStatus = 'IN_STOCK' | 'LOW_STOCK' | 'OUT_OF_STOCK';
@@ -66,11 +68,13 @@ const formatDateTime = (date: string) => new Date(date).toLocaleString('en-PH', 
 });
 
 export const AdminDashboard: React.FC = () => {
-  const { setAdminScreen } = useCart();
+  const { setAdminScreen, adminUser } = useCart();
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [liveConnected, setLiveConnected] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [salesPeriod, setSalesPeriod] = useState<SalesPeriod>('weekly');
   const activeRequest = useRef(0);
   const mounted = useRef(true);
@@ -100,11 +104,18 @@ export const AdminDashboard: React.FC = () => {
   useEffect(() => {
     mounted.current = true;
     void loadDashboard(true);
-    const poller = window.setInterval(() => void loadDashboard(true), 30_000);
+    const unsubscribe = subscribeToDashboardEvents(
+      () => void loadDashboard(true),
+      (connected) => {
+        if (mounted.current) setLiveConnected(connected);
+      }
+    );
+    const fallbackPoller = window.setInterval(() => void loadDashboard(true), 60_000);
     return () => {
       mounted.current = false;
       activeRequest.current += 1;
-      window.clearInterval(poller);
+      unsubscribe();
+      window.clearInterval(fallbackPoller);
     };
   }, [loadDashboard]);
 
@@ -172,7 +183,7 @@ export const AdminDashboard: React.FC = () => {
     { label: 'Total Sales', value: peso.format(dashboard.summary.totalSales), icon: <PhilippinePeso />, tone: 'blue', destination: 'TRANSACTIONS' },
     { label: 'Low Stock', value: dashboard.summary.lowStock.toLocaleString(), icon: <AlertTriangle />, tone: 'amber', destination: 'INVENTORY' },
     { label: 'Out of Stock', value: dashboard.summary.outOfStock.toLocaleString(), icon: <CircleX />, tone: 'red', destination: 'INVENTORY' },
-    { label: 'Waiting for Cashier', value: dashboard.summary.waitingForCashier.toLocaleString(), icon: <Clock3 />, tone: 'violet', destination: 'CART_MONITORING' },
+    { label: 'Pending QR Payments', value: dashboard.summary.waitingForCashier.toLocaleString(), icon: <Clock3 />, tone: 'violet', destination: 'CART_MONITORING' },
   ];
 
   return (
@@ -182,15 +193,30 @@ export const AdminDashboard: React.FC = () => {
           <h1>Admin Dashboard</h1>
         </div>
         <div className="dashboard-heading__actions">
-          <span className="dashboard-last-updated">
-            <span className="dashboard-live-dot" /> Updated {formatDateTime(dashboard.generatedAt)}
+          <span
+            className="dashboard-last-updated"
+            title={liveConnected ? 'Real-time updates connected' : 'Reconnecting real-time updates'}
+          >
+            <span className={`dashboard-live-dot ${liveConnected ? '' : 'is-reconnecting'}`} />
+            Updated {formatDateTime(dashboard.generatedAt)}
           </span>
-          <button type="button" className="dashboard-refresh" onClick={() => void loadDashboard()} disabled={refreshing}>
-            <RefreshCw className={refreshing ? 'is-spinning' : ''} />
-            <span>{refreshing ? 'Refreshing' : 'Refresh'}</span>
+          <button
+            type="button"
+            className="dashboard-profile"
+            onClick={() => setIsProfileOpen(true)}
+            aria-haspopup="dialog"
+            aria-label="Open admin profile"
+          >
+            <span className={`dashboard-profile__avatar ${adminUser?.profileImage ? 'has-profile-image' : ''}`} aria-hidden="true">
+              {adminUser?.profileImage ? <img src={adminUser.profileImage} alt="" /> : <UserRound />}
+            </span>
           </button>
         </div>
       </header>
+
+      {isProfileOpen && adminUser && (
+        <AdminProfileModal admin={adminUser} onClose={() => setIsProfileOpen(false)} />
+      )}
 
       {error && (
         <div className="dashboard-stale-warning" role="status">

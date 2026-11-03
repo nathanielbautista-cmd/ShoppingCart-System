@@ -229,7 +229,7 @@ export const SearchProducts: React.FC = () => {
                 }`}
               >
 
-                <div className="search-product-image">{product.image ? <img src={product.image} alt="" onError={(event) => { event.currentTarget.style.display = 'none'; }} /> : <ImageIcon />}</div>
+                <div className="search-product-image">{product.image ? <img src={product.image} alt="" draggable={false} onError={(event) => { event.currentTarget.style.display = 'none'; }} /> : <ImageIcon />}</div>
                 <div className="search-products__item-30">
                   <div className="search-products__item-31">
                     <span className="search-products__item-32">

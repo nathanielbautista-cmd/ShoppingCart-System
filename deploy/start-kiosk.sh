@@ -10,6 +10,7 @@ done
 
 exec /usr/bin/chromium "$KIOSK_URL" \
   --kiosk \
+  --kiosk-printing \
   --start-maximized \
   --ozone-platform=wayland \
   --noerrdialogs \

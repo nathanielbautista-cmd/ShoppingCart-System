@@ -7,15 +7,16 @@ const {
   getTransactionById
   , getWaitingForCashier
 } = require('../controllers/checkoutController');
+const { protect, adminOnly } = require('../middleware/authMiddleware');
 
 
 router.get('/transactions', getTransactions);
 router.get('/transactions/:id', getTransactionById);
 
 
-router.post('/:cartId/request-cashier', requestCashierCheckout);
-router.post('/:cartId', processCheckout);
+router.post('/:cartId/request-cashier', protect, adminOnly, requestCashierCheckout);
+router.post('/:cartId', protect, adminOnly, processCheckout);
 
-router.get('/waiting', getWaitingForCashier);
+router.get('/waiting', protect, adminOnly, getWaitingForCashier);
 
 module.exports = router;

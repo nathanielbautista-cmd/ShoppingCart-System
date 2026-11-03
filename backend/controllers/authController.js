@@ -19,6 +19,7 @@ const generateToken = (id) => jwt.sign(
 );
 
 const normalizePhoneNumber = (value = '') => value.trim().replace(/[\s()-]/g, '');
+const getAuthenticatedUserId = (req) => req.user?._id || req.user?.id;
 const hashVerificationCode = (code) => crypto.createHash('sha256').update(code).digest('hex');
 const createVerificationCode = () => crypto.randomInt(100000, 1000000).toString();
 const maskEmail = (email) => {
@@ -31,6 +32,7 @@ const publicUser = (user) => ({
   name: user.name,
   email: user.email,
   phoneNumber: user.phoneNumber,
+  profileImage: user.profileImage || '',
   role: user.role,
   isEmailVerified: user.isEmailVerified,
   createdAt: user.createdAt,
@@ -195,7 +197,10 @@ const login = async (req, res, next) => {
     }
 
     const user = await User.findOne({ email: email.toLowerCase().trim() });
-    if (!user || !(await user.matchPassword(password))) {
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    if (!(await user.matchPassword(password))) {
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
     if (user.role !== 'admin') {
@@ -356,8 +361,47 @@ const resendVerification = async (req, res, next) => {
 
 const getMe = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.id).select('-password');
+    const user = await User.findById(getAuthenticatedUserId(req)).select('-password');
     res.status(200).json({ success: true, user });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateProfileImage = async (req, res, next) => {
+  try {
+    const profileImage = String(req.body?.profileImage || '');
+    if (profileImage) {
+      const match = profileImage.match(/^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/=]+)$/);
+      if (!match) {
+        return res.status(400).json({
+          success: false,
+          message: 'Profile image must be a PNG, JPG, or WebP file'
+        });
+      }
+
+      const imageBytes = Buffer.from(match[2], 'base64');
+      if (imageBytes.length > 1024 * 1024) {
+        return res.status(413).json({
+          success: false,
+          message: 'Profile image must be 1 MB or smaller'
+        });
+      }
+    }
+
+    const user = await User.findById(getAuthenticatedUserId(req));
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    user.profileImage = profileImage;
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: profileImage ? 'Profile picture updated successfully' : 'Profile picture removed',
+      user: publicUser(user)
+    });
   } catch (error) {
     next(error);
   }
@@ -381,7 +425,7 @@ const changePassword = async (req, res, next) => {
       });
     }
 
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(getAuthenticatedUserId(req));
     if (!user || !(await user.matchPassword(currentPassword))) {
       return res.status(401).json({ success: false, message: 'Current password is incorrect' });
     }
@@ -410,5 +454,6 @@ module.exports = {
   forgotPassword,
   resetPassword,
   getMe,
+  updateProfileImage,
   changePassword
 };

@@ -21,7 +21,9 @@ fi
 
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get install -y \
-  nodejs npm nginx curl build-essential python3 make g++
+  nodejs npm nginx curl build-essential python3 python3-usb make g++
+
+usermod -aG lp "${APP_USER}"
 
 install -d -o "${APP_USER}" -g "${APP_USER}" \
   "${APP_DIR}/backend/data" "${APP_DIR}/backend/backups"
@@ -47,6 +49,7 @@ install -m 0644 "${APP_DIR}/deploy/systemd/icart-db-backup.timer" /etc/systemd/s
 install -m 0644 "${APP_DIR}/hardware/systemd/icart-cart-controls.service" /etc/systemd/system/icart-cart-controls.service
 install -m 0644 "${APP_DIR}/hardware/systemd/icart-load-cell.service" /etc/systemd/system/icart-load-cell.service
 install -m 0644 "${APP_DIR}/deploy/defaults/icart-cart-controls" /etc/default/icart-cart-controls
+install -m 0644 "${APP_DIR}/deploy/defaults/icart-load-cell" /etc/default/icart-load-cell
 chmod 0755 "${APP_DIR}/deploy/start-kiosk.sh"
 
 nginx -t

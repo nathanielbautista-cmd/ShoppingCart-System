@@ -19,6 +19,13 @@
   margin: 0 auto 20px;
 }
 
+.welcome-page__brand { min-width: 0; }
+.welcome-page__brand strong { max-width: min(48vw, 260px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.welcome-page__brand-mark img,
+.welcome-page__icon img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.welcome-page__brand-mark.has-store-logo,
+.welcome-page__icon.has-store-logo { overflow: hidden; background: transparent; box-shadow: none; }
+
 .welcome-page__actions {
   width: 100%;
   transform: translateY(30px);

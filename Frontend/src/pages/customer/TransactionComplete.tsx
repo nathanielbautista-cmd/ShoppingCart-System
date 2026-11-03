@@ -1,18 +1,19 @@
 import './TransactionComplete.css';
 import React, { useEffect, useState } from 'react';
-import { CheckCircle2, ShoppingCart, Sparkles, Check } from 'lucide-react';
+import { Check, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
-import { Button } from '../../components/Button';
 
 export const TransactionComplete: React.FC = () => {
-  const { cartId, currentTotal, transactions, resetShoppingSession, settings } = useCart();
-  const [secondsUntilReset, setSecondsUntilReset] = useState(5);
+  const { resetShoppingSession } = useCart();
+  const [secondsUntilReset, setSecondsUntilReset] = useState(20);
+  const [showPaymentToast, setShowPaymentToast] = useState(true);
 
   useEffect(() => {
-    const countdownId = window.setInterval(() => {
-      setSecondsUntilReset((seconds) => Math.max(0, seconds - 1));
-    }, 1000);
-    const resetId = window.setTimeout(resetShoppingSession, 5000);
+    const countdownId = window.setInterval(
+      () => setSecondsUntilReset((seconds) => Math.max(0, seconds - 1)),
+      1000,
+    );
+    const resetId = window.setTimeout(resetShoppingSession, 20000);
 
     return () => {
       window.clearInterval(countdownId);
@@ -20,66 +21,45 @@ export const TransactionComplete: React.FC = () => {
     };
   }, [resetShoppingSession]);
 
-  const latestTx = transactions.find((transaction) => transaction.cartId === cartId) || null;
-  const receiptCartId = latestTx?.cartId || cartId;
-  const receiptTotal = latestTx?.total ?? currentTotal;
+  useEffect(() => {
+    const toastId = window.setTimeout(() => setShowPaymentToast(false), 4000);
+    return () => window.clearTimeout(toastId);
+  }, []);
 
   return (
-    <div className="transaction-complete__item-1">
-
-      <div className="transaction-complete__item-2">
-        <span className="transaction-complete__item-3">
-          <Sparkles className="transaction-complete__item-4" />
-          <span>Payment Verified</span>
-        </span>
-      </div>
-
-
-      <div className="transaction-complete__item-5">
-        <div className="transaction-complete__item-6">
-          <CheckCircle2 className="transaction-complete__item-7" />
-        </div>
-
-        <h2 className="transaction-complete__item-8">
-          ✓ SHOPPING COMPLETE
-        </h2>
-
-
-        <div className="transaction-complete__item-9">
-          <div className="transaction-complete__item-10">
-            <span>Cart ID:</span>
-            <span className="transaction-complete__item-11">{receiptCartId || 'Not available'}</span>
-          </div>
-
-          <div className="transaction-complete__item-12">
-            <span>Transaction ID:</span>
-            <span className="transaction-complete__item-13">{latestTx?.id || 'Not available'}</span>
-          </div>
-
-          <div className="transaction-complete__item-14">
-            <span className="transaction-complete__item-15">Total Amount:</span>
-            <span className="transaction-complete__item-16">
-              {settings.currencySymbol}{receiptTotal.toFixed(2)}
-            </span>
+    <main className="payment-complete">
+      {showPaymentToast && (
+        <div className="payment-complete__toast" role="status" aria-live="polite" aria-atomic="true">
+          <CheckCircle2 aria-hidden="true" />
+          <div>
+            <strong>Payment successful</strong>
+            <span>Your QR Ph payment has been verified.</span>
           </div>
         </div>
-      </div>
+      )}
 
-
-      <div className="transaction-complete__item-17">
-        <p className="transaction-complete__next-customer">
-          Returning to Start Shopping for the next customer in {secondsUntilReset}s...
+      <section className="payment-complete__card" aria-labelledby="payment-complete-title">
+        <div className="payment-complete__icon">
+          <CheckCircle2 aria-hidden="true" />
+        </div>
+        <p className="payment-complete__eyebrow">Payment verified</p>
+        <h1 id="payment-complete-title">Payment successful!</h1>
+        <p className="payment-complete__message">
+          Thank you for shopping. Your receipt is being printed.
         </p>
-        <Button
-          variant="glow"
-          size="lg"
-          className="transaction-complete__item-18"
-          icon={<Check className="transaction-complete__item-19" />}
-          onClick={resetShoppingSession}
-        >
-          DONE NOW
-        </Button>
-      </div>
-    </div>
+        <div className="payment-complete__secure">
+          <ShieldCheck aria-hidden="true" />
+          <span>QR Ph secured</span>
+        </div>
+        <p className="payment-complete__countdown">
+          Returning to the welcome screen in <strong>{secondsUntilReset}s</strong>
+        </p>
+        <button type="button" className="payment-complete__done" onClick={resetShoppingSession}>
+          <Check aria-hidden="true" />
+          Done
+        </button>
+      </section>
+
+    </main>
   );
 };

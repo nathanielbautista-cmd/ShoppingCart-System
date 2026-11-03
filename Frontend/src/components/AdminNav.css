@@ -34,7 +34,9 @@
 }
 
 .admin-nav__brand-mark svg { width: 20px; height: 20px; }
-.admin-nav__brand strong { color: #f8fafc; font-size: 1.18rem; letter-spacing: -.025em; }
+.admin-nav__brand-mark.has-store-logo { overflow: hidden; background: transparent; box-shadow: none; }
+.admin-nav__brand-mark.has-store-logo img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.admin-nav__brand strong { min-width: 0; overflow: hidden; color: #f8fafc; font-size: 1.18rem; letter-spacing: -.025em; text-overflow: ellipsis; white-space: nowrap; }
 
 .admin-nav__profile {
   width: 100%;
@@ -69,6 +71,8 @@
   font-size: .82rem;
   font-weight: 850;
 }
+
+.admin-nav__avatar svg { width: 22px; height: 22px; }
 
 .admin-nav__identity { min-width: 0; }
 .admin-nav__identity h3 { margin: 0; overflow: hidden; color: #f8fafc; font-size: .9rem; font-weight: 750; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
@@ -255,14 +259,45 @@
   box-shadow: 0 10px 24px rgba(22, 163, 74, .22);
 }
 
+.admin-profile-summary__avatar svg { width: 30px; height: 30px; }
+.admin-profile-summary__avatar.has-profile-image { overflow: hidden; background: transparent; box-shadow: none; }
+.admin-profile-summary__avatar img { display: block; width: 100%; height: 100%; object-fit: contain; }
+
 .admin-profile-summary h3 { margin: 0; color: #0f172a; font-size: 1.05rem; }
 .admin-profile-summary p { margin: 4px 0 8px; color: #64748b; font-size: .78rem; }
-.admin-profile-summary span { display: inline-flex; align-items: center; gap: 5px; color: #15803d; font-size: .68rem; font-weight: 800; }
-.admin-profile-summary span svg { width: 14px; height: 14px; }
+.admin-profile-summary__identity { min-width: 0; flex: 1; }
+.admin-profile-summary__identity h3,
+.admin-profile-summary__identity p { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-profile-image-actions { display: flex; align-items: center; gap: 7px; }
+.admin-profile-image-upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid #16a34a;
+  border-radius: 8px;
+  color: #fff;
+  background: #16a34a;
+  cursor: pointer;
+  font-size: .65rem;
+  font-weight: 800;
+}
+.admin-profile-image-upload:hover { background: #15803d; }
+.admin-profile-image-upload input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.admin-profile-image-upload svg { width: 13px; height: 13px; }
+.admin-profile-image-remove { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 1px solid #fecdd3; border-radius: 8px; color: #be123c; background: #fff1f2; cursor: pointer; }
+.admin-profile-image-remove:hover { background: #ffe4e6; }
+.admin-profile-image-remove svg { width: 13px; height: 13px; }
+.admin-profile-image-upload:has(input:disabled),
+.admin-profile-image-remove:disabled { cursor: wait; opacity: .6; }
+.admin-profile-image-message { display: block; margin-top: 5px; font-size: .62rem; font-weight: 700; }
+.admin-profile-image-message--success { color: #15803d; }
+.admin-profile-image-message--error { color: #be123c; }
 
 .admin-profile-details {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   margin-top: 14px;
 }
@@ -372,7 +407,6 @@ html[data-theme="dark"] .admin-profile-modal__close:hover { background: #334155;
 html[data-theme="dark"] .admin-profile-summary { border-color: #166534; background: linear-gradient(135deg, #10291d, #0d2824); }
 html[data-theme="dark"] .admin-profile-summary p,
 html[data-theme="dark"] .admin-password-panel__heading p { color: #94a3b8; }
-html[data-theme="dark"] .admin-profile-summary span { color: #86efac; }
 html[data-theme="dark"] .admin-profile-detail { border-color: #334155; background: #111c2d; }
 html[data-theme="dark"] .admin-profile-detail strong { color: #e2e8f0; }
 html[data-theme="dark"] .admin-profile-detail span { color: #94a3b8; }
@@ -382,6 +416,7 @@ html[data-theme="dark"] .admin-password-form label { color: #cbd5e1; }
 html[data-theme="dark"] .admin-password-form input { border-color: #475569; background: #111c2d; color: #f8fafc; }
 html[data-theme="dark"] .admin-profile-button--secondary { border-color: #475569; background: #1e293b; color: #e2e8f0; }
 html[data-theme="dark"] .admin-profile-button--secondary:hover { background: #334155; }
+html[data-theme="dark"] .admin-profile-image-remove { border-color: #881337; color: #fda4af; background: #4c0519; }
 
 @media (max-width: 1180px) {
   .admin-nav { width: 238px; flex-basis: 238px; }

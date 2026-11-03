@@ -63,6 +63,19 @@
     text-align: center;
   }
 
+  .customer-sidebar__nav > button,
+  .customer-sidebar__settings-wrap > button {
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    font-size: 9px;
+  }
+
+  .customer-sidebar__settings-menu {
+    left: calc(100% + 8px);
+    width: 260px;
+  }
+
   .customer-topbar {
     min-height: 50px;
     padding: 5px 10px;
@@ -88,6 +101,23 @@
 
   .customer-topbar button svg {
     width: 17px;
+  }
+
+  .customer-topbar__search {
+    height: 38px;
+  }
+
+  .customer-topbar__search input {
+    height: 36px;
+    font-size: 12px;
+  }
+
+  .customer-floating-cart {
+    right: 12px;
+    bottom: 12px;
+    height: 44px;
+    min-width: 108px;
+    border-radius: 14px;
   }
 
   .customer-topbar .customer-topbar__settings-button {
@@ -149,6 +179,15 @@
     width: 40px;
     height: 40px;
     flex-basis: 40px;
+  }
+
+  .kiosk-home__category-bar button {
+    width: auto;
+    min-width: max-content;
+    height: 36px;
+    flex-basis: auto;
+    padding: 0 10px;
+    font-size: 10px;
   }
 
   .kiosk-home__catalog {

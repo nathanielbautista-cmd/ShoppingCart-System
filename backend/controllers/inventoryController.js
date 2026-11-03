@@ -1,4 +1,5 @@
 const Product = require('../models/Product');
+const { publishDashboardUpdate } = require('../services/dashboardEventService');
 
 
 
@@ -143,6 +144,12 @@ const adjustStock = async (req, res, next) => {
 
     product.stock = newStock;
     await product.save();
+
+    publishDashboardUpdate('inventory-adjusted', {
+      productId: product._id,
+      previousStock,
+      currentStock: newStock
+    });
 
     res.status(200).json({
       success: true,

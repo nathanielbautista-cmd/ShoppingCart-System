@@ -28,7 +28,7 @@ import { Cart } from './pages/customer/Cart';
 import { Budget } from './pages/customer/Budget';
 import { RemoveItem } from './pages/customer/RemoveItem';
 import { CheckoutReview } from './pages/customer/CheckoutReview';
-import { WaitingForCashier } from './pages/customer/WaitingForCashier';
+import { QRPayment } from './pages/customer/QRPayment';
 import { TransactionComplete } from './pages/customer/TransactionComplete';
 import { Help } from './pages/customer/Help';
 import { SearchProducts } from './pages/customer/SearchProducts';
@@ -43,12 +43,19 @@ import { AdminTransactions } from './pages/admin/AdminTransactions';
 import { AdminReports } from './pages/admin/AdminReports';
 import { AdminCartMonitoring } from './pages/admin/AdminCartMonitoring';
 import { AdminSettings } from './pages/admin/AdminSettings';
-import { AdminCashiers } from './pages/admin/AdminCashiers';
 import './kiosk-800x480.css';
 
 const AppContent: React.FC = () => {
   const { userMode, customerScreen, adminScreen, adminUser, settings, hasSetBudget } = useCart();
   const [powered, setPowered] = useState(true);
+  const [categoriesOpen, setCategoriesOpen] = useState(false);
+  const [catalogSearchTerm, setCatalogSearchTerm] = useState('');
+  const isQrPayment = userMode === 'CUSTOMER' && customerScreen === 'QR_PAYMENT';
+  const isCheckoutFlow = userMode === 'CUSTOMER' && (
+    customerScreen === 'CHECKOUT_REVIEW' ||
+    customerScreen === 'QR_PAYMENT' ||
+    customerScreen === 'TRANSACTION_COMPLETE'
+  );
 
   useEffect(() => {
     const onHardware = (event: Event) => {
@@ -65,6 +72,10 @@ const AppContent: React.FC = () => {
     document.documentElement.dataset.theme = settings.theme.toLowerCase();
   }, [settings.theme]);
 
+  useEffect(() => {
+    if (customerScreen !== 'SHOPPING_HOME') setCategoriesOpen(false);
+  }, [customerScreen]);
+
   const renderCustomerScreen = () => {
     switch (customerScreen) {
       case 'WELCOME':
@@ -72,7 +83,7 @@ const AppContent: React.FC = () => {
       case 'BUDGET_SETUP':
         return <BudgetSetup />;
       case 'SHOPPING_HOME':
-        return <ShoppingHome />;
+        return <ShoppingHome categoriesOpen={categoriesOpen} searchTerm={catalogSearchTerm} />;
       case 'PRODUCT_VERIFICATION':
         return <ProductVerification />;
       case 'CART':
@@ -83,8 +94,8 @@ const AppContent: React.FC = () => {
         return <RemoveItem />;
       case 'CHECKOUT_REVIEW':
         return <CheckoutReview />;
-      case 'WAITING_FOR_CASHIER':
-        return <WaitingForCashier />;
+      case 'QR_PAYMENT':
+        return <QRPayment />;
       case 'TRANSACTION_COMPLETE':
         return <TransactionComplete />;
       case 'HELP':
@@ -111,7 +122,6 @@ const AppContent: React.FC = () => {
           {adminScreen === 'TRANSACTIONS' && <AdminTransactions />}
           {adminScreen === 'REPORTS' && <AdminReports />}
           {adminScreen === 'CART_MONITORING' && <AdminCartMonitoring />}
-          {adminScreen === 'CASHIERS' && <AdminCashiers />}
           {adminScreen === 'SETTINGS' && <AdminSettings />}
         </div>
       </div>
@@ -121,12 +131,12 @@ const AppContent: React.FC = () => {
   return (
     <div className={`app-shell app-theme-${settings.theme.toLowerCase()} w-screen h-screen flex flex-col overflow-hidden font-sans select-none ${settings.theme === 'DARK' ? 'bg-slate-950 text-slate-100' : 'bg-slate-100 text-slate-900'} ${userMode === 'CUSTOMER' && settings.theme === 'DARK' ? 'customer-theme-dark' : ''}`}>
       <HardwareButtonBridge />
-      <WeightAnomalyAlert />
-      <BudgetLimitAlert />
-      <ProductVerificationFeedback />
-      <RemovalFeedback />
-      <ScannedProductModal />
-      <KioskKeyboard />
+      {!isQrPayment && <WeightAnomalyAlert />}
+      {!isQrPayment && <BudgetLimitAlert />}
+      {!isQrPayment && customerScreen !== 'TRANSACTION_COMPLETE' && <ProductVerificationFeedback />}
+      {!isQrPayment && <RemovalFeedback />}
+      {!isQrPayment && <ScannedProductModal />}
+      {!isQrPayment && <KioskKeyboard />}
       {!powered ? <div className="flex-1 grid place-items-center bg-black text-slate-500">iCart is powered off</div> : <>
 
       <main className={`flex-1 overflow-hidden ${settings.theme === 'DARK' ? 'bg-slate-950' : 'bg-slate-50'}`}>
@@ -134,18 +144,25 @@ const AppContent: React.FC = () => {
           className="flex h-full w-full flex-col overflow-hidden relative"
         >
 
-          <ScannerInput />
+          {!isQrPayment && <ScannerInput />}
 
 
           <div className={`app__item-5 ${userMode === 'CUSTOMER' ? 'kiosk-customer-layout' : ''}`}>
-            {userMode === 'CUSTOMER' && hasSetBudget && <CustomerSidebar />}
+            {userMode === 'CUSTOMER' && hasSetBudget && !isCheckoutFlow && <CustomerSidebar
+              categoriesOpen={categoriesOpen}
+              onToggleCategories={() => setCategoriesOpen((open) => !open)}
+              onCloseCategories={() => setCategoriesOpen(false)}
+            />}
             <div className="kiosk-customer-content">
-              {userMode === 'CUSTOMER' && hasSetBudget && <CustomerTopbar />}
+              {userMode === 'CUSTOMER' && hasSetBudget && !isCheckoutFlow && <CustomerTopbar
+                searchTerm={catalogSearchTerm}
+                onSearchTermChange={setCatalogSearchTerm}
+              />}
               <div className="kiosk-customer-page">
                 {userMode === 'CUSTOMER' ? (
                   customerScreen === 'CART' ? (
                     <div className="kiosk-cart-view">
-                      <ShoppingHome />
+                      <ShoppingHome categoriesOpen={false} searchTerm={catalogSearchTerm} />
                       <aside className="kiosk-cart-panel" aria-label="My cart sidebar">
                         <Cart />
                       </aside>

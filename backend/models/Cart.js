@@ -23,6 +23,7 @@ module.exports = createSqliteModel({
   defaults: {
     status: CART_STATUS.ACTIVE,
     pendingTransactionId: null,
+    pendingPaymentId: null,
     budget: 0,
     subtotal: 0,
     total: 0,

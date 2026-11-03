@@ -1,21 +1,31 @@
 import './AdminSettings.css';
 import React, { useState } from 'react';
 import { useCart } from '../../context/CartContext';
-import { Camera, Check, Volume2, Scale, Store, Moon, Sun } from 'lucide-react';
+import {
+  Camera,
+  Check,
+  CheckCircle2,
+  Image as ImageIcon,
+  Moon,
+  Store,
+  Sun,
+  Trash2,
+  Upload,
+  Volume2,
+} from 'lucide-react';
 import { Button } from '../../components/Button';
+
+const MAX_LOGO_SIZE_BYTES = 1024 * 1024;
+const ALLOWED_LOGO_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 export const AdminSettings: React.FC = () => {
   const { settings, updateSettings, playVoice } = useCart();
 
   const [storeName, setStoreName] = useState(settings.storeName);
+  const [storeLogo, setStoreLogo] = useState(settings.storeLogo);
+  const [logoError, setLogoError] = useState('');
   const [currencySymbol, setCurrencySymbol] = useState(settings.currencySymbol);
   const [currency, setCurrency] = useState(settings.currency);
-  const [budgetWarningThreshold, setBudgetWarningThreshold] = useState(
-    settings.budgetWarningThreshold.toString()
-  );
-  const [weightToleranceGrams, setWeightToleranceGrams] = useState(
-    settings.weightToleranceGrams.toString()
-  );
   const [voiceEnabled, setVoiceEnabled] = useState(settings.voiceEnabled);
   const [theme, setTheme] = useState(settings.theme);
   const [savedNotice, setSavedNotice] = useState(false);
@@ -25,21 +35,48 @@ export const AdminSettings: React.FC = () => {
     updateSettings({ theme: nextTheme });
   };
 
+  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    if (!ALLOWED_LOGO_TYPES.has(file.type)) {
+      setLogoError('Please upload a PNG, JPG, or WebP image.');
+      return;
+    }
+
+    if (file.size > MAX_LOGO_SIZE_BYTES) {
+      setLogoError('Logo must be 1 MB or smaller.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result !== 'string') {
+        setLogoError('Unable to read the selected image.');
+        return;
+      }
+      setStoreLogo(reader.result);
+      setLogoError('');
+    };
+    reader.onerror = () => setLogoError('Unable to read the selected image.');
+    reader.readAsDataURL(file);
+  };
+
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     updateSettings({
       storeName: storeName.trim() || 'Metro Supermarket',
+      storeLogo,
       currency: currency.trim() || 'PHP',
       currencySymbol: currencySymbol.trim() || '₱',
-      budgetWarningThreshold: parseInt(budgetWarningThreshold, 10) || 80,
-      weightToleranceGrams: parseInt(weightToleranceGrams, 10) || 15,
       voiceEnabled,
       theme,
     });
 
     setSavedNotice(true);
     playVoice('Settings saved successfully');
-    setTimeout(() => setSavedNotice(false), 2500);
+    setTimeout(() => setSavedNotice(false), 4000);
   };
 
   return (
@@ -50,9 +87,17 @@ export const AdminSettings: React.FC = () => {
       </div>
 
       {savedNotice && (
-        <div className="admin-settings__item-4">
-          <Check className="admin-settings__item-5" />
-          <span>Configuration updated successfully!</span>
+        <div
+          className="admin-settings__item-4"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          <CheckCircle2 className="admin-settings__item-5" />
+          <div>
+            <strong>Settings saved successfully!</strong>
+            <span>Configuration updated successfully.</span>
+          </div>
         </div>
       )}
 
@@ -74,6 +119,46 @@ export const AdminSettings: React.FC = () => {
                 onChange={(e) => setStoreName(e.target.value)}
                 className="admin-settings__item-12"
               />
+
+              <div className="admin-settings__logo-field">
+                <span className="admin-settings__logo-label">Store Logo</span>
+                <div className="admin-settings__logo-control">
+                  <div className={`admin-settings__logo-preview ${storeLogo ? 'has-store-logo' : ''}`}>
+                    {storeLogo ? (
+                      <img src={storeLogo} alt="Store logo preview" />
+                    ) : (
+                      <ImageIcon aria-hidden="true" />
+                    )}
+                  </div>
+                  <div className="admin-settings__logo-actions">
+                    <div>
+                      <label className="admin-settings__logo-upload">
+                        <Upload aria-hidden="true" />
+                        <span>{storeLogo ? 'Change Logo' : 'Upload Logo'}</span>
+                        <input
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp"
+                          onChange={handleLogoUpload}
+                        />
+                      </label>
+                      {storeLogo && (
+                        <button
+                          type="button"
+                          className="admin-settings__logo-remove"
+                          onClick={() => {
+                            setStoreLogo('');
+                            setLogoError('');
+                          }}
+                        >
+                          <Trash2 aria-hidden="true" />
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                    {logoError && <span className="admin-settings__logo-error" role="alert">{logoError}</span>}
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="admin-settings__item-13">
@@ -100,51 +185,6 @@ export const AdminSettings: React.FC = () => {
             </div>
           </div>
         </div>
-
-
-        <div className="admin-settings__item-18">
-          <h3 className="admin-settings__item-19">
-            <Scale className="admin-settings__item-20" />
-            <span>Sensor & Budget Thresholds</span>
-          </h3>
-
-          <div className="admin-settings__item-21">
-            <div>
-              <label className="admin-settings__item-22">
-                Budget Warning Threshold (%)
-              </label>
-              <div className="admin-settings__item-23">
-                <input
-                  type="number"
-                  min="50"
-                  max="100"
-                  value={budgetWarningThreshold}
-                  onChange={(e) => setBudgetWarningThreshold(e.target.value)}
-                  className="admin-settings__item-24"
-                />
-                <span className="admin-settings__item-25">%</span>
-              </div>
-            </div>
-
-            <div>
-              <label className="admin-settings__item-26">
-                HX711 Weight Tolerance (± grams)
-              </label>
-              <div className="admin-settings__item-27">
-                <input
-                  type="number"
-                  min="1"
-                  max="100"
-                  value={weightToleranceGrams}
-                  onChange={(e) => setWeightToleranceGrams(e.target.value)}
-                  className="admin-settings__item-28"
-                />
-                <span className="admin-settings__item-29">g</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
 
         <div className="admin-settings__item-30">
           <div className="admin-settings__item-31">

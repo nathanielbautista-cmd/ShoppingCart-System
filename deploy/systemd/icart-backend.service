@@ -7,10 +7,14 @@ Before=nginx.service
 Type=simple
 User=icart
 Group=icart
+SupplementaryGroups=lp
 WorkingDirectory=/home/icart/icart/backend
 Environment=NODE_ENV=production
 Environment=PORT=5000
 Environment=SQLITE_DB_PATH=/home/icart/icart/backend/data/icart.db
+Environment=RECEIPT_PRINTER_ENABLED=true
+Environment=RECEIPT_PRINTER_PYTHON=/usr/bin/python3
+Environment=RECEIPT_PRINTER_SCRIPT=/home/icart/icart/hardware/bp210_printer.py
 ExecStart=/usr/bin/node server.js
 Restart=always
 RestartSec=3

@@ -7,6 +7,7 @@ const {
   verifyWeight,
   WEIGHT_TOLERANCE_GRAMS
 } = require('../config/constants');
+const { publishDashboardUpdate } = require('../services/dashboardEventService');
 
 
 
@@ -82,6 +83,8 @@ const createCart = async (req, res, next) => {
       existing.hasWeightAnomaly = false;
       existing.anomalyNote = '';
       await existing.save();
+
+      publishDashboardUpdate('cart-reactivated', { cartId: existing.cartId });
 
       return res.status(200).json({
         success: true,

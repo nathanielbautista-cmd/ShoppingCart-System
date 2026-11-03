@@ -26,7 +26,9 @@
 
 .help__item-5 {
   height: 100%;
-  max-width: var(--container-2xl,42rem);
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
   background-color: var(--color-slate-950,oklch(12.9% .042 264.695));
   padding-inline: calc(var(--spacing,.25rem) * 4);
   padding-block: calc(var(--spacing,.25rem) * 2.5);
@@ -35,9 +37,16 @@
   user-select: none;
   flex-direction: column;
   justify-content: space-between;
-  margin-inline: auto;
+  margin-inline: 0;
   display: flex;
   overflow: hidden;
+}
+
+.help__item-6,
+.help__item-10,
+.help__item-23 {
+  width: min(100%, var(--container-2xl,42rem));
+  margin-inline: auto;
 }
 
 @media (width>=40rem) {
@@ -373,4 +382,75 @@
 .help__item-25 {
   height: calc(var(--spacing,.25rem) * 4);
   width: calc(var(--spacing,.25rem) * 4);
+}
+
+/* The Help screen follows the selected customer theme. Its original styles
+   remain the dark-mode design; these scoped overrides provide the light mode. */
+.app-theme-light .help__item-5 {
+  color: #243650;
+  background:
+    radial-gradient(circle at 92% 0, rgba(37, 137, 103, .08), transparent 30%),
+    #f6f8fb;
+}
+
+.app-theme-light .help__item-6,
+.app-theme-light .help__item-23 {
+  border-color: #dce5ee;
+}
+
+.app-theme-light .help__item-7 {
+  border-color: #bce5d1;
+  color: #258967;
+  background: #e8f7f0;
+}
+
+.app-theme-light .help__item-9,
+.app-theme-light .help__item-14 {
+  color: #17233b;
+}
+
+.app-theme-light .help__item-12 {
+  border-color: #dce5ee;
+  background: #fff;
+  box-shadow: 0 3px 12px rgba(24, 43, 70, .06);
+}
+
+.app-theme-light .help__item-13 {
+  border-color: #bce5d1;
+  color: #176e50;
+  background: #e8f7f0;
+}
+
+.app-theme-light .help__item-15 {
+  color: #61738a;
+}
+
+.app-theme-light .help__item-17,
+.app-theme-light .help__item-20 {
+  border-color: #dce5ee;
+  color: #697b91;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(24, 43, 70, .04);
+}
+
+.app-theme-light .help__item-19,
+.app-theme-light .help__item-22 {
+  color: #263650;
+}
+
+.app-theme-light .help__item-24 {
+  border-color: #d8e1ea !important;
+  color: #4e6179 !important;
+  background: #fff !important;
+  box-shadow: 0 2px 8px rgba(24, 43, 70, .05) !important;
+}
+
+.app-theme-light .help__item-24:hover {
+  border-color: #bce5d1 !important;
+  color: #176e50 !important;
+  background: #e8f7f0 !important;
+}
+
+.app-theme-light .help__item-25 {
+  color: #258967;
 }

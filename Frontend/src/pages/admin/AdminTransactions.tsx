@@ -67,7 +67,7 @@ export const AdminTransactions: React.FC = () => {
       <Modal
         isOpen={selectedTx !== null}
         onClose={() => setSelectedTx(null)}
-        title="Transaction Receipt"
+        title="Digital Invoice"
         maxWidth="md"
       >
         {selectedTx && (
@@ -85,9 +85,23 @@ export const AdminTransactions: React.FC = () => {
               <span className="admin-transactions__item-36">{new Date(selectedTx.date).toLocaleString()}</span>
             </div>
             <div className="admin-transactions__item-37">
-              <span className="admin-transactions__item-38">Cashier Counter:</span>
-              <span className="admin-transactions__item-39">{selectedTx.cashierName || 'Express Desk'}</span>
+              <span className="admin-transactions__item-38">Payment channel:</span>
+              <span className="admin-transactions__item-39">
+                {selectedTx.paymentProvider || selectedTx.paymentMethod || 'QR Ph'}
+              </span>
             </div>
+            {selectedTx.invoiceNumber && (
+              <div className="admin-transactions__item-37">
+                <span className="admin-transactions__item-38">Invoice number:</span>
+                <span className="admin-transactions__item-39">{selectedTx.invoiceNumber}</span>
+              </div>
+            )}
+            {selectedTx.paymentReference && (
+              <div className="admin-transactions__item-37">
+                <span className="admin-transactions__item-38">Payment reference:</span>
+                <span className="admin-transactions__item-39">{selectedTx.paymentReference}</span>
+              </div>
+            )}
 
             <div className="admin-transactions__item-40">
               <div className="admin-transactions__item-41">Purchased Items</div>
@@ -123,15 +137,7 @@ export const AdminTransactions: React.FC = () => {
             </div>
             <div className="admin-transactions__item-45">
               <span className="admin-transactions__item-46">PAYMENT</span>
-              <span className="admin-transactions__item-47">{selectedTx.paymentMethod || 'CASH'}</span>
-            </div>
-            <div className="admin-transactions__item-45">
-              <span className="admin-transactions__item-46">AMOUNT RECEIVED</span>
-              <span className="admin-transactions__item-47">{settings.currencySymbol} {(selectedTx.amountReceived ?? selectedTx.total).toFixed(2)}</span>
-            </div>
-            <div className="admin-transactions__item-45">
-              <span className="admin-transactions__item-46">CHANGE</span>
-              <span className="admin-transactions__item-47">{settings.currencySymbol} {(selectedTx.change ?? 0).toFixed(2)}</span>
+              <span className="admin-transactions__item-47">{selectedTx.paymentMethod || 'QRPH'}</span>
             </div>
           </div>
         )}

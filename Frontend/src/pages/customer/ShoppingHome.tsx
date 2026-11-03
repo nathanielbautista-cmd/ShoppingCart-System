@@ -1,18 +1,20 @@
 import './ShoppingHome.css';
-import React, { useEffect, useMemo, useState } from 'react';
-import { Image as ImageIcon, Package, Search, X } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { Image as ImageIcon, Package } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
-import { BARCODE_CAPTURED_EVENT } from '../../services/scannerEvents';
+import { soundService } from '../../services/soundService';
 
-export const ShoppingHome: React.FC = () => {
-  const { products, selectedProductCategory, settings } = useCart();
-  const [searchTerm, setSearchTerm] = useState('');
+interface ShoppingHomeProps {
+  categoriesOpen: boolean;
+  searchTerm: string;
+}
 
-  useEffect(() => {
-    const clearScannedBarcode = () => setSearchTerm('');
-    window.addEventListener(BARCODE_CAPTURED_EVENT, clearScannedBarcode);
-    return () => window.removeEventListener(BARCODE_CAPTURED_EVENT, clearScannedBarcode);
-  }, []);
+export const ShoppingHome: React.FC<ShoppingHomeProps> = ({ categoriesOpen, searchTerm }) => {
+  const { products, selectedProductCategory, setSelectedProductCategory, settings } = useCart();
+  const categories = useMemo(
+    () => ['All', ...Array.from(new Set(products.map((product) => product.category))).filter(Boolean)],
+    [products]
+  );
 
   const visibleProducts = useMemo(
     () => {
@@ -30,24 +32,24 @@ export const ShoppingHome: React.FC = () => {
   );
 
   return <main className="kiosk-home">
-    <section className="kiosk-home__primary" role="search" aria-label="Search products">
-      <Search aria-hidden="true" />
-      <label className="sr-only" htmlFor="kiosk-product-search">Search products</label>
-      <input
-        id="kiosk-product-search"
-        type="search"
-        value={searchTerm}
-        onChange={(event) => setSearchTerm(event.target.value)}
-        placeholder="Search product"
-        autoComplete="off"
-        data-barcode-capture
-      />
-      {searchTerm && <button type="button" onClick={() => setSearchTerm('')} aria-label="Clear product search"><X /></button>}
-    </section>
+    {categoriesOpen && <nav id="customer-category-bar" className="kiosk-home__primary kiosk-home__category-bar" aria-label="Product categories">
+      {categories.map((category) => <button
+        type="button"
+        key={category}
+        className={selectedProductCategory === category ? 'is-active' : ''}
+        onClick={() => {
+          soundService.playKeyClick();
+          setSelectedProductCategory(category);
+        }}
+        aria-pressed={selectedProductCategory === category}
+      >
+        {category}
+      </button>)}
+    </nav>}
 
     <section className="kiosk-home__catalog" aria-label="Product catalog">
       {visibleProducts.length ? visibleProducts.map((product) => <article className="kiosk-home__product" key={product.id}>
-        <div className="kiosk-home__product-icon">{product.image ? <img src={product.image} alt="" onError={(event) => { event.currentTarget.style.display = 'none'; }} /> : <ImageIcon />}</div>
+        <div className="kiosk-home__product-icon">{product.image ? <img src={product.image} alt="" draggable={false} onError={(event) => { event.currentTarget.style.display = 'none'; }} /> : <ImageIcon />}</div>
         <div className="kiosk-home__product-details"><small>{product.category}</small><strong>{product.name}</strong><span>{product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}</span></div>
         <b>{settings.currencySymbol}{product.price.toFixed(2)}</b>
       </article>) : <div className="kiosk-home__empty"><Package /><strong>{searchTerm ? 'No matching products' : 'No products in this category'}</strong><span>{searchTerm ? 'Try another product name, category, barcode, or aisle.' : 'Select another category from the sidebar.'}</span></div>}

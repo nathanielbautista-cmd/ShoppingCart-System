@@ -1,4 +1,4 @@
-import api, { setAuthToken } from './api';
+import api, { API_BASE, getAuthToken, setAuthToken } from './api';
 
 export const loginAdmin = async (email: string, password: string) => {
   const response = await api.post('/auth/login', { email, password });
@@ -35,26 +35,8 @@ export const resetAccountPassword = async (
 export const changeAdminPassword = async (currentPassword: string, newPassword: string) =>
   api.put('/auth/change-password', { currentPassword, newPassword });
 
-export interface CashierAccount {
-  id: string;
-  name: string;
-  email: string;
-  phoneNumber: string;
-  role: 'cashier';
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CashierRegistration {
-  name: string;
-  email: string;
-  phoneNumber: string;
-  password: string;
-}
-
-export const getCashierAccounts = async () => api.get('/admin/cashiers');
-export const createCashierAccount = async (details: CashierRegistration) =>
-  api.post('/admin/cashiers', details);
+export const updateAdminProfileImage = async (profileImage: string) =>
+  api.put('/auth/profile-image', { profileImage });
 
 export const logoutAdmin = () => setAuthToken(null);
 
@@ -64,6 +46,109 @@ export const adjustStock = async (productId: string, action: 'add' | 'subtract' 
 export const getTransactions = async () => api.get('/checkout/transactions?limit=100');
 export const getDashboardOverview = async (salesPeriod: 'weekly' | 'monthly' = 'weekly') =>
   api.get(`/reports/dashboard?salesPeriod=${salesPeriod}`);
+
+export interface DashboardUpdateEvent {
+  id: string;
+  reason: string;
+  details: Record<string, unknown>;
+  occurredAt: string;
+}
+
+export const subscribeToDashboardEvents = (
+  onUpdate: (event: DashboardUpdateEvent) => void,
+  onConnectionChange?: (connected: boolean) => void
+) => {
+  let stopped = false;
+  let attempt = 0;
+  let reconnectTimer: number | undefined;
+  let controller: AbortController | null = null;
+
+  const scheduleReconnect = () => {
+    if (stopped) return;
+    const delay = Math.min(1000 * (2 ** attempt), 15_000);
+    attempt += 1;
+    reconnectTimer = window.setTimeout(() => void connect(), delay);
+  };
+
+  const dispatchEvent = (block: string) => {
+    let eventName = 'message';
+    const data: string[] = [];
+
+    block.split('\n').forEach((line) => {
+      if (line.startsWith('event:')) eventName = line.slice(6).trim();
+      if (line.startsWith('data:')) data.push(line.slice(5).trimStart());
+    });
+
+    if (eventName !== 'dashboard-update' || data.length === 0) return;
+    try {
+      onUpdate(JSON.parse(data.join('\n')) as DashboardUpdateEvent);
+    } catch {
+      // Ignore malformed events and keep the live stream connected.
+    }
+  };
+
+  const connect = async () => {
+    if (stopped) return;
+    const token = getAuthToken();
+    if (!token) {
+      onConnectionChange?.(false);
+      scheduleReconnect();
+      return;
+    }
+
+    controller = new AbortController();
+    try {
+      const response = await fetch(`${API_BASE}/reports/dashboard/events`, {
+        method: 'GET',
+        headers: {
+          Accept: 'text/event-stream',
+          Authorization: `Bearer ${token}`,
+        },
+        cache: 'no-store',
+        signal: controller.signal,
+      });
+
+      if (!response.ok || !response.body) {
+        throw new Error(`Dashboard event stream failed (${response.status})`);
+      }
+
+      attempt = 0;
+      onConnectionChange?.(true);
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (!stopped) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, '\n');
+
+        let boundary = buffer.indexOf('\n\n');
+        while (boundary >= 0) {
+          dispatchEvent(buffer.slice(0, boundary));
+          buffer = buffer.slice(boundary + 2);
+          boundary = buffer.indexOf('\n\n');
+        }
+      }
+    } catch (error) {
+      if (!stopped && !(error instanceof DOMException && error.name === 'AbortError')) {
+        // Reconnection below handles temporary backend or network failures.
+      }
+    } finally {
+      controller = null;
+      onConnectionChange?.(false);
+      scheduleReconnect();
+    }
+  };
+
+  void connect();
+
+  return () => {
+    stopped = true;
+    controller?.abort();
+    if (reconnectTimer !== undefined) window.clearTimeout(reconnectTimer);
+  };
+};
 
 export interface ProductPerformanceParams {
   from: string;

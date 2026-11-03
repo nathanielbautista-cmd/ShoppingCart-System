@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
+    "kiosk:windows": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File deploy/start-kiosk-windows.ps1",
+    "printer:check": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File deploy/start-kiosk-windows.ps1 -CheckOnly",
+    "printer:test": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File deploy/setup-bp210-windows.ps1 -PrintTestReceipt",
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",

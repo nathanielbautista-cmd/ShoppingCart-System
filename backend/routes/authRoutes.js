@@ -8,6 +8,7 @@ const {
   forgotPassword,
   resetPassword,
   getMe,
+  updateProfileImage,
   changePassword
 } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
@@ -31,6 +32,7 @@ router.post('/reset-password', resetPassword);
 
 router.get('/me', protect, getMe);
 
+router.put('/profile-image', protect, updateProfileImage);
 
 router.put('/change-password', protect, changePassword);
 

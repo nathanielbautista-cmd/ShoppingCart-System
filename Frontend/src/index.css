@@ -1,1 +1,5 @@
 @import "tailwindcss";
+img[draggable="false"] {
+  -webkit-user-drag: none;
+  user-select: none;
+}

@@ -325,31 +325,39 @@ Clears anomaly flag upon cashier inspection or user resolution.
 
 ---
 
-### 5.5 Checkout & Transactions (`/api/checkout`)
+### 5.5 QR Ph Checkout & Digital Invoices (`/api/payments`)
 
-#### `POST /api/checkout/:cartId/request-cashier`
-Transitions cart status to `WAITING_FOR_CASHIER` for cash payments or cashier review.
+The customer checkout is kiosk-based and no longer requires a cashier payment step.
 
-#### `POST /api/checkout/:cartId`
-Completes the transaction:
-1. Re-verifies inventory availability for all cart items.
-2. **Deducts inventory stock permanently** from each product in SQLite.
-3. Creates a `Transaction` audit record with unique `transactionId` (e.g., `TXN-20260928-4821`).
-4. Updates cart status to `COMPLETED`.
-5. Returns finalized receipt breakdown.
+1. `POST /api/payments/qrph/:cartId` locks the cart total and creates a one-time QR Ph payment that remains pending until paid or cancelled.
+2. The customer scans the code using GCash, Maya, or another participating QR Ph app.
+3. The payment provider calls `POST /api/payments/qrph/webhook` with a signed status update.
+4. Only a provider-confirmed `PAID` status finalizes the transaction, deducts inventory, and creates a digital invoice.
+5. The kiosk polls `GET /api/payments/:paymentId` and automatically displays the invoice after confirmation.
 
-* **Request:**
-```json
-{
-  "paymentMethod": "CASH",
-  "discount": 0,
-  "cashierId": "CASHIER-STATION-1",
-  "cashierNotes": "Paid in cash"
-}
+`GET /api/payments/pending` is protected by admin authentication and powers the live payment-monitoring screen.
+
+#### Local development mode
+
+The default `QRPH_PROVIDER=mock` setting creates a scannable development payload. The kiosk exposes a demo confirmation button outside production. It does not transfer real money.
+
+#### Live provider configuration
+
+Set these values in `backend/.env` after selecting a QR Ph-capable merchant acquirer or payment gateway:
+
+```env
+QRPH_PROVIDER=live
+QRPH_CREATE_PAYMENT_URL=https://provider.example/payments
+QRPH_API_KEY=replace-with-provider-secret
+QRPH_WEBHOOK_SECRET=replace-with-webhook-secret
 ```
 
+The live adapter expects the provider response to contain a payment ID and QR payload. Map provider-specific response fields in `services/qrPhService.js` if its contract differs. Configure the provider webhook URL as `/api/payments/qrph/webhook`; screenshots and client-side success messages are never accepted as proof of payment.
+
+Legacy cashier checkout controllers remain available only for authenticated operational support and historical compatibility. They are not part of the customer kiosk flow.
+
 #### `GET /api/checkout/transactions`
-Retrieves past transactions for reporting and auditing.
+Retrieves finalized transactions for reporting and digital-invoice auditing.
 
 ---
 

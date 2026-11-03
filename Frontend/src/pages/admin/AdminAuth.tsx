@@ -11,7 +11,7 @@ import { AdminForgotPassword } from './AdminForgotPassword';
 type AuthView = 'LOGIN' | 'SIGNUP' | 'VERIFY' | 'FORGOT';
 
 export const AdminAuth: React.FC = () => {
-  const { setUserMode, setCustomerScreen } = useCart();
+  const { setUserMode, setCustomerScreen, settings } = useCart();
   const [view, setView] = useState<AuthView>('LOGIN');
   const [pendingEmail, setPendingEmail] = useState('');
   const [pendingPassword, setPendingPassword] = useState('');
@@ -39,12 +39,21 @@ export const AdminAuth: React.FC = () => {
   const subtitle = view === 'VERIFY'
     ? `Enter the 6-digit code sent to ${pendingEmail}`
     : '';
+  const showStoreLogo = Boolean(settings.storeLogo) && (view === 'LOGIN' || view === 'SIGNUP');
 
   return (
     <div className="admin-auth-shell">
       <section className="admin-auth-card" aria-labelledby="admin-auth-title">
         <header className="admin-auth-header">
-          <div className="admin-auth-icon">{view === 'VERIFY' ? <MailCheck /> : <Shield />}</div>
+          <div className={`admin-auth-icon ${showStoreLogo ? 'has-store-logo' : ''}`}>
+            {showStoreLogo ? (
+              <img src={settings.storeLogo} alt={`${settings.storeName} logo`} />
+            ) : view === 'VERIFY' ? (
+              <MailCheck />
+            ) : (
+              <Shield />
+            )}
+          </div>
           <h1 id="admin-auth-title">{title}</h1>
           {subtitle && <p>{subtitle}</p>}
         </header>

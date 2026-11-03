@@ -1,4 +1,5 @@
 const Product = require('../models/Product');
+const { publishDashboardUpdate } = require('../services/dashboardEventService');
 
 
 
@@ -154,6 +155,8 @@ const createProduct = async (req, res, next) => {
       isActive: isActive !== undefined ? isActive : true
     });
 
+    publishDashboardUpdate('product-created', { productId: product._id });
+
     res.status(201).json({
       success: true,
       message: 'Product created successfully',
@@ -205,6 +208,8 @@ const updateProduct = async (req, res, next) => {
       { new: true, runValidators: true }
     );
 
+    publishDashboardUpdate('product-updated', { productId: updatedProduct._id });
+
     res.status(200).json({
       success: true,
       message: 'Product updated successfully',
@@ -232,6 +237,8 @@ const deleteProduct = async (req, res, next) => {
     }
 
     await Product.findByIdAndDelete(req.params.id);
+
+    publishDashboardUpdate('product-deleted', { productId: product._id });
 
     res.status(200).json({
       success: true,

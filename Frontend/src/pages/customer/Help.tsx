@@ -48,7 +48,7 @@ export const Help: React.FC = () => {
     {
       num: '4',
       title: 'Proceed to checkout',
-      desc: 'Open My Cart to check quantities and total. Tap Checkout, review the receipt, then wait for cashier payment confirmation.',
+      desc: 'Open My Cart, review the total, then tap Pay with QR Ph. Scan the code using a participating bank or e-wallet and wait for automatic verification.',
       icon: <ReceiptText className="help__item-4" />,
     },
   ];
@@ -91,7 +91,7 @@ export const Help: React.FC = () => {
           <div className="help__item-17">
             <MinusCircle className="help__item-18" />
             <span>
-              <strong className="help__item-19">Remove an item:</strong> Open My Cart, tap the trash icon, start the scale check, then remove the selected item when prompted.
+              <strong className="help__item-19">Remove an item:</strong> Make changes before generating the QR code. Open My Cart, tap the trash icon, then remove the selected item when prompted.
             </span>
           </div>
           <div className="help__item-20">

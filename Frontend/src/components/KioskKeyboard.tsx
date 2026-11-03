@@ -1,6 +1,7 @@
 import './KioskKeyboard.css';
 import React, { useEffect, useRef, useState } from 'react';
 import { ArrowUp, CornerDownLeft, Delete, Globe2 } from 'lucide-react';
+import { BARCODE_CAPTURED_EVENT } from '../services/scannerEvents';
 import { soundService } from '../services/soundService';
 
 type KeyboardTarget = HTMLInputElement | HTMLTextAreaElement;
@@ -86,11 +87,15 @@ export const KioskKeyboard: React.FC = () => {
       closeKeyboard();
     };
 
+    const handleBarcodeCaptured = () => closeKeyboard();
+
     document.addEventListener('focusin', handleFocusIn);
     document.addEventListener('pointerdown', handlePointerDown, true);
+    window.addEventListener(BARCODE_CAPTURED_EVENT, handleBarcodeCaptured);
     return () => {
       document.removeEventListener('focusin', handleFocusIn);
       document.removeEventListener('pointerdown', handlePointerDown, true);
+      window.removeEventListener(BARCODE_CAPTURED_EVENT, handleBarcodeCaptured);
       document.documentElement.classList.remove('kiosk-keyboard-open');
     };
   }, []);

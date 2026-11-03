@@ -448,6 +448,18 @@ html[data-theme="light"] .modal__item-4:hover { background: #e2e8f0; color: #0f1
   color: #94a3b8;
 }
 
+.customer-theme-dark .kiosk-home__category-bar button {
+  border-color: #334155;
+  color: #cbd5e1;
+  background: #1e293b;
+}
+
+.customer-theme-dark .kiosk-home__category-bar button.is-active {
+  border-color: #258967;
+  color: #fff;
+  background: #167354;
+}
+
 .customer-theme-dark .kiosk-home__product-icon {
   color: #6ee7b7;
   background: #133c35;
