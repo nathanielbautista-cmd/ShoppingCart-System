@@ -26,12 +26,12 @@ const responseRecorder = () => ({
   }
 });
 
-test('forgot password returns User not found for an unknown cashier', async () => {
+test('forgot password returns User not found for an unknown admin', async () => {
   User.findOne = missingUserQuery;
   const response = responseRecorder();
 
   await forgotPassword(
-    { body: { email: 'missing@example.com', role: 'cashier' } },
+    { body: { email: 'missing@example.com', role: 'admin' } },
     response,
     (error) => { throw error; }
   );
@@ -40,7 +40,7 @@ test('forgot password returns User not found for an unknown cashier', async () =
   assert.deepEqual(response.body, { success: false, message: 'User not found' });
 });
 
-test('reset password returns User not found for an unknown cashier', async () => {
+test('reset password returns User not found for an unknown admin', async () => {
   User.findOne = missingUserQuery;
   const response = responseRecorder();
 
@@ -48,7 +48,7 @@ test('reset password returns User not found for an unknown cashier', async () =>
     {
       body: {
         email: 'missing@example.com',
-        role: 'cashier',
+        role: 'admin',
         code: '123456',
         newPassword: 'StrongPassword1!'
       }

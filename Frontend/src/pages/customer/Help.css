@@ -43,8 +43,7 @@
 }
 
 .help__item-6,
-.help__item-10,
-.help__item-23 {
+.help__item-10 {
   width: min(100%, var(--container-2xl,42rem));
   margin-inline: auto;
 }
@@ -358,32 +357,6 @@
   color: var(--color-slate-200,oklch(92.9% .013 255.508));
 }
 
-.help__item-23 {
-  border-top-style: var(--tw-border-style);
-  border-color: #1d293dcc;
-  border-top-width: 1px;
-  flex-shrink: 0;
-}
-
-@supports (color:color-mix(in lab, red, red)) {
-  .help__item-23 {
-    border-color: color-mix(in oklab, var(--color-slate-800,oklch(27.9% .041 260.031)) 80%, transparent);
-  }
-}
-
-.help__item-23 {
-  padding-top: calc(var(--spacing,.25rem) * 1.5);
-}
-
-.help__item-24 {
-  width: 100%;
-}
-
-.help__item-25 {
-  height: calc(var(--spacing,.25rem) * 4);
-  width: calc(var(--spacing,.25rem) * 4);
-}
-
 /* The Help screen follows the selected customer theme. Its original styles
    remain the dark-mode design; these scoped overrides provide the light mode. */
 .app-theme-light .help__item-5 {
@@ -393,8 +366,7 @@
     #f6f8fb;
 }
 
-.app-theme-light .help__item-6,
-.app-theme-light .help__item-23 {
+.app-theme-light .help__item-6 {
   border-color: #dce5ee;
 }
 
@@ -436,21 +408,4 @@
 .app-theme-light .help__item-19,
 .app-theme-light .help__item-22 {
   color: #263650;
-}
-
-.app-theme-light .help__item-24 {
-  border-color: #d8e1ea !important;
-  color: #4e6179 !important;
-  background: #fff !important;
-  box-shadow: 0 2px 8px rgba(24, 43, 70, .05) !important;
-}
-
-.app-theme-light .help__item-24:hover {
-  border-color: #bce5d1 !important;
-  color: #176e50 !important;
-  background: #e8f7f0 !important;
-}
-
-.app-theme-light .help__item-25 {
-  color: #258967;
 }

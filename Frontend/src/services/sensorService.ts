@@ -25,6 +25,7 @@ export interface WeightVerificationResult {
   verified: boolean;
   expectedWeightGrams: number;
   detectedWeightGrams: number;
+  basketWeightGrams?: number;
   differenceGrams: number;
   toleranceGrams: number;
   reason?: 'MISMATCH' | 'TIMEOUT' | 'HARDWARE_UNAVAILABLE';
@@ -42,6 +43,9 @@ type WeightDirection = 'increase' | 'decrease';
 const POLL_INTERVAL_MS = 350;
 const BASELINE_TIMEOUT_MS = 5000;
 const CHANGE_TIMEOUT_MS = 15000;
+const BASELINE_CONFIRMATIONS = 2;
+const MATCH_CONFIRMATIONS = 2;
+const MISMATCH_CONFIRMATIONS = 3;
 
 const delay = (milliseconds: number) => new Promise((resolve) => {
   window.setTimeout(resolve, milliseconds);
@@ -72,16 +76,47 @@ export async function getLoadCellStatus(): Promise<LoadCellStatus> {
   };
 }
 
+const readingTimestamp = (reading: WeightReading) => reading.receivedAt || reading.measuredAt;
+
+const median = (values: number[]) => {
+  const sorted = [...values].sort((first, second) => first - second);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0
+    ? (sorted[middle - 1] + sorted[middle]) / 2
+    : sorted[middle];
+};
+
 async function getStableBaseline(): Promise<WeightReading> {
   const deadline = Date.now() + BASELINE_TIMEOUT_MS;
   let lastError: unknown = null;
+  let lastTimestamp = '';
+  let candidates: WeightReading[] = [];
 
   while (Date.now() < deadline) {
     try {
       const reading = await getCurrentWeight();
-      if (reading.stable) return reading;
+      const timestamp = readingTimestamp(reading);
+      if (!reading.stable || (timestamp && timestamp === lastTimestamp)) {
+        await delay(POLL_INTERVAL_MS);
+        continue;
+      }
+      lastTimestamp = timestamp;
+
+      const agreementGrams = Math.max(5, reading.spreadGrams || 0);
+      const center = candidates.length
+        ? median(candidates.map((candidate) => candidate.grams))
+        : reading.grams;
+      candidates = Math.abs(reading.grams - center) <= agreementGrams
+        ? [...candidates, reading].slice(-BASELINE_CONFIRMATIONS)
+        : [reading];
+
+      if (candidates.length >= BASELINE_CONFIRMATIONS) {
+        const baselineGrams = Number(median(candidates.map((candidate) => candidate.grams)).toFixed(1));
+        return { ...reading, grams: baselineGrams };
+      }
     } catch (error) {
       lastError = error;
+      candidates = [];
     }
     await delay(POLL_INTERVAL_MS);
   }
@@ -99,7 +134,8 @@ export async function verifyProductWeight(
   toleranceGrams: number = 15,
   simulateMismatch: boolean = false,
   direction: WeightDirection = 'increase',
-  onBaselineCaptured?: () => void
+  onBaselineCaptured?: () => void,
+  knownBaselineGrams?: number | null
 ): Promise<WeightVerificationResult> {
   if (expectedWeightGrams <= 0) {
     throw new Error('This product has no valid expected weight. Ask staff to update the product record.');
@@ -122,7 +158,12 @@ export async function verifyProductWeight(
 
   let baseline: WeightReading;
   try {
-    baseline = await getStableBaseline();
+    if (knownBaselineGrams !== null && knownBaselineGrams !== undefined && Number.isFinite(knownBaselineGrams)) {
+      const latestReading = await getCurrentWeight();
+      baseline = { ...latestReading, grams: Number(knownBaselineGrams.toFixed(1)) };
+    } else {
+      baseline = await getStableBaseline();
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'HX711 load cells are unavailable.';
     throw new Error(`Load-cell verification unavailable: ${message}`);
@@ -132,6 +173,8 @@ export async function verifyProductWeight(
   const deadline = Date.now() + CHANGE_TIMEOUT_MS;
   const minimumChange = Math.max(2, Math.min(toleranceGrams, expectedWeightGrams * 0.1));
   let lastDetected = 0;
+  let lastTimestamp = readingTimestamp(baseline);
+  let candidates: number[] = [];
 
   while (Date.now() < deadline) {
     await delay(POLL_INTERVAL_MS);
@@ -142,7 +185,9 @@ export async function verifyProductWeight(
 
       continue;
     }
-    if (!reading.stable || reading.receivedAt === baseline.receivedAt) continue;
+    const timestamp = readingTimestamp(reading);
+    if (!reading.stable || (timestamp && timestamp === lastTimestamp)) continue;
+    lastTimestamp = timestamp;
 
     const rawDelta = direction === 'increase'
       ? reading.grams - baseline.grams
@@ -150,14 +195,31 @@ export async function verifyProductWeight(
     lastDetected = Math.max(0, Number(rawDelta.toFixed(1)));
 
 
-    if (lastDetected < minimumChange) continue;
+    if (lastDetected < minimumChange) {
+      candidates = [];
+      continue;
+    }
 
-    const differenceGrams = Number(Math.abs(lastDetected - expectedWeightGrams).toFixed(1));
+    // A product can touch one side of the basket before its full weight has
+    // settled. Require consecutive, agreeing publications so a transient
+    // partial weight does not reject the next scanned item.
+    const agreementGrams = Math.max(5, Math.min(12, toleranceGrams * 0.5));
+    const candidateCenter = candidates.length ? median(candidates) : lastDetected;
+    candidates = Math.abs(lastDetected - candidateCenter) <= agreementGrams
+      ? [...candidates, lastDetected].slice(-MISMATCH_CONFIRMATIONS)
+      : [lastDetected];
+
+    const settledWeight = Number(median(candidates).toFixed(1));
+    const differenceGrams = Number(Math.abs(settledWeight - expectedWeightGrams).toFixed(1));
     const verified = differenceGrams <= toleranceGrams;
+    const confirmationsNeeded = verified ? MATCH_CONFIRMATIONS : MISMATCH_CONFIRMATIONS;
+    if (candidates.length < confirmationsNeeded) continue;
+
     return {
       verified,
       expectedWeightGrams,
-      detectedWeightGrams: lastDetected,
+      detectedWeightGrams: settledWeight,
+      basketWeightGrams: reading.grams,
       differenceGrams,
       toleranceGrams,
       reason: verified ? undefined : 'MISMATCH',

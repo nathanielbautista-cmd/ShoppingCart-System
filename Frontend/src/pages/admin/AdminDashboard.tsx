@@ -31,7 +31,7 @@ interface DashboardData {
     totalSales: number;
     lowStock: number;
     outOfStock: number;
-    waitingForCashier: number;
+    pendingPayments: number;
   };
   stockStatus: { inStock: number; lowStock: number; outOfStock: number };
   salesOverview: Array<{ date: string; sales: number; transactions: number }>;
@@ -183,7 +183,7 @@ export const AdminDashboard: React.FC = () => {
     { label: 'Total Sales', value: peso.format(dashboard.summary.totalSales), icon: <PhilippinePeso />, tone: 'blue', destination: 'TRANSACTIONS' },
     { label: 'Low Stock', value: dashboard.summary.lowStock.toLocaleString(), icon: <AlertTriangle />, tone: 'amber', destination: 'INVENTORY' },
     { label: 'Out of Stock', value: dashboard.summary.outOfStock.toLocaleString(), icon: <CircleX />, tone: 'red', destination: 'INVENTORY' },
-    { label: 'Pending QR Payments', value: dashboard.summary.waitingForCashier.toLocaleString(), icon: <Clock3 />, tone: 'violet', destination: 'CART_MONITORING' },
+    { label: 'Pending QR Payments', value: (dashboard.summary.pendingPayments ?? 0).toLocaleString(), icon: <Clock3 />, tone: 'violet', destination: 'CART_MONITORING' },
   ];
 
   return (

@@ -1,0 +1,177 @@
+﻿[
+    {
+        "track":  2,
+        "key":  "WELCOME",
+        "language":  "en-US",
+        "message":  "Welcome to iCart. Set your shopping budget.",
+        "source":  "Welcome to my cart set your shopping budget.m4a"
+    },
+    {
+        "track":  3,
+        "key":  "BUDGET",
+        "language":  "en-US",
+        "message":  "Budget saved.",
+        "source":  "budget saved.m4a"
+    },
+    {
+        "track":  4,
+        "key":  "SCANNED",
+        "language":  "en-US",
+        "message":  "Product scanned.",
+        "source":  "Product scanned.m4a"
+    },
+    {
+        "track":  5,
+        "key":  "ITEM_ADDED",
+        "language":  "en-US",
+        "message":  "Item added to your cart.",
+        "source":  "product name added to your cart.m4a"
+    },
+    {
+        "track":  6,
+        "key":  "WEIGHT_VERIFICATION_FAILED",
+        "language":  "en-US",
+        "message":  "Weight verification failed.",
+        "source":  "Weight verification failed.m4a"
+    },
+    {
+        "track":  7,
+        "key":  "UNSCANNED",
+        "language":  "en-US",
+        "message":  "Unscanned item detected.",
+        "source":  "Unscanned item detected.m4a"
+    },
+    {
+        "track":  8,
+        "key":  "ALARM",
+        "language":  "en-US",
+        "message":  "Security alert detected. Remove the unscanned item to stop the alarm.",
+        "source":  "Alarm unscanned item after countdown 10s.m4a"
+    },
+    {
+        "track":  9,
+        "key":  "REMOVE_ITEM",
+        "language":  "en-US",
+        "message":  "No item selected for removal.",
+        "source":  "No item selected for removal.m4a"
+    },
+    {
+        "track":  10,
+        "key":  "ITEM_REMOVED",
+        "language":  "en-US",
+        "message":  "Product was removed.",
+        "source":  "Product was removed.m4a"
+    },
+    {
+        "track":  11,
+        "key":  "PAYMENT_READY",
+        "language":  "en-US",
+        "message":  "QR payment is ready.",
+        "source":  "Qr payment is ready.m4a"
+    },
+    {
+        "track":  12,
+        "key":  "PAYMENT_SUCCESS",
+        "language":  "en-US",
+        "message":  "Payment successful. Your receipt is printing. Thank you for shopping with iCart.",
+        "source":  "payment successfully your receipt is printing.m4a"
+    },
+    {
+        "track":  13,
+        "key":  "BUDGET_WARNING",
+        "language":  "en-US",
+        "message":  "You are nearly at your spending limit.",
+        "source":  "You are nealy at your spending limit.m4a"
+    },
+    {
+        "track":  14,
+        "key":  "BUDGET_EXCEEDED",
+        "language":  "en-US",
+        "message":  "Budget exceeded. Remove an item or adjust your budget.",
+        "source":  "Budget exceeded remove an item or adjust your budget.m4a"
+    },
+    {
+        "track":  15,
+        "key":  "BUDGET_ERROR",
+        "language":  "en-US",
+        "message":  "Your budget was not saved.",
+        "source":  "Your budget was not saved.m4a"
+    },
+    {
+        "track":  16,
+        "key":  "SCAN_ERROR",
+        "language":  "en-US",
+        "message":  "Product not found.",
+        "source":  "Product not found.m4a"
+    },
+    {
+        "track":  17,
+        "key":  "SESSION_ERROR",
+        "language":  "en-US",
+        "message":  "Shopping session could not start.",
+        "source":  "Shopping session could not start.m4a"
+    },
+    {
+        "track":  18,
+        "key":  "REMOVE_ERROR",
+        "language":  "en-US",
+        "message":  "Removed item does not match.",
+        "source":  "removed item does not match.m4a"
+    },
+    {
+        "track":  19,
+        "key":  "WEIGHT_CHANGE_NOT_DETECTED",
+        "language":  "en-US",
+        "message":  "No matching weight change was detected.",
+        "source":  "No matching weight change was detected.m4a"
+    },
+    {
+        "track":  20,
+        "key":  "PAYMENT_CANCELLED",
+        "language":  "en-US",
+        "message":  "Payment cancelled.",
+        "source":  "payment cancelled.m4a"
+    },
+    {
+        "track":  21,
+        "key":  "BUDGET_REACHED",
+        "language":  "en-US",
+        "message":  "Budget limit reached. You have used your full budget. Review your cart before adding another item.",
+        "source":  "Budget limit reached Review your cart.m4a"
+    },
+    {
+        "track":  22,
+        "key":  "PAYMENT_FAILED",
+        "language":  "en-US",
+        "message":  "Payment failed.",
+        "source":  "payment failed.m4a"
+    },
+    {
+        "track":  23,
+        "key":  "SCAN_CANCELLED",
+        "language":  "en-US",
+        "message":  "Scan cancelled.",
+        "source":  "Scan canlled.m4a"
+    },
+    {
+        "track":  24,
+        "key":  "CART_ERROR",
+        "language":  "en-US",
+        "message":  "No active cart found.",
+        "source":  "No active cart found.m4a"
+    },
+    {
+        "track":  25,
+        "key":  "ALARM_TONE",
+        "language":  "en-US",
+        "message":  "Security alarm tone.",
+        "source":  "freesound_community-security-alarm-63578.mp3"
+    },
+    {
+        "track":  26,
+        "key":  "ALARM_INSTRUCTION",
+        "language":  "en-US",
+        "message":  "Remove the unscanned item to stop the alarm.",
+        "source":  "Remove the unscanned item to stop the alarm.m4a"
+    }
+]

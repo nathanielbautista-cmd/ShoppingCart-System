@@ -224,7 +224,7 @@ const sendVerificationEmail = async ({ email, name, code }) => {
 };
 
 const sendPasswordResetEmail = async ({ email, name, code, role }) => {
-  const accountType = role === 'cashier' ? 'cashier' : 'admin';
+  const accountType = 'admin';
   await sendEmail({
     to: email,
     subject: 'Reset your iCart password',

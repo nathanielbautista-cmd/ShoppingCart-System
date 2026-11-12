@@ -16,7 +16,7 @@ The **iCart Backend** is a Node.js / Express REST API with an embedded SQLite da
 * **Runtime:** Node.js (v20+)
 * **Server Framework:** Express.js (v4.21+)
 * **Database:** SQLite via `better-sqlite3` (WAL mode)
-* **Security & Auth:** JSON Web Tokens (`jsonwebtoken`) & `bcryptjs`
+* **Security & Auth:** Admin JSON Web Tokens (`jsonwebtoken`) & `bcryptjs`
 * **Configuration:** `dotenv`
 * **CORS:** `cors`
 
@@ -43,7 +43,7 @@ backend/
 │   └── errorMiddleware.js      # 404 handler & centralized error formatter
 │
 ├── models/
-│   ├── User.js           # Admin and Cashier accounts (bcrypt hashing)
+│   ├── User.js           # Administrator accounts (bcrypt hashing)
 │   ├── Product.js        # Products with unique barcode & expected weight
 │   ├── Cart.js           # Shopping cart, line items, budget, weight status
 │   └── Transaction.js    # Completed checkouts, payments, audit history
@@ -95,7 +95,6 @@ npm run seed
 ```
 This sets up:
 * **Admin Account:** `admin@icart.com` / `Admin@12345`
-* **Cashier Account:** `cashier@icart.com` / `Cashier@12345`
 * **Sample Cart:** `ICART-001` (Active with initial items and ₱500 budget)
 * Sample products with realistic barcodes and weights in grams (e.g., Del Monte Pineapple Juice, Pancit Canton, Bear Brand Milk, Piattos, Kopiko, etc.).
 
@@ -132,13 +131,13 @@ Sends a replacement verification code with `{ "email": "..." }`.
 For Gmail delivery over HTTPS, configure `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN`, and `GMAIL_USER`. The OAuth grant must include `https://www.googleapis.com/auth/gmail.send` and offline access. Gmail API has highest priority and sends from `iCart <GMAIL_USER>`. As fallbacks, configure `RESEND_API_KEY` plus `EMAIL_FROM` for Resend, or `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, and `SMTP_PASS` for SMTP. `EMAIL_TIMEOUT_MS` defaults to 10 seconds. Verification codes are never returned by the API or exposed in the frontend.
 
 #### `POST /api/auth/forgot-password`
-Sends a 6-digit password reset code using `{ "email": "...", "role": "admin" }` or role `cashier`. Codes expire after 10 minutes and requests have a 60-second resend cooldown.
+Sends a 6-digit password reset code using `{ "email": "...", "role": "admin" }`. Codes expire after 10 minutes and requests have a 60-second resend cooldown.
 
 #### `POST /api/auth/reset-password`
 Resets the password using `{ "email": "...", "role": "admin", "code": "123456", "newPassword": "..." }`. New passwords must meet the same strength rules as account creation.
 
 #### `POST /api/auth/login`
-Authenticates an administrator or cashier.
+Authenticates an administrator.
 * **Request:**
 ```json
 {
@@ -318,16 +317,16 @@ Invoked when cart scale detects weight change without a barcode scan (Situation 
   "note": "Unscanned object detected on scale"
 }
 ```
-* Flags `hasWeightAnomaly: true` on the cart so the cashier kiosk and UI can prompt the user.
+* Flags `hasWeightAnomaly: true` on the cart so the customer and admin interfaces can prompt a resolution.
 
 #### `POST /api/cart/:cartId/clear-anomaly`
-Clears anomaly flag upon cashier inspection or user resolution.
+Clears the anomaly flag after customer correction or administrator review.
 
 ---
 
 ### 5.5 QR Ph Checkout & Digital Invoices (`/api/payments`)
 
-The customer checkout is kiosk-based and no longer requires a cashier payment step.
+The customer checkout is a self-service QR Ph flow with administrator monitoring.
 
 1. `POST /api/payments/qrph/:cartId` locks the cart total and creates a one-time QR Ph payment that remains pending until paid or cancelled.
 2. The customer scans the code using GCash, Maya, or another participating QR Ph app.
@@ -353,8 +352,6 @@ QRPH_WEBHOOK_SECRET=replace-with-webhook-secret
 ```
 
 The live adapter expects the provider response to contain a payment ID and QR payload. Map provider-specific response fields in `services/qrPhService.js` if its contract differs. Configure the provider webhook URL as `/api/payments/qrph/webhook`; screenshots and client-side success messages are never accepted as proof of payment.
-
-Legacy cashier checkout controllers remain available only for authenticated operational support and historical compatibility. They are not part of the customer kiosk flow.
 
 #### `GET /api/checkout/transactions`
 Retrieves finalized transactions for reporting and digital-invoice auditing.

@@ -33,7 +33,8 @@ export const WeightAnomalyAlert: React.FC = () => {
       setAlarmActive(true);
       soundService.startAlarm();
       void setHardwareAlarm(true).catch(() => undefined);
-      playVoice('Security alert. Remove the unscanned item from the basket now.');
+      playVoice('Security alert detected.');
+      playVoice('Remove the unscanned item to stop the alarm.');
     }, ALARM_DELAY_SECONDS * 1000);
 
     return () => {
@@ -48,7 +49,7 @@ export const WeightAnomalyAlert: React.FC = () => {
 
   const statusMessage = isIncrease
     ? alarmActive
-      ? 'ALARM ACTIVE — remove the item to stop it.'
+      ? 'Security alert detected. Remove the unscanned item to stop the alarm.'
       : `Remove it within ${secondsUntilAlarm} second${secondsUntilAlarm === 1 ? '' : 's'} to prevent the alarm.`
     : 'Return it to the basket, then use My Cart when products have similar weights.';
 

@@ -1,6 +1,7 @@
 param(
   [string]$PrinterName = 'BP210',
   [string]$KioskUrl = 'http://127.0.0.1:3000',
+  [string]$ApiTarget = 'http://127.0.0.1:5000',
   [switch]$CheckOnly
 )
 
@@ -63,6 +64,9 @@ if (-not (Test-IcartUrl -Url $backendUrl)) {
 }
 
 if (-not (Test-IcartUrl -Url $KioskUrl)) {
+  # Keep the Windows kiosk self-contained by default. Callers can pass
+  # -ApiTarget when they intentionally want the frontend to use the Pi.
+  $env:VITE_DEV_API_TARGET = $ApiTarget
   Start-Process -FilePath 'npm.cmd' `
     -ArgumentList @('run', 'dev') `
     -WorkingDirectory $repoRoot `
@@ -90,6 +94,7 @@ $chromeArguments = @(
   '--no-default-browser-check',
   '--disable-session-crashed-bubble',
   '--disable-pinch',
+  '--touch-events=enabled',
   '--overscroll-history-navigation=0',
   '--disable-features=Translate',
   "--user-data-dir=$chromeProfile",

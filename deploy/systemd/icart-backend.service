@@ -1,13 +1,13 @@
 [Unit]
 Description=iCart local Node.js backend
-After=local-fs.target
+After=local-fs.target sound.target
 Before=nginx.service
 
 [Service]
 Type=simple
 User=icart
 Group=icart
-SupplementaryGroups=lp
+SupplementaryGroups=lp audio dialout
 WorkingDirectory=/home/icart/icart/backend
 Environment=NODE_ENV=production
 Environment=PORT=5000
@@ -15,6 +15,43 @@ Environment=SQLITE_DB_PATH=/home/icart/icart/backend/data/icart.db
 Environment=RECEIPT_PRINTER_ENABLED=true
 Environment=RECEIPT_PRINTER_PYTHON=/usr/bin/python3
 Environment=RECEIPT_PRINTER_SCRIPT=/home/icart/icart/hardware/bp210_printer.py
+Environment=ICART_TTS_PROVIDER=dfplayer
+Environment=ICART_PIPER_EXECUTABLE=/opt/piper/piper
+Environment=ICART_PIPER_MODEL=/home/icart/icart/voice/en_US-lessac-medium.onnx
+Environment=ICART_AUDIO_DEVICE=plughw:CARD=Headphones,DEV=0
+Environment=ICART_PIPER_NICE=15
+Environment=ICART_DFPLAYER_ENABLED=true
+Environment=ICART_DFPLAYER_DEVICE=/dev/serial0
+Environment=ICART_DFPLAYER_MODE=mp3
+Environment=ICART_DFPLAYER_VOLUME=18
+Environment=ICART_DFPLAYER_SCRIPT=/home/icart/icart/hardware/dfplayer_player.py
+# Put the matching audio prompts on the DFPlayer microSD card under /mp3.
+Environment=ICART_DFPLAYER_TRACK_DEFAULT=2
+Environment=ICART_DFPLAYER_TRACK_WELCOME=2
+Environment=ICART_DFPLAYER_TRACK_BUDGET=3
+Environment=ICART_DFPLAYER_TRACK_SCANNED=4
+Environment=ICART_DFPLAYER_TRACK_ITEM_ADDED=5
+Environment=ICART_DFPLAYER_TRACK_WEIGHT_VERIFICATION_FAILED=6
+Environment=ICART_DFPLAYER_TRACK_UNSCANNED=7
+Environment=ICART_DFPLAYER_TRACK_ALARM=8
+Environment=ICART_DFPLAYER_TRACK_ALARM_TONE=25
+Environment=ICART_DFPLAYER_TRACK_ALARM_INSTRUCTION=26
+Environment=ICART_DFPLAYER_TRACK_REMOVE_ITEM=9
+Environment=ICART_DFPLAYER_TRACK_ITEM_REMOVED=10
+Environment=ICART_DFPLAYER_TRACK_PAYMENT_READY=11
+Environment=ICART_DFPLAYER_TRACK_PAYMENT_SUCCESS=12
+Environment=ICART_DFPLAYER_TRACK_BUDGET_WARNING=13
+Environment=ICART_DFPLAYER_TRACK_BUDGET_EXCEEDED=14
+Environment=ICART_DFPLAYER_TRACK_BUDGET_ERROR=15
+Environment=ICART_DFPLAYER_TRACK_SCAN_ERROR=16
+Environment=ICART_DFPLAYER_TRACK_SESSION_ERROR=17
+Environment=ICART_DFPLAYER_TRACK_REMOVE_ERROR=18
+Environment=ICART_DFPLAYER_TRACK_WEIGHT_CHANGE_NOT_DETECTED=19
+Environment=ICART_DFPLAYER_TRACK_PAYMENT_CANCELLED=20
+Environment=ICART_DFPLAYER_TRACK_BUDGET_REACHED=21
+Environment=ICART_DFPLAYER_TRACK_PAYMENT_FAILED=22
+Environment=ICART_DFPLAYER_TRACK_SCAN_CANCELLED=23
+Environment=ICART_DFPLAYER_TRACK_CART_ERROR=24
 ExecStart=/usr/bin/node server.js
 Restart=always
 RestartSec=3

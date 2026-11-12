@@ -24,6 +24,7 @@ from hardware_config import (
     BUTTON_PINS,
     GPIO_CHIP,
     POWER_INDICATOR_LED_PIN,
+    RESTART_COOLDOWN_SECONDS,
 )
 
 logging.basicConfig(level=logging.INFO, format="[Cart controls] %(message)s")
@@ -45,7 +46,8 @@ class CartControls:
         # service or Raspberry Pi restart.
         self.powered = True
         self.previous = {}
-        self.last_press = {name: 0.0 for name in BUTTON_PINS}
+        # The first press must always be accepted, even immediately after boot.
+        self.last_press = {name: float("-inf") for name in BUTTON_PINS}
         self.alarm_active = False
         self.alarm_led_on = False
         self.last_output_sync = 0.0
@@ -75,7 +77,7 @@ class CartControls:
                 if not 200 <= response.status < 300:
                     raise RuntimeError(f"backend returned HTTP {response.status}")
             logger.info("%s", action)
-        except (URLError, RuntimeError) as error:
+        except (URLError, RuntimeError, TimeoutError, OSError) as error:
             logger.error("Could not deliver %s: %s", action, error)
 
     def sync_outputs(self):
@@ -89,7 +91,7 @@ class CartControls:
             if self.output_connected is not True:
                 logger.info("Alarm LED connected: GPIO%s", ALARM_LED_PIN)
             self.output_connected = True
-        except (URLError, RuntimeError, ValueError, json.JSONDecodeError) as error:
+        except (URLError, RuntimeError, TimeoutError, OSError, ValueError, json.JSONDecodeError) as error:
             if self.output_connected is not False:
                 logger.error("Could not read hardware outputs: %s", error)
             self.output_connected = False
@@ -116,6 +118,16 @@ class CartControls:
         else:
             logger.info("Ignored %s: cart is powered off", name)
 
+    def handle_button_state(self, name: str, state: int, now: float):
+        """Process one GPIO sample and emit once for each button press."""
+        previous = self.previous[name]
+        cooldown = RESTART_COOLDOWN_SECONDS if name == "restart" else BUTTON_DEBOUNCE_SECONDS
+        if previous == 1 and state == 0 and now - self.last_press[name] >= cooldown:
+            self.last_press[name] = now
+            self.press(name)
+
+        self.previous[name] = state
+
     def run(self):
         logger.info(
             "Ready: power=GPIO23, restart=GPIO24, add=GPIO17, delete=GPIO27, "
@@ -134,11 +146,7 @@ class CartControls:
                 self.update_alarm_led(now)
                 for name, pin in BUTTON_PINS.items():
                     state = lgpio.gpio_read(self.handle, pin)
-
-                    if self.previous[name] == 1 and state == 0 and now - self.last_press[name] >= BUTTON_DEBOUNCE_SECONDS:
-                        self.last_press[name] = now
-                        self.press(name)
-                    self.previous[name] = state
+                    self.handle_button_state(name, state, now)
                 time.sleep(0.01)
         finally:
             self.close()

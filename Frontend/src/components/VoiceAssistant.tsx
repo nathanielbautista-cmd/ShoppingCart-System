@@ -1,18 +1,15 @@
-import './VoiceAssistant.css';
+﻿import './VoiceAssistant.css';
 import React, { useState, useEffect } from 'react';
-import { Volume2, VolumeX, Mic, RotateCcw } from 'lucide-react';
-import { useCart } from '../context/CartContext';
+import { Volume2, RotateCcw } from 'lucide-react';
 import { voiceService } from '../services/voiceService';
-import { soundService } from '../services/soundService';
 
 interface VoiceAssistantProps {
   compact?: boolean;
 }
 
 export const VoiceAssistant: React.FC<VoiceAssistantProps> = ({ compact = false }) => {
-  const { settings, toggleVoice } = useCart();
   const [currentMessage, setCurrentMessage] = useState<string>(
-    voiceService.getLastMessage() || 'Voice Assistant active.'
+    voiceService.getLastMessage() || 'Voice assistance is active.'
   );
   const [isSpeakingAnimation, setIsSpeakingAnimation] = useState(false);
 
@@ -28,41 +25,22 @@ export const VoiceAssistant: React.FC<VoiceAssistantProps> = ({ compact = false 
     return unsubscribe;
   }, []);
 
-  const handleToggle = () => {
-    soundService.playKeyClick();
-    toggleVoice();
-  };
-
   const handleReplay = () => {
-    soundService.playKeyClick();
-    voiceService.speak(currentMessage, true);
+    voiceService.speak(currentMessage);
   };
 
   if (compact) {
     return (
-      <button
-        onClick={handleToggle}
-        title={settings.voiceEnabled ? 'Mute Voice Assistant' : 'Unmute Voice Assistant'}
-        className={`voice-assistant__compact voice-assistant__compact--${settings.voiceEnabled ? 'enabled' : 'muted'}`}
-      >
-        {settings.voiceEnabled ? (
-          <>
-            <Volume2 className={`voice-assistant__compact-icon ${isSpeakingAnimation ? 'voice-assistant__icon--speaking' : ''}`} />
-            <span className="voice-assistant__compact-label">Voice ON</span>
-          </>
-        ) : (
-          <>
-            <VolumeX className="voice-assistant__compact-icon voice-assistant__compact-icon--muted" />
-            <span className="voice-assistant__compact-label">MUTE</span>
-          </>
-        )}
-      </button>
+      <div className="voice-assistant__compact voice-assistant__compact--enabled" role="status">
+        <Volume2 className={`voice-assistant__compact-icon ${isSpeakingAnimation ? 'voice-assistant__icon--speaking' : ''}`} />
+        <span className="voice-assistant__compact-label">Voice active</span>
+      </div>
     );
   }
 
   return (
     <div
-      className={`voice-assistant voice-assistant--${settings.voiceEnabled ? 'enabled' : 'muted'}`}
+      className="voice-assistant voice-assistant--enabled"
     >
       <div className="voice-assistant__details">
         <div
@@ -73,9 +51,7 @@ export const VoiceAssistant: React.FC<VoiceAssistantProps> = ({ compact = false 
         <div className="voice-assistant__message-wrap">
           <div className="voice-assistant__heading">
             <span>🔊 Voice Assistant</span>
-            <span className="voice-assistant__state">
-              {settings.voiceEnabled ? 'VOICE ACTIVE' : 'MUTED'}
-            </span>
+            <span className="voice-assistant__state">Always on</span>
           </div>
           <div className="voice-assistant__message">
             &ldquo;{currentMessage}&rdquo;
@@ -92,13 +68,6 @@ export const VoiceAssistant: React.FC<VoiceAssistantProps> = ({ compact = false 
           <RotateCcw className="voice-assistant__action-icon" />
         </button>
 
-        <button
-          onClick={handleToggle}
-          aria-label={settings.voiceEnabled ? 'Mute Voice' : 'Enable Voice'}
-          className="voice-assistant__toggle-button"
-        >
-          {settings.voiceEnabled ? 'MUTE' : 'UNMUTE'}
-        </button>
       </div>
     </div>
   );

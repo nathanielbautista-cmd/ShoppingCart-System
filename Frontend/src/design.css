@@ -6,8 +6,7 @@
 .welcome-page__brand, .welcome-page__online, .welcome-page__benefits, .shop-home__status, .shop-home__cart-button { display: flex; align-items: center; gap: 8px; }
 .welcome-page__brand { font-size: 18px; letter-spacing: -.03em; color: #fff; }
 .welcome-page__brand-mark, .welcome-page__icon, .shop-home__scan-icon { display: grid; place-items: center; background: linear-gradient(135deg, #3fbe8b, #267dca); box-shadow: 0 12px 30px rgba(24, 145, 109, .25); }
-.welcome-page__brand-mark { width: 28px; height: 28px; padding: 0; color: inherit; border: 0; border-radius: 8px; cursor: pointer; }.welcome-page__brand-mark svg { width: 17px; }
-.welcome-page__brand-mark:focus-visible { outline: 2px solid #8ee4bb; outline-offset: 3px; }
+.welcome-page__brand-mark { width: 28px; height: 28px; padding: 0; color: inherit; border: 0; border-radius: 8px; cursor: default; }.welcome-page__brand-mark svg { width: 17px; }
 .welcome-page__online { color: #8ee4bb; text-transform: uppercase; font-size: 10px; letter-spacing: .08em; }.welcome-page__online svg { width: 14px; }
 .welcome-page__hero { max-width: 500px; margin: 18px auto; text-align: center; }.welcome-page__icon { margin: auto auto 18px; width: 72px; height: 72px; border-radius: 23px; }.welcome-page__icon svg { width: 37px; height: 37px; }
 .welcome-page__eyebrow, .shop-home__eyebrow { margin: 0 0 8px; color: #7de0b2; font-size: 10px; font-weight: 800; letter-spacing: .13em; }

@@ -78,8 +78,8 @@ test('uses the Gmail API before Resend and sends from the configured Gmail accou
   };
 
   await sendVerificationEmail({
-    email: 'cashier@example.com',
-    name: '<b>Cashier</b>',
+    email: 'admin@example.com',
+    name: '<b>Admin</b>',
     code: '135790'
   });
 
@@ -92,9 +92,9 @@ test('uses the Gmail API before Resend and sends from the configured Gmail accou
   const sendBody = JSON.parse(requests[1].options.body);
   const mime = Buffer.from(sendBody.raw, 'base64url').toString('utf8');
   assert.match(mime, /From: iCart <sender@gmail\.com>/);
-  assert.match(mime, /To: cashier@example\.com/);
+  assert.match(mime, /To: admin@example\.com/);
   assert.match(mime, /135790/);
-  assert.match(mime, /&lt;b&gt;Cashier&lt;\/b&gt;/);
+  assert.match(mime, /&lt;b&gt;Admin&lt;\/b&gt;/);
   assert.equal(getEmailProvider(), 'gmail-api');
 });
 

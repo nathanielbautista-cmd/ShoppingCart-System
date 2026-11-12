@@ -1,6 +1,6 @@
 import './CustomerSidebar.css';
 import React, { useEffect, useRef, useState } from 'react';
-import { CircleHelp, LayoutGrid, Moon, Settings, ShoppingCart, Volume2, Wallet } from 'lucide-react';
+import { CircleHelp, LayoutGrid, Moon, Settings, ShoppingCart, Sun, Wallet } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { soundService } from '../services/soundService';
 
@@ -15,46 +15,36 @@ export const CustomerSidebar: React.FC<CustomerSidebarProps> = ({
   onToggleCategories,
   onCloseCategories,
 }) => {
-  const { customerScreen, setCustomerScreen, settings, toggleVoice, updateSettings } = useCart();
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const {
+    customerScreen,
+    setCustomerScreen,
+    settings,
+    updateSettings,
+  } = useCart();
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!isSettingsOpen) return;
-
-    const closeOnOutsideClick = (event: PointerEvent) => {
-      if (!settingsRef.current?.contains(event.target as Node)) setIsSettingsOpen(false);
+    if (!settingsOpen) return;
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) setSettingsOpen(false);
     };
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setIsSettingsOpen(false);
-    };
-
-    document.addEventListener('pointerdown', closeOnOutsideClick);
-    document.addEventListener('keydown', closeOnEscape);
-    return () => {
-      document.removeEventListener('pointerdown', closeOnOutsideClick);
-      document.removeEventListener('keydown', closeOnEscape);
-    };
-  }, [isSettingsOpen]);
+    document.addEventListener('mousedown', closeOnOutsideClick);
+    return () => document.removeEventListener('mousedown', closeOnOutsideClick);
+  }, [settingsOpen]);
 
   const goTo = (screen: 'BUDGET' | 'HELP') => {
     soundService.playKeyClick();
+    setSettingsOpen(false);
     onCloseCategories();
-    setIsSettingsOpen(false);
     setCustomerScreen(screen);
   };
 
   const toggleCategories = () => {
+    setSettingsOpen(false);
     soundService.playKeyClick();
-    setIsSettingsOpen(false);
     setCustomerScreen('SHOPPING_HOME');
     onToggleCategories();
-  };
-
-  const toggleSettings = () => {
-    soundService.playKeyClick();
-    onCloseCategories();
-    setIsSettingsOpen((open) => !open);
   };
 
   return <aside className="customer-sidebar" aria-label="Shopping navigation">
@@ -92,42 +82,33 @@ export const CustomerSidebar: React.FC<CustomerSidebarProps> = ({
       <div className="customer-sidebar__settings-wrap" ref={settingsRef}>
         <button
           type="button"
-          className={isSettingsOpen ? 'is-active' : ''}
-          onClick={toggleSettings}
-          aria-expanded={isSettingsOpen}
+          className={settingsOpen ? 'is-active' : ''}
+          aria-expanded={settingsOpen}
           aria-haspopup="dialog"
+          onClick={() => {
+            soundService.playKeyClick();
+            onCloseCategories();
+            setSettingsOpen((open) => !open);
+          }}
         >
           <Settings /><span>Settings</span>
         </button>
-
-        {isSettingsOpen && <section className="customer-sidebar__settings-menu" role="dialog" aria-label="Customer settings">
+        {settingsOpen && <section className="customer-sidebar__settings-menu" role="dialog" aria-label="Settings">
           <header><strong>Settings</strong></header>
           <div className="customer-sidebar__setting-row">
-            <span><Volume2 /><strong>Voice Assistance</strong></span>
+            <span>{settings.theme === 'DARK' ? <Moon aria-hidden="true" /> : <Sun aria-hidden="true" />}<strong>Display theme</strong></span>
             <button
               type="button"
-              role="switch"
-              aria-checked={settings.voiceEnabled}
-              className={`customer-sidebar__switch ${settings.voiceEnabled ? 'is-on' : ''}`}
-              onClick={() => { soundService.playKeyClick(); toggleVoice(); }}
+              className={`customer-sidebar__switch${settings.theme === 'DARK' ? ' is-on' : ''}`}
+              aria-label={`Switch to ${settings.theme === 'DARK' ? 'light' : 'dark'} theme`}
+              onClick={() => updateSettings({ theme: settings.theme === 'DARK' ? 'LIGHT' : 'DARK' })}
             >
-              <span>{settings.voiceEnabled ? 'ON' : 'OFF'}</span><i />
-            </button>
-          </div>
-          <div className="customer-sidebar__setting-row">
-            <span><Moon /><strong>Dark Mode</strong></span>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={settings.theme === 'DARK'}
-              className={`customer-sidebar__switch ${settings.theme === 'DARK' ? 'is-on' : ''}`}
-              onClick={() => { soundService.playKeyClick(); updateSettings({ theme: settings.theme === 'DARK' ? 'LIGHT' : 'DARK' }); }}
-            >
-              <span>{settings.theme === 'DARK' ? 'ON' : 'OFF'}</span><i />
+              <span>{settings.theme === 'DARK' ? 'Dark' : 'Light'}</span><i />
             </button>
           </div>
         </section>}
       </div>
     </nav>
+
   </aside>;
 };

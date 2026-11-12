@@ -64,7 +64,6 @@ export interface StoreSettings {
   currencySymbol: string;
   budgetWarningThreshold: number;
   weightToleranceGrams: number;
-  voiceEnabled: boolean;
   theme: 'DARK' | 'LIGHT';
 }
 
@@ -75,7 +74,7 @@ export interface TransactionRecord {
   items: CartItem[];
   total: number;
   paymentStatus: 'PAID' | 'PENDING' | 'CANCELLED' | 'FAILED' | 'EXPIRED' | 'REFUNDED';
-  cashierName?: string;
+  processedBy?: string;
   subtotal?: number;
   discount?: number;
   paymentMethod?: string;

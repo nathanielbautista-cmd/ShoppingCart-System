@@ -16,8 +16,8 @@ if [[ ! -f "${ARCHIVE}" ]]; then
 fi
 
 apt-get update
-DEBIAN_FRONTEND=noninteractive apt-get install -y python3-usb
-usermod -aG lp "${APP_USER}"
+DEBIAN_FRONTEND=noninteractive apt-get install -y python3-usb espeak-ng alsa-utils
+usermod -aG lp,audio "${APP_USER}"
 
 staging="$(mktemp -d "${APP_DIR}/deploy/staging-bp210-XXXXXX")"
 cleanup() {

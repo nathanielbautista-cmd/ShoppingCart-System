@@ -189,17 +189,7 @@ const seedDatabase = async () => {
       isEmailVerified: true
     });
 
-    const cashierUser = await User.create({
-      name: 'Cashier Station 1',
-      email: 'cashier@icart.com',
-      phoneNumber: '09171234568',
-      password: 'Cashier@12345',
-      role: 'cashier',
-      isEmailVerified: true
-    });
-
     console.log(`Created admin: ${adminUser.email} / Admin@12345`);
-    console.log(`Created cashier: ${cashierUser.email} / Cashier@12345`);
 
 
     console.log('Seeding products with realistic barcodes and weights...');

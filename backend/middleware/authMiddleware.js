@@ -64,15 +64,4 @@ const adminOnly = (req, res, next) => {
   }
 };
 
-const cashierOnly = (req, res, next) => {
-  if (req.user && (req.user.role === 'cashier' || req.user.role === 'admin')) {
-    next();
-  } else {
-    res.status(403).json({
-      success: false,
-      message: 'Access denied: Cashier privileges required'
-    });
-  }
-};
-
-module.exports = { protect, adminOnly, cashierOnly };
+module.exports = { protect, adminOnly };

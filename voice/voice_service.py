@@ -106,7 +106,7 @@ def main() -> None:
                 "Product added to cart.",
                 "Please place the item in the cart.",
                 "You are approaching your budget.",
-                "Checkout is ready. Please proceed to the cashier.",
+                "Checkout is ready. Please proceed to QR payment.",
             ):
                 service.speak(message)
         else:

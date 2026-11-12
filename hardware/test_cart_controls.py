@@ -82,6 +82,26 @@ class CartControlsTests(unittest.TestCase):
         self.controls.press('restart')
         self.assertEqual(self.emitted_actions(), ['restart'])
 
+    def test_restart_gpio_responds_to_a_normal_press(self):
+        # A first press is accepted even during the first seconds after boot.
+        self.controls.handle_button_state('restart', 0, 0.1)
+        self.assertEqual(self.emitted_actions(), ['restart'])
+
+        # Staying held low must not produce repeat restart events.
+        self.controls.handle_button_state('restart', 0, 35.0)
+        self.assertEqual(self.emitted_actions(), ['restart'])
+
+        self.controls.handle_button_state('restart', 1, 35.1)
+        self.controls.handle_button_state('restart', 0, 35.2)
+        self.assertEqual(self.emitted_actions(), ['restart', 'restart'])
+
+    def test_restart_button_bounce_does_not_repeat_the_event(self):
+        self.controls.handle_button_state('restart', 0, 20.0)
+        self.controls.handle_button_state('restart', 1, 20.05)
+        self.controls.handle_button_state('restart', 0, 20.1)
+        self.controls.handle_button_state('restart', 1, 20.15)
+        self.assertEqual(self.emitted_actions(), ['restart'])
+
     def test_red_alarm_led_blinks_only_while_powered_and_active(self):
         self.controls.alarm_active = True
         self.controls.update_alarm_led(2.0)

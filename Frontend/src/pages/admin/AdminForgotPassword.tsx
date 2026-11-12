@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { CheckCircle2, KeyRound, Mail } from 'lucide-react';
+import { CheckCircle2, Eye, EyeOff, KeyRound, Mail } from 'lucide-react';
 import { Button } from '../../components/Button';
 import { requestPasswordReset, resetAccountPassword } from '../../services/adminService';
 
@@ -21,6 +21,7 @@ export const AdminForgotPassword: React.FC<AdminForgotPasswordProps> = ({ initia
   const [code, setCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPasswords, setShowPasswords] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -31,7 +32,7 @@ export const AdminForgotPassword: React.FC<AdminForgotPasswordProps> = ({ initia
     setBusy(true);
     setError('');
     try {
-      const response = await requestPasswordReset(email, 'admin');
+      const response = await requestPasswordReset(email);
       setMessage(response.message);
       setCode('');
       setStage('RESET');
@@ -56,7 +57,7 @@ export const AdminForgotPassword: React.FC<AdminForgotPasswordProps> = ({ initia
 
     setBusy(true);
     try {
-      const response = await resetAccountPassword(email, 'admin', code, newPassword);
+      const response = await resetAccountPassword(email, code, newPassword);
       setMessage(response.message);
       setStage('DONE');
     } catch (resetError) {
@@ -101,11 +102,21 @@ export const AdminForgotPassword: React.FC<AdminForgotPasswordProps> = ({ initia
           </label>
           <label>
             <span>New password</span>
-            <input type="password" value={newPassword} onChange={(event) => { setNewPassword(event.target.value); setError(''); }} autoComplete="new-password" required />
+            <div className="admin-auth-password-field">
+              <input type={showPasswords ? 'text' : 'password'} value={newPassword} onChange={(event) => { setNewPassword(event.target.value); setError(''); }} autoComplete="new-password" required />
+              <button type="button" className="admin-auth-password-toggle" onClick={() => setShowPasswords((visible) => !visible)} aria-label={showPasswords ? 'Hide passwords' : 'Show passwords'} title={showPasswords ? 'Hide passwords' : 'Show passwords'}>
+                {showPasswords ? <EyeOff /> : <Eye />}
+              </button>
+            </div>
           </label>
           <label>
             <span>Confirm new password</span>
-            <input type="password" value={confirmPassword} onChange={(event) => { setConfirmPassword(event.target.value); setError(''); }} autoComplete="new-password" required />
+            <div className="admin-auth-password-field">
+              <input type={showPasswords ? 'text' : 'password'} value={confirmPassword} onChange={(event) => { setConfirmPassword(event.target.value); setError(''); }} autoComplete="new-password" required />
+              <button type="button" className="admin-auth-password-toggle" onClick={() => setShowPasswords((visible) => !visible)} aria-label={showPasswords ? 'Hide passwords' : 'Show passwords'} title={showPasswords ? 'Hide passwords' : 'Show passwords'}>
+                {showPasswords ? <EyeOff /> : <Eye />}
+              </button>
+            </div>
           </label>
           <p className="admin-auth-hint">At least 8 characters with uppercase, lowercase, number, and special character.</p>
           <Button type="submit" variant="glow" size="md" className="admin-auth-primary" icon={<KeyRound />} disabled={busy || code.length !== 6}>

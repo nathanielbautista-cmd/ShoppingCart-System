@@ -46,15 +46,14 @@ export const HardwareButtonBridge = () => {
             window.dispatchEvent(new CustomEvent('icart-hardware', { detail: event.action }));
           } else if (event.action === 'add_product') {
             if (!pendingProduct) {
-              const text = 'Add: scan a product first.';
+              const text = 'No product is selected.';
               showMessage(text);
-              playVoice(text);
             } else if (verificationStatus === 'VERIFYING') {
               showMessage(`Add: ${pendingProduct.name} is already being verified.`);
             } else if (verificationStatus === 'VERIFIED') {
               showMessage(`Add: ${pendingProduct.name} is already in your cart.`);
             } else {
-              showMessage(`Add: checking ${pendingProduct.name}. Place it in the basket when prompted.`);
+              showMessage(`Add: checking ${pendingProduct.name}.`);
               void confirmPendingProduct();
             }
           } else if (event.action === 'delete_product' || event.action === 'remove_product') {
@@ -64,9 +63,8 @@ export const HardwareButtonBridge = () => {
             } else if (cartItems.length === 0) {
               const text = 'Remove: your cart is empty.';
               showMessage(text);
-              playVoice(text);
             } else {
-              const text = 'Remove: take one scanned item out now. The scale will identify and deduct it automatically.';
+              const text = 'No item selected for removal.';
               showMessage(text);
               playVoice(text);
             }

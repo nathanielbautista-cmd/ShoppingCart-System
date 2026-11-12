@@ -2,7 +2,6 @@ import './AdminSettings.css';
 import React, { useState } from 'react';
 import { useCart } from '../../context/CartContext';
 import {
-  Camera,
   Check,
   CheckCircle2,
   Image as ImageIcon,
@@ -11,7 +10,6 @@ import {
   Sun,
   Trash2,
   Upload,
-  Volume2,
 } from 'lucide-react';
 import { Button } from '../../components/Button';
 
@@ -19,14 +17,13 @@ const MAX_LOGO_SIZE_BYTES = 1024 * 1024;
 const ALLOWED_LOGO_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 export const AdminSettings: React.FC = () => {
-  const { settings, updateSettings, playVoice } = useCart();
+  const { settings, updateSettings } = useCart();
 
   const [storeName, setStoreName] = useState(settings.storeName);
   const [storeLogo, setStoreLogo] = useState(settings.storeLogo);
   const [logoError, setLogoError] = useState('');
   const [currencySymbol, setCurrencySymbol] = useState(settings.currencySymbol);
   const [currency, setCurrency] = useState(settings.currency);
-  const [voiceEnabled, setVoiceEnabled] = useState(settings.voiceEnabled);
   const [theme, setTheme] = useState(settings.theme);
   const [savedNotice, setSavedNotice] = useState(false);
 
@@ -70,12 +67,10 @@ export const AdminSettings: React.FC = () => {
       storeLogo,
       currency: currency.trim() || 'PHP',
       currencySymbol: currencySymbol.trim() || '₱',
-      voiceEnabled,
       theme,
     });
 
     setSavedNotice(true);
-    playVoice('Settings saved successfully');
     setTimeout(() => setSavedNotice(false), 4000);
   };
 
@@ -186,28 +181,6 @@ export const AdminSettings: React.FC = () => {
           </div>
         </div>
 
-        <div className="admin-settings__item-30">
-          <div className="admin-settings__item-31">
-            <div className="admin-settings__item-32">
-              <Volume2 className="admin-settings__item-33" />
-            </div>
-            <div>
-              <div className="admin-settings__item-34">Voice Assistance (TTS)</div>
-            </div>
-          </div>
-
-          <label className="admin-settings__item-35">
-            <input
-              type="checkbox"
-              checked={voiceEnabled}
-              onChange={(e) => setVoiceEnabled(e.target.checked)}
-              className="admin-settings__item-36"
-            />
-            <div className="admin-settings__item-37"></div>
-          </label>
-        </div>
-
-
         <div className="admin-settings__item-38">
           <div className="admin-settings__item-39">
             <div className="admin-settings__item-40">
@@ -221,27 +194,6 @@ export const AdminSettings: React.FC = () => {
             <button type="button" onClick={() => selectTheme('LIGHT')} aria-pressed={theme === 'LIGHT'} className={`admin-settings__theme-button ${theme === 'LIGHT' ? 'is-active' : ''}`}><Sun className="admin-settings__item-44" />White</button>
             <button type="button" onClick={() => selectTheme('DARK')} aria-pressed={theme === 'DARK'} className={`admin-settings__theme-button ${theme === 'DARK' ? 'is-active' : ''}`}><Moon className="admin-settings__item-45" />Dark</button>
           </div>
-        </div>
-
-        <div className="admin-settings__camera-test">
-          <div className="admin-settings__camera-test-copy">
-            <span className="admin-settings__camera-test-icon"><Camera /></span>
-            <div>
-              <strong>Cart Camera Diagnostic</strong>
-              <p>Check the live camera angle, permission, and snapshot quality before enabling item detection.</p>
-            </div>
-          </div>
-          <button
-            type="button"
-            className="admin-settings__camera-test-button"
-            onClick={() => {
-              const url = new URL(window.location.href);
-              url.searchParams.set('camera-test', '1');
-              window.location.assign(`${url.pathname}${url.search}${url.hash}`);
-            }}
-          >
-            <Camera /> Test Camera
-          </button>
         </div>
 
         <div className="admin-settings__item-46">

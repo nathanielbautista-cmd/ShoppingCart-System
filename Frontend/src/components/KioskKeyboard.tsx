@@ -83,7 +83,11 @@ export const KioskKeyboard: React.FC = () => {
 
     const handlePointerDown = (event: PointerEvent) => {
       const element = event.target instanceof Element ? event.target : null;
-      if (!targetRef.current || element?.closest('.kiosk-keyboard') || isKeyboardTarget(element)) return;
+      if (
+        !targetRef.current
+        || element?.closest('.kiosk-keyboard, [data-kiosk-keep-focus="true"]')
+        || isKeyboardTarget(element)
+      ) return;
       closeKeyboard();
     };
 

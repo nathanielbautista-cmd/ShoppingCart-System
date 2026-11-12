@@ -46,7 +46,6 @@
 .budget-page__heading h1 { margin: 0; color: #17233b; font-size: 20px; line-height: 1.1; letter-spacing: -.035em; }
 
 .budget-page__edit,
-.budget-page__back,
 .budget-editor button {
   border: 1px solid #d8e1ea;
   color: #4e6179;
@@ -102,11 +101,6 @@
 .budget-editor__save:hover { background: var(--budget-accent-dark) !important; }
 .budget-editor__save:disabled { opacity: .45; cursor: not-allowed; }
 
-.budget-page__footer { min-height: 38px; margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex: 0 0 auto; }
-.budget-page__back { min-height: 36px; display: flex; align-items: center; gap: 7px; padding: 7px 12px; border-radius: 9px; font-size: 10px; font-weight: 800; }
-.budget-page__back svg { width: 15px; color: var(--budget-accent); }
-.budget-page__back:hover { border-color: var(--budget-accent-border); color: var(--budget-accent-dark); background: var(--budget-accent-soft); }
-
 .budget-page button:focus-visible { outline: 2px solid var(--budget-accent); outline-offset: 2px; }
 .budget-page button:active:not(:disabled) { transform: scale(.98); }
 
@@ -122,13 +116,11 @@
 .customer-theme-dark .budget-overview__track { background: #263449; }
 .customer-theme-dark .budget-metric + .budget-metric { border-color: #27364a; }
 .customer-theme-dark .budget-page__edit,
-.customer-theme-dark .budget-page__back,
 .customer-theme-dark .budget-editor button,
 .customer-theme-dark .budget-editor__amount { border-color: #334155; color: #cbd5e1; background: #111c2d; }
 .customer-theme-dark .budget-editor__amount output { color: #f8fafc; }
 .customer-theme-dark .budget-page__edit:hover,
 .customer-theme-dark .budget-page__edit.is-active,
-.customer-theme-dark .budget-page__back:hover,
 .customer-theme-dark .budget-editor__increments button:hover { border-color: var(--budget-accent); color: #d1fae5; background: #162235; }
 
 @media (max-width: 720px) {

@@ -1,4 +1,5 @@
 const express = require('express');
+const { getVoiceStatus, queueSpeech, setDfPlayerAlarm, MAX_MESSAGE_LENGTH } = require('../services/voiceService');
 
 
 
@@ -73,7 +74,10 @@ router.post('/alarm', (req, res) => {
     return res.status(400).json({ success: false, message: 'active must be a boolean' });
   }
 
-  alarmActive = req.body.active;
+  if (alarmActive !== req.body.active) {
+    alarmActive = req.body.active;
+    setDfPlayerAlarm(alarmActive);
+  }
   alarmUpdatedAt = new Date().toISOString();
   return res.status(202).json({ success: true, alarmActive, alarmUpdatedAt });
 });
@@ -82,6 +86,26 @@ router.post('/alarm', (req, res) => {
 // events makes browser-to-hardware state idempotent and safe to retry.
 router.get('/outputs', (_req, res) => {
   return res.json({ success: true, alarmActive, alarmUpdatedAt });
+});
+
+router.get('/voice/status', (_req, res) => {
+  return res.json({ success: true, ...getVoiceStatus() });
+});
+
+router.post('/voice/speak', (req, res) => {
+  const message = typeof req.body?.message === 'string' ? req.body.message.trim() : '';
+  if (!message) {
+    return res.status(400).json({ success: false, message: 'message is required' });
+  }
+  if (message.length > MAX_MESSAGE_LENGTH) {
+    return res.status(400).json({ success: false, message: `message must be ${MAX_MESSAGE_LENGTH} characters or fewer` });
+  }
+
+  const result = queueSpeech(message);
+  if (!result.accepted) {
+    return res.status(503).json({ success: false, ...getVoiceStatus() });
+  }
+  return res.status(202).json({ success: true, ...result, ...getVoiceStatus() });
 });
 
 

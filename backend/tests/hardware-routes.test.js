@@ -88,6 +88,21 @@ test('kiosk alarm endpoint rejects a non-boolean state', async () => {
   assert.equal(response.status, 400);
 });
 
+test('voice endpoint reports its local engine and validates speech requests', async () => {
+  const statusResponse = await fetch(`${baseUrl}/voice/status`);
+  assert.equal(statusResponse.status, 200);
+  const status = await statusResponse.json();
+  assert.equal(typeof status.available, 'boolean');
+  assert.ok(status.provider === null || ['piper', 'sapi', 'espeak'].includes(status.provider));
+
+  const invalidResponse = await fetch(`${baseUrl}/voice/speak`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: '' }),
+  });
+  assert.equal(invalidResponse.status, 400);
+});
+
 test('load-cell publisher connects to the weight endpoint and exposes health', async () => {
   const postResponse = await fetch(`${baseUrl}/weight`, {
     method: 'POST',

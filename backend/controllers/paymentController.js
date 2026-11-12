@@ -209,8 +209,8 @@ const finalizePaidPayment = async (payment) => {
       amountReceived: expectedTotal,
       change: 0,
       paidAt: new Date(),
-      cashierId: 'QRPH-AUTO',
-      cashierNotes: 'Automatically verified through QR Ph payment confirmation.',
+      processedBy: 'QRPH-AUTO',
+      processingNotes: 'Automatically verified through QR Ph payment confirmation.',
     });
 
     await Cart.findOneAndUpdate(

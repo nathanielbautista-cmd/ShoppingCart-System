@@ -16,12 +16,12 @@ HX711_SENSORS = {
 ACTIVE_SENSOR_IDS = ("hx711_1",)
 
 RAW_SAMPLE_COUNT = 15
-# Live publishing favors response time while tare/calibration continue using
-# the larger RAW_SAMPLE_COUNT for accuracy. Three samples keep the median/MAD
-# spike filter while allowing feedback on the next stable HX711 update.
-LIVE_SAMPLE_COUNT = 3
+# Five live samples give the median/MAD filter enough data to reject electrical
+# spikes without making consecutive product scans feel unresponsive. Tare and
+# calibration still use the larger RAW_SAMPLE_COUNT for maximum accuracy.
+LIVE_SAMPLE_COUNT = 5
 RAW_READY_TIMEOUT_SECONDS = 2.0
-STABILITY_TOLERANCE_GRAMS = 10.0
+STABILITY_TOLERANCE_GRAMS = 8.0
 OUTLIER_MAD_MULTIPLIER = 3.5
 CALIBRATION_MIN_SIGNAL_TO_NOISE_RATIO = 10.0
 
@@ -38,6 +38,9 @@ BUTTON_PINS = {
 POWER_INDICATOR_LED_PIN = 25
 ALARM_LED_PIN = 18
 BUTTON_DEBOUNCE_SECONDS = 0.15
+# Restart responds to a normal press, then ignores repeat signals long enough
+# for the kiosk browser to reload and for any switch bounce to settle.
+RESTART_COOLDOWN_SECONDS = 10.0
 
 
 def get_sensor_pins(sensor_id: str) -> dict:

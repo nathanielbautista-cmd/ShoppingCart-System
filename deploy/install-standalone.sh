@@ -21,9 +21,10 @@ fi
 
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get install -y \
-  nodejs npm nginx curl build-essential python3 python3-usb make g++
+  nodejs npm nginx curl build-essential python3 python3-usb make g++ \
+  espeak-ng alsa-utils
 
-usermod -aG lp "${APP_USER}"
+usermod -aG lp,audio "${APP_USER}"
 
 install -d -o "${APP_USER}" -g "${APP_USER}" \
   "${APP_DIR}/backend/data" "${APP_DIR}/backend/backups"

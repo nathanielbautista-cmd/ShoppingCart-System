@@ -11,47 +11,6 @@
     #0c1628;
 }
 
-.payment-complete__toast {
-  position: fixed;
-  z-index: 185;
-  top: 16px;
-  left: 50%;
-  width: min(500px, calc(100vw - 32px));
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  box-sizing: border-box;
-  padding: 11px 15px;
-  border: 1px solid #34d399;
-  border-radius: 12px;
-  color: #fff;
-  background: #065f46;
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35);
-  transform: translateX(-50%);
-}
-
-.payment-complete__toast > svg {
-  width: 22px;
-  height: 22px;
-  flex: 0 0 22px;
-}
-
-.payment-complete__toast strong,
-.payment-complete__toast span {
-  display: block;
-}
-
-.payment-complete__toast strong {
-  font-size: 13px;
-  font-weight: 900;
-}
-
-.payment-complete__toast span {
-  margin-top: 2px;
-  font-size: 10px;
-  font-weight: 700;
-}
-
 .payment-complete__card {
   width: min(440px, 100%);
   display: flex;
@@ -85,15 +44,6 @@
   stroke-width: 2.4;
 }
 
-.payment-complete__eyebrow {
-  margin: 0 0 7px;
-  color: #34d399;
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
 .payment-complete h1 {
   margin: 0;
   color: #fff;
@@ -104,40 +54,11 @@
 
 .payment-complete__message {
   max-width: 330px;
-  margin: 13px 0 18px;
+  margin: 13px 0 24px;
   color: #a9bacd;
   font-size: 14px;
   font-weight: 600;
   line-height: 1.55;
-}
-
-.payment-complete__secure {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 8px 12px;
-  border: 1px solid rgba(52, 211, 153, 0.3);
-  border-radius: 999px;
-  color: #6ee7b7;
-  background: rgba(16, 185, 129, 0.1);
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.payment-complete__secure svg {
-  width: 16px;
-  height: 16px;
-}
-
-.payment-complete__countdown {
-  margin: 26px 0 11px;
-  color: #8295aa;
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.payment-complete__countdown strong {
-  color: #d4e0ec;
 }
 
 .payment-complete__done {
@@ -197,9 +118,6 @@
     margin: 9px 0 12px;
   }
 
-  .payment-complete__countdown {
-    margin-top: 15px;
-  }
 }
 
 @media (max-width: 520px) {

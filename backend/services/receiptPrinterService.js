@@ -95,7 +95,17 @@ const sendToPrinter = (payload) => new Promise((resolve, reject) => {
     'hardware',
     'bp210_printer.py'
   );
-  const child = spawn(python, [script], { stdio: ['pipe', 'ignore', 'pipe'] });
+  const transport = String(process.env.RECEIPT_PRINTER_TRANSPORT || 'usb').trim().toLowerCase();
+  const printerArgs = [script, '--transport', transport];
+  if (transport === 'bluetooth') {
+    printerArgs.push(
+      '--bluetooth-address',
+      String(process.env.RECEIPT_PRINTER_BLUETOOTH_ADDRESS || '').trim(),
+      '--bluetooth-channel',
+      String(process.env.RECEIPT_PRINTER_BLUETOOTH_CHANNEL || '1').trim()
+    );
+  }
+  const child = spawn(python, printerArgs, { stdio: ['pipe', 'ignore', 'pipe'] });
   let errorOutput = '';
 
   child.stderr.on('data', (chunk) => {

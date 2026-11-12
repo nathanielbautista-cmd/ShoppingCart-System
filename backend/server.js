@@ -18,10 +18,8 @@ const productRoutes = require('./routes/productRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 const checkoutRoutes = require('./routes/checkoutRoutes');
 const inventoryRoutes = require('./routes/inventoryRoutes');
-const cashierRoutes = require('./routes/cashierRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const hardwareRoutes = require('./routes/hardwareRoutes');
-const adminRoutes = require('./routes/adminRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 
 
@@ -60,10 +58,8 @@ app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/checkout', checkoutRoutes);
 app.use('/api/inventory', inventoryRoutes);
-app.use('/api/cashier', cashierRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/hardware', hardwareRoutes);
-app.use('/api/admin', adminRoutes);
 app.use('/api/payments', paymentRoutes);
 
 

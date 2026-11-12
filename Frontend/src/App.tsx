@@ -18,6 +18,7 @@ import { ProductVerificationFeedback } from './components/ProductVerificationFee
 import { RemovalFeedback } from './components/RemovalFeedback';
 import { ScannedProductModal } from './components/ScannedProductModal';
 import { KioskKeyboard } from './components/KioskKeyboard';
+import { KioskScrollSupport } from './components/KioskScrollSupport';
 
 
 import { Welcome } from './pages/customer/Welcome';
@@ -32,7 +33,6 @@ import { QRPayment } from './pages/customer/QRPayment';
 import { TransactionComplete } from './pages/customer/TransactionComplete';
 import { Help } from './pages/customer/Help';
 import { SearchProducts } from './pages/customer/SearchProducts';
-import { CameraTest } from './pages/CameraTest';
 
 
 import { AdminAuth } from './pages/admin/AdminAuth';
@@ -130,13 +130,14 @@ const AppContent: React.FC = () => {
 
   return (
     <div className={`app-shell app-theme-${settings.theme.toLowerCase()} w-screen h-screen flex flex-col overflow-hidden font-sans select-none ${settings.theme === 'DARK' ? 'bg-slate-950 text-slate-100' : 'bg-slate-100 text-slate-900'} ${userMode === 'CUSTOMER' && settings.theme === 'DARK' ? 'customer-theme-dark' : ''}`}>
+      <KioskScrollSupport />
       <HardwareButtonBridge />
       {!isQrPayment && <WeightAnomalyAlert />}
       {!isQrPayment && <BudgetLimitAlert />}
       {!isQrPayment && customerScreen !== 'TRANSACTION_COMPLETE' && <ProductVerificationFeedback />}
       {!isQrPayment && <RemovalFeedback />}
       {!isQrPayment && <ScannedProductModal />}
-      {!isQrPayment && <KioskKeyboard />}
+      {userMode === 'CUSTOMER' && !isQrPayment && <KioskKeyboard />}
       {!powered ? <div className="flex-1 grid place-items-center bg-black text-slate-500">iCart is powered off</div> : <>
 
       <main className={`flex-1 overflow-hidden ${settings.theme === 'DARK' ? 'bg-slate-950' : 'bg-slate-50'}`}>
@@ -179,10 +180,6 @@ const AppContent: React.FC = () => {
 };
 
 export default function App() {
-  if (new URLSearchParams(window.location.search).has('camera-test')) {
-    return <CameraTest />;
-  }
-
   return (
     <CartProvider>
       <AppContent />

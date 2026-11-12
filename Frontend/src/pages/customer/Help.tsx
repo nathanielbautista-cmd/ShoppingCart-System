@@ -2,30 +2,15 @@ import './Help.css';
 import React from 'react';
 import {
   Scan,
-  PackageCheck,
   Wallet,
   ReceiptText,
-  ArrowLeft,
   HelpCircle,
   Scale,
   MinusCircle,
   ShoppingCart,
-  AlertTriangle,
 } from 'lucide-react';
-import { useCart } from '../../context/CartContext';
-import { Button } from '../../components/Button';
 
 export const Help: React.FC = () => {
-  const { setCustomerScreen, cartItems } = useCart();
-
-  const handleBack = () => {
-    if (cartItems.length > 0) {
-      setCustomerScreen('SHOPPING_HOME');
-    } else {
-      setCustomerScreen('WELCOME');
-    }
-  };
-
   const steps = [
     {
       num: '1',
@@ -102,19 +87,6 @@ export const Help: React.FC = () => {
           </div>
          
         </div>
-      </div>
-
-
-      <div className="help__item-23">
-        <Button
-          variant="secondary"
-          size="md"
-          className="help__item-24"
-          icon={<ArrowLeft className="help__item-25" />}
-          onClick={handleBack}
-        >
-          BACK
-        </Button>
       </div>
     </div>
   );

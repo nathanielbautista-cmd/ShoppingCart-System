@@ -19,5 +19,6 @@ exec /usr/bin/chromium "$KIOSK_URL" \
   --no-default-browser-check \
   --disable-session-crashed-bubble \
   --disable-pinch \
+  --touch-events=enabled \
   --overscroll-history-navigation=0 \
   --disable-features=Translate

@@ -2,6 +2,8 @@
 """Send an ESC/POS receipt to the BP210 over its USB bulk-out endpoint."""
 
 import argparse
+import os
+import socket
 import sys
 
 import usb.core
@@ -10,6 +12,7 @@ import usb.util
 
 DEFAULT_VENDOR_ID = 0x0FE6
 DEFAULT_PRODUCT_ID = 0x811E
+DEFAULT_BLUETOOTH_CHANNEL = 1
 
 
 def parse_number(value: str) -> int:
@@ -56,16 +59,73 @@ def open_printer(vendor_id: int, product_id: int):
     return device, interface_number, endpoint
 
 
+def open_bluetooth_printer(address: str, channel: int):
+    if not address:
+        raise RuntimeError("BP210 Bluetooth address is not configured")
+
+    connection = socket.socket(
+        socket.AF_BLUETOOTH,
+        socket.SOCK_STREAM,
+        socket.BTPROTO_RFCOMM,
+    )
+    connection.settimeout(10)
+    try:
+        connection.connect((address, channel))
+    except Exception:
+        connection.close()
+        raise
+    return connection
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--transport",
+        choices=("usb", "bluetooth"),
+        default=os.environ.get("RECEIPT_PRINTER_TRANSPORT", "usb"),
+    )
     parser.add_argument("--vendor-id", type=parse_number, default=DEFAULT_VENDOR_ID)
     parser.add_argument("--product-id", type=parse_number, default=DEFAULT_PRODUCT_ID)
+    parser.add_argument(
+        "--bluetooth-address",
+        default=os.environ.get("RECEIPT_PRINTER_BLUETOOTH_ADDRESS", ""),
+    )
+    parser.add_argument(
+        "--bluetooth-channel",
+        type=int,
+        default=int(
+            os.environ.get(
+                "RECEIPT_PRINTER_BLUETOOTH_CHANNEL",
+                str(DEFAULT_BLUETOOTH_CHANNEL),
+            )
+        ),
+    )
     parser.add_argument("--probe", action="store_true")
     args = parser.parse_args()
 
     device = None
     interface_number = None
+    bluetooth_connection = None
     try:
+        if args.transport == "bluetooth":
+            bluetooth_connection = open_bluetooth_printer(
+                args.bluetooth_address,
+                args.bluetooth_channel,
+            )
+            if args.probe:
+                print(
+                    "BP210 ready over Bluetooth "
+                    f"{args.bluetooth_address} channel {args.bluetooth_channel}",
+                    flush=True,
+                )
+                return 0
+
+            payload = sys.stdin.buffer.read()
+            if not payload:
+                raise RuntimeError("No receipt data was provided")
+            bluetooth_connection.sendall(payload)
+            return 0
+
         device, interface_number, endpoint = open_printer(
             args.vendor_id, args.product_id
         )
@@ -87,6 +147,8 @@ def main() -> int:
         print(str(error), file=sys.stderr, flush=True)
         return 1
     finally:
+        if bluetooth_connection is not None:
+            bluetooth_connection.close()
         if device is not None and interface_number is not None:
             try:
                 usb.util.release_interface(device, interface_number)

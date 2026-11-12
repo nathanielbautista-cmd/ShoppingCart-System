@@ -1,0 +1,163 @@
+﻿[
+    {
+        "track":  2,
+        "baseTrack":  2,
+        "key":  "WELCOME",
+        "language":  "en-US",
+        "message":  "Welcome to iCart. Set your shopping budget."
+    },
+    {
+        "track":  3,
+        "baseTrack":  3,
+        "key":  "BUDGET",
+        "language":  "en-US",
+        "message":  "Budget saved."
+    },
+    {
+        "track":  4,
+        "baseTrack":  4,
+        "key":  "SCANNED",
+        "language":  "en-US",
+        "message":  "Product scanned."
+    },
+    {
+        "track":  5,
+        "baseTrack":  5,
+        "key":  "ITEM_ADDED",
+        "language":  "en-US",
+        "message":  "Item added to your cart."
+    },
+    {
+        "track":  6,
+        "baseTrack":  6,
+        "key":  "WEIGHT_VERIFICATION_FAILED",
+        "language":  "en-US",
+        "message":  "Weight verification failed."
+    },
+    {
+        "track":  7,
+        "baseTrack":  7,
+        "key":  "UNSCANNED",
+        "language":  "en-US",
+        "message":  "Unscanned item detected."
+    },
+    {
+        "track":  8,
+        "baseTrack":  8,
+        "key":  "ALARM",
+        "language":  "en-US",
+        "message":  "Security alert detected. Remove the unscanned item to stop the alarm."
+    },
+    {
+        "track":  9,
+        "baseTrack":  9,
+        "key":  "REMOVE_ITEM",
+        "language":  "en-US",
+        "message":  "No item selected for removal."
+    },
+    {
+        "track":  10,
+        "baseTrack":  10,
+        "key":  "ITEM_REMOVED",
+        "language":  "en-US",
+        "message":  "Product was removed."
+    },
+    {
+        "track":  11,
+        "baseTrack":  11,
+        "key":  "PAYMENT_READY",
+        "language":  "en-US",
+        "message":  "QR payment is ready."
+    },
+    {
+        "track":  12,
+        "baseTrack":  12,
+        "key":  "PAYMENT_SUCCESS",
+        "language":  "en-US",
+        "message":  "Payment successful. Your receipt is printing. Thank you for shopping with iCart."
+    },
+    {
+        "track":  13,
+        "baseTrack":  13,
+        "key":  "BUDGET_WARNING",
+        "language":  "en-US",
+        "message":  "You are nearly at your spending limit."
+    },
+    {
+        "track":  14,
+        "baseTrack":  14,
+        "key":  "BUDGET_EXCEEDED",
+        "language":  "en-US",
+        "message":  "Budget exceeded. Remove an item or adjust your budget."
+    },
+    {
+        "track":  15,
+        "baseTrack":  15,
+        "key":  "BUDGET_ERROR",
+        "language":  "en-US",
+        "message":  "Your budget was not saved."
+    },
+    {
+        "track":  16,
+        "baseTrack":  16,
+        "key":  "SCAN_ERROR",
+        "language":  "en-US",
+        "message":  "Product not found."
+    },
+    {
+        "track":  17,
+        "baseTrack":  17,
+        "key":  "SESSION_ERROR",
+        "language":  "en-US",
+        "message":  "Shopping session could not start."
+    },
+    {
+        "track":  18,
+        "baseTrack":  18,
+        "key":  "REMOVE_ERROR",
+        "language":  "en-US",
+        "message":  "Removed item does not match."
+    },
+    {
+        "track":  19,
+        "baseTrack":  19,
+        "key":  "WEIGHT_CHANGE_NOT_DETECTED",
+        "language":  "en-US",
+        "message":  "No matching weight change was detected."
+    },
+    {
+        "track":  20,
+        "baseTrack":  20,
+        "key":  "PAYMENT_CANCELLED",
+        "language":  "en-US",
+        "message":  "Payment cancelled."
+    },
+    {
+        "track":  21,
+        "baseTrack":  21,
+        "key":  "BUDGET_REACHED",
+        "language":  "en-US",
+        "message":  "Budget limit reached. You have used your full budget. Review your cart before adding another item."
+    },
+    {
+        "track":  22,
+        "baseTrack":  22,
+        "key":  "PAYMENT_FAILED",
+        "language":  "en-US",
+        "message":  "Payment failed."
+    },
+    {
+        "track":  23,
+        "baseTrack":  23,
+        "key":  "SCAN_CANCELLED",
+        "language":  "en-US",
+        "message":  "Scan cancelled."
+    },
+    {
+        "track":  24,
+        "baseTrack":  24,
+        "key":  "CART_ERROR",
+        "language":  "en-US",
+        "message":  "No active cart found."
+    }
+]

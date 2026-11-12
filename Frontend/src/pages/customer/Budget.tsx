@@ -1,7 +1,6 @@
 import './Budget.css';
 import React, { useState } from 'react';
 import {
-  ArrowLeft,
   Check,
   Delete,
   Edit3,
@@ -17,7 +16,6 @@ const BUDGET_INCREMENTS = [10, 20, 50, 100, 500, 1000, 5000, 10000];
 
 export const Budget: React.FC = () => {
   const {
-    setCustomerScreen,
     budget,
     currentTotal,
     remainingBudget,
@@ -61,11 +59,6 @@ export const Budget: React.FC = () => {
     soundService.playKeyClick();
     applyBudget(proposedBudget);
     setIsEditing(false);
-  };
-
-  const handleReturn = () => {
-    soundService.playKeyClick();
-    setCustomerScreen('SHOPPING_HOME');
   };
 
   return (
@@ -174,13 +167,6 @@ export const Budget: React.FC = () => {
           </div>
         </section>
       )}
-
-      <footer className="budget-page__footer">
-        <button type="button" onClick={handleReturn} className="budget-page__back">
-          <ArrowLeft aria-hidden="true" />
-          <span>Return to shopping</span>
-        </button>
-      </footer>
     </main>
   );
 };

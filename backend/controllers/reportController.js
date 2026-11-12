@@ -299,9 +299,9 @@ const getDashboardOverview = async (req, res, next) => {
 
     const operations = carts.reduce((summary, cart) => {
       if (cart.status === 'ACTIVE' || cart.status === 'CHECKOUT') summary.activeCarts += 1;
-      if (cart.status === 'WAITING_FOR_CASHIER' || cart.status === 'PAYMENT_PENDING') summary.waitingForCashier += 1;
+      if (cart.status === 'PAYMENT_PENDING') summary.pendingPayments += 1;
       return summary;
-    }, { activeCarts: 0, waitingForCashier: 0 });
+    }, { activeCarts: 0, pendingPayments: 0 });
 
     const todaySummary = todaySummaryRows[0] || { sales: 0, checkouts: 0 };
     const totalSalesSummary = totalSalesRows[0] || { sales: 0 };
@@ -316,7 +316,7 @@ const getDashboardOverview = async (req, res, next) => {
         totalSales: totalSalesSummary.sales,
         lowStock: stockStatus.lowStock,
         outOfStock: stockStatus.outOfStock,
-        waitingForCashier: operations.waitingForCashier
+        pendingPayments: operations.pendingPayments
       },
       stockStatus,
       salesOverview,

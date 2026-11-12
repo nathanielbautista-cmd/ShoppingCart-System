@@ -40,7 +40,7 @@
 .customer-sidebar__logo img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .customer-sidebar__logo strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.customer-sidebar__nav { display: flex; flex: 1; flex-direction: column; gap: 7px; }
+.customer-sidebar__nav { display: flex; min-height: 0; flex: 1; flex-direction: column; justify-content: space-evenly; gap: 7px; }
 .customer-sidebar__nav > button,
 .customer-sidebar__settings-wrap > button {
   width: 100%;
@@ -73,7 +73,7 @@
 .customer-sidebar__settings-wrap > button svg { width: 17px; flex: 0 0 17px; color: #74d4a2; }
 .customer-sidebar__nav > button.is-active svg,
 .customer-sidebar__settings-wrap > button.is-active svg { color: #fff; }
-.customer-sidebar__settings-wrap { position: relative; margin-top: auto; }
+.customer-sidebar__settings-wrap { position: relative; }
 
 .customer-sidebar__settings-menu {
   position: absolute;

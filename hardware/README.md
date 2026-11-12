@@ -33,6 +33,51 @@ cell documentation before applying power. All modules must share Pi ground.
 sudo apt install -y python3-lgpio
 ```
 
+## DFPlayer Mini speaker
+
+The DFPlayer Mini uses the Raspberry Pi primary UART and does not conflict
+with the HX711 or cart-control GPIO assignments:
+
+| Raspberry Pi physical pin | GPIO / function | DFPlayer Mini pin |
+| --- | --- | --- |
+| 2 | 5V | VCC |
+| 6 | GND | GND |
+| 8 | GPIO14 / TXD | RX, through a 1 kOhm resistor |
+| 10 | GPIO15 / RXD | TX |
+
+Connect the actual speaker only between the DFPlayer `SPK_1` and `SPK_2`
+pins; neither speaker lead goes to Pi ground. Use a stable 5 V supply if the
+module resets or the sound distorts at higher volume, and make sure its ground
+is shared with the Pi.
+
+On the microSD card, create an `mp3` folder and put numbered files in it, for
+example `/mp3/0001.mp3`. The default deployment uses track 1 as a temporary
+test/default prompt. To use separate recorded prompts, set the
+`ICART_DFPLAYER_TRACK_*` variables in `backend/.env`; their names and values
+are listed in `backend/.env.example`.
+
+Enable the Pi UART once, then reboot:
+
+```bash
+sudo raspi-config nonint do_serial 0
+sudo reboot
+```
+
+This turns on `/dev/serial0` and disables the serial login console so it will
+not send text into the DFPlayer. After deployment, test a known track:
+
+```bash
+sudo -u icart /usr/bin/python3 /home/icart/icart/hardware/dfplayer_player.py --track 1
+```
+
+The `icart-backend` service has access to the `dialout` group and, when
+`ICART_DFPLAYER_ENABLED=true`, uses the DFPlayer before Piper/eSpeak. Check
+the selected output with:
+
+```bash
+curl http://127.0.0.1/api/hardware/voice/status
+```
+
 ## Physical cart buttons
 
 All button GPIO values use BCM numbering. Wire each normally-open button
@@ -65,7 +110,9 @@ They do nothing after the cart has been powered off.
 
 Power on/off is a safe touchscreen state: it blanks or restores the kiosk and
 controls the power LED, but it does not cut power to the Raspberry Pi. Restart
-reloads the kiosk page; it does not reboot the Raspberry Pi operating system.
+reloads the kiosk page with one normal press; it does not reboot the Raspberry
+Pi operating system. Repeat restart signals are ignored for 10 seconds while
+the browser reloads.
 
 Run the live load-cell publisher in a second terminal after calibration:
 

@@ -139,39 +139,28 @@ async function run() {
   } catch (e) {}
 
 
+  let paymentId = null;
   try {
-    const r = await fetchJson(`/checkout/${CART_ID}`, { method: 'POST', body: JSON.stringify({ paymentMethod: 'CASH', amountReceived: 1000000 }) });
-    if (r.status !== 200) {
-      console.error('Checkout response body:', r.body);
-      throw new Error('Checkout did not return 200');
-    }
-    if (!(r.body && (r.body.receipt || r.body.message))) {
-      console.error('Checkout response body (no receipt):', r.body);
-      throw new Error('Receipt not returned');
-    }
-
-    const cartGet = await fetchJson(`/cart/${CART_ID}`);
-    const status = cartGet.body && cartGet.body.cart && cartGet.body.cart.status;
-    if (!status || status.toUpperCase().indexOf('COMPLETED') === -1) throw new Error('Cart status not changed to COMPLETED');
-    console.log('[PASS] Test 9 — Checkout');
+    const r = await fetchJson(`/payments/qrph/${CART_ID}`, { method: 'POST', body: '{}' });
+    if (r.status !== 201) throw new Error(`QR payment creation returned ${r.status}`);
+    paymentId = r.body?.payment?.paymentId;
+    if (!paymentId) throw new Error('Payment ID was not returned');
+    console.log('[PASS] Test 9 — QR payment creation');
   } catch (e) {
-    console.error('[FAIL] Test 9 — Checkout:', e.message);
+    console.error('[FAIL] Test 9 — QR payment creation:', e.message);
     failures++;
   }
 
 
   try {
-    const r = await fetchJson('/checkout/waiting');
-    if (r.status === 404) {
-      console.error('[FAIL] Test 10 — Waiting cashier: endpoint not implemented (404)');
-      failures++;
-    } else if (r.status !== 200) {
-      throw new Error(`Unexpected status ${r.status}`);
-    } else {
-      console.log('[PASS] Test 10 — Waiting cashier');
-    }
+    if (!paymentId) throw new Error('No payment ID available from previous step');
+    const r = await fetchJson(`/payments/${paymentId}/simulate-success`, { method: 'POST', body: '{}' });
+    if (r.status !== 200 || r.body?.payment?.status !== 'PAID') throw new Error(`QR payment confirmation returned ${r.status}`);
+    const cartGet = await fetchJson(`/cart/${CART_ID}`);
+    if (cartGet.body?.cart?.status !== 'COMPLETED') throw new Error('Cart status did not change to COMPLETED');
+    console.log('[PASS] Test 10 — QR payment confirmation');
   } catch (e) {
-    console.error('[FAIL] Test 10 — Waiting cashier:', e.message);
+    console.error('[FAIL] Test 10 — QR payment confirmation:', e.message);
     failures++;
   }
 

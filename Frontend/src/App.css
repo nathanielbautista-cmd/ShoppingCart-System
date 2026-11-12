@@ -7,6 +7,11 @@
   overflow: hidden;
 }
 
+.kiosk-drag-scrolling,
+.kiosk-drag-scrolling * {
+  cursor: grabbing !important;
+}
+
 .app__item-5 {
   flex: 1;
   min-width: 0;
@@ -37,7 +42,11 @@
   height: 100%;
   flex: 1;
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
   background: #020617;
 }
 

@@ -82,7 +82,6 @@ interface CartContextType {
 
   settings: StoreSettings;
   updateSettings: (newSettings: Partial<StoreSettings>) => void;
-  toggleVoice: () => void;
   playVoice: (message: string) => void;
   adminUser: AdminUser | null;
 
@@ -125,7 +124,6 @@ const DEFAULT_SETTINGS: StoreSettings = {
   currencySymbol: '₱',
   budgetWarningThreshold: 80,
   weightToleranceGrams: 20,
-  voiceEnabled: true,
   theme: 'LIGHT',
 };
 
@@ -135,7 +133,9 @@ const loadStoredSettings = (): StoreSettings => {
   try {
     const stored = localStorage.getItem(SETTINGS_STORAGE_KEY);
     if (!stored) return DEFAULT_SETTINGS;
-    const parsed = JSON.parse(stored) as Partial<StoreSettings>;
+    const parsed = JSON.parse(stored) as Partial<StoreSettings> & { voiceEnabled?: boolean; voiceLanguage?: string };
+    delete parsed.voiceEnabled;
+    delete parsed.voiceLanguage;
     return {
       ...DEFAULT_SETTINGS,
       ...parsed,
@@ -190,7 +190,9 @@ const findAutomaticRemovalMatch = (
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
-  const [userMode, setUserMode] = useState<UserMode>('CUSTOMER');
+  const [userMode, setUserMode] = useState<UserMode>(() =>
+    window.location.pathname.replace(/\/+$/, '') === '/admin' ? 'ADMIN' : 'CUSTOMER'
+  );
   const [customerScreen, setCustomerScreenState] = useState<CustomerScreen>('WELCOME');
   const [selectedProductCategory, setSelectedProductCategory] = useState('All');
   const [adminScreen, setAdminScreen] = useState<AdminScreen>('LOGIN');
@@ -202,6 +204,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [checkoutSubmitting, setCheckoutSubmitting] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [paymentIntent, setPaymentIntent] = useState<PaymentIntent | null>(null);
+  const lastPaymentNoticeRef = useRef<string | null>(null);
   const [voidReminder, setVoidReminder] = useState<{ id: string; productName: string; quantity: number } | null>(null);
   const lastSeenVoidRef = useRef<string | null>(null);
   const [budget, setBudget] = useState<number>(0);
@@ -282,35 +285,42 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     return 'NORMAL';
   }, [currentTotal, budget, settings.budgetWarningThreshold]);
+  const lastBudgetAlertRef = useRef<BudgetState>('NORMAL');
 
 
   const playVoice = useCallback(
     (message: string) => {
-      speakMessage(message, settings.voiceEnabled);
+      speakMessage(message);
     },
-    [settings.voiceEnabled]
+    []
   );
 
-  const toggleVoice = useCallback(() => {
-    setSettings((prev) => {
-      const updated = !prev.voiceEnabled;
-      if (updated) {
-        speakMessage('Voice assistance activated', true);
-      }
-      const nextSettings = { ...prev, voiceEnabled: updated };
-      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(nextSettings));
-      return nextSettings;
-    });
-  }, []);
+  useEffect(() => {
+    if (!hasSetBudget) {
+      lastBudgetAlertRef.current = 'NORMAL';
+      return;
+    }
+    if (budgetState === lastBudgetAlertRef.current) return;
+
+    lastBudgetAlertRef.current = budgetState;
+    if (budgetState === 'WARNING') {
+      playVoice('You are nearly at your spending limit.');
+    } else if (budgetState === 'EXCEEDED') {
+      playVoice('Budget exceeded. Remove an item or adjust your budget.');
+    }
+  }, [budgetState, hasSetBudget, playVoice]);
 
   useEffect(() => {
+    const productVerificationActive = pendingProduct !== null && (
+      verificationStatus === 'WAITING' || verificationStatus === 'VERIFYING'
+    );
     const monitoringAllowed = (
       userMode === 'CUSTOMER' &&
       hasSetBudget &&
       cartStatus === 'ACTIVE' &&
-      (pendingProduct === null || verificationStatus === 'VERIFIED') &&
+      !productVerificationActive &&
       itemToRemove === null &&
-      (customerScreen !== 'PRODUCT_VERIFICATION' || verificationStatus === 'VERIFIED') &&
+      (customerScreen !== 'PRODUCT_VERIFICATION' || verificationStatus === 'VERIFIED' || verificationStatus === 'FAILED') &&
       customerScreen !== 'REMOVE_ITEM' &&
       customerScreen !== 'CHECKOUT_REVIEW' &&
       customerScreen !== 'QR_PAYMENT' &&
@@ -334,8 +344,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // calculated from three raw HX711 samples on the Pi; the 15 g floor keeps
     // ordinary empty-basket drift below the unscanned-item trigger.
     const minimumIncreaseThresholdGrams = 15;
-    const baselineSampleCount = 1;
-    const requiredIncreaseConfirmations = 1;
+    const baselineSampleCount = 2;
+    const requiredIncreaseConfirmations = 2;
 
     const updateAnomaly = (value: {
       changeGrams: number;
@@ -385,9 +395,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             decreaseCandidateRef.current = null;
             anomalyReturnCandidateRef.current = 0;
             if (cartId) void clearWeightAnomaly(cartId).catch(() => undefined);
-            playVoice(activeAnomaly.direction === 'increase'
-              ? 'Unscanned item removed. You may continue shopping.'
-              : 'Removed item returned to the basket. Use My Cart if you want to remove it.');
+            if (activeAnomaly.direction === 'increase') playVoice('Product was removed.');
           }
           return;
         }
@@ -429,7 +437,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             anomalyReturnCandidateRef.current = 0;
             updateAnomaly({ changeGrams: increaseGrams, direction: 'increase' });
             soundService.playWarning();
-            playVoice('Unscanned item detected. Remove it from the basket, scan its barcode, then place it back.');
+            playVoice('Unscanned item detected.');
             if (cartId) void reportWeightAnomaly(
               cartId,
               increaseGrams,
@@ -462,10 +470,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
               updateAnomaly({ changeGrams: decreaseGrams, direction: 'decrease' });
               anomalyReturnCandidateRef.current = 0;
               soundService.playWarning();
-              playVoice(
-                'The removed weight does not uniquely match an item in your cart. ' +
-                'Return it to the basket, then use My Cart to remove it.'
-              );
+              playVoice('Removed item does not match.');
               if (cartId) void reportWeightAnomaly(
                 cartId,
                 -decreaseGrams,
@@ -508,18 +513,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
               backgroundBaselineRef.current = reading.grams;
               soundService.playSuccessChime();
-              playVoice(
-                `${match.quantity > 1 ? `${match.quantity} units of ` : ''}` +
-                `${match.item.product.name} automatically removed from your cart.`
-              );
+              playVoice('Product was removed.');
             } catch (error) {
               console.error('Automatic cart removal failed', error);
               updateAnomaly({ changeGrams: decreaseGrams, direction: 'decrease' });
               soundService.playWarning();
-              playVoice(
-                'The item was removed from the basket but could not be updated in your cart. ' +
-                'Return it to the basket and try again.'
-              );
             } finally {
               backgroundRemovalInProgressRef.current = false;
             }
@@ -673,7 +671,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
               amountReceived: transaction.amountReceived,
               change: transaction.change,
               paymentStatus: transaction.paymentStatus,
-              cashierName: transaction.cashierId,
+              processedBy: transaction.processedBy,
             };
             setTransactions((previous) => [
               completedTransaction,
@@ -686,7 +684,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setPendingProduct(null);
           setVerificationStatus('WAITING');
           soundService.playSuccessChime();
-          playVoice('QR Ph payment verified. Your receipt is printing. Thank you for shopping with iCart.');
+          playVoice('Payment successful. Your receipt is printing. Thank you for shopping with iCart.');
           setCustomerScreenState('TRANSACTION_COMPLETE');
           return;
         }
@@ -694,9 +692,17 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (['FAILED', 'CANCELLED', 'REVIEW_REQUIRED'].includes(currentPayment.status)) {
           setCartStatus(currentPayment.status === 'REVIEW_REQUIRED' ? 'PAYMENT_PENDING' : 'ACTIVE');
           setCheckoutError(currentPayment.failureReason || 'Payment could not be completed.');
+          const noticeKey = `${currentPayment.paymentId}:${currentPayment.status}`;
+          if (lastPaymentNoticeRef.current !== noticeKey) {
+            lastPaymentNoticeRef.current = noticeKey;
+            if (currentPayment.status === 'CANCELLED') playVoice('Payment cancelled.');
+            else playVoice('Payment failed.');
+          }
         }
       } catch (error) {
-        if (!stopped) setCheckoutError(error instanceof Error ? error.message : 'Unable to check payment status.');
+        if (!stopped) {
+          setCheckoutError(error instanceof Error ? error.message : 'Unable to check payment status.');
+        }
       } finally {
         requestInFlight = false;
       }
@@ -722,25 +728,23 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setHasSetBudget(false);
           setCartStatus('ACTIVE');
           setCustomerScreenState('BUDGET_SETUP');
-          playVoice('Welcome to iCart. Please set your shopping budget.');
+          playVoice('Welcome to iCart. Set your shopping budget.');
         } else {
-          setSessionError('The server did not return a new cart. Please try again or contact staff.');
-          playVoice('Unable to start shopping session. Please ask a staff member for assistance.');
+        setSessionError('The server did not return a new cart.');
+          playVoice('Shopping session could not start.');
         }
       })
       .catch((err) => {
         console.error('Failed to create cart on backend', err);
         const message = err instanceof Error ? err.message : 'Unable to reach the iCart backend.';
         setSessionError(`Could not start session: ${message}`);
-        playVoice('Unable to start shopping session. Please ask a staff member for assistance.');
+        playVoice('Shopping session could not start.');
       });
   }, [playVoice]);
 
   const applyBudget = useCallback(
     (budgetAmount: number) => {
-      const budgetConfirmation = hasSetBudget
-        ? `Budget updated to ${settings.currencySymbol}${budgetAmount}.`
-        : `Budget set to ${settings.currencySymbol}${budgetAmount}. You are ready to shop.`;
+      const budgetConfirmation = 'Budget saved.';
       setBudget(budgetAmount);
       setHasSetBudget(true);
       if (cartId) {
@@ -755,13 +759,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .catch((err) => {
             console.error('Failed to update budget', err);
             setCustomerScreenState('SHOPPING_HOME');
+            playVoice('Your budget was not saved.');
           });
       } else {
         setCustomerScreenState('SHOPPING_HOME');
         playVoice(budgetConfirmation);
       }
     },
-    [hasSetBudget, playVoice, settings.currencySymbol]
+    [playVoice]
   );
 
 
@@ -772,17 +777,17 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (res.success && res.product) {
         soundService.playScanBeep();
         setPendingProduct(res.product);
-        playVoice(`Scanned ${res.product.name}. Price is ${settings.currencySymbol}${res.product.price}.`);
+        playVoice('Product scanned.');
         return { success: true, product: res.product };
       } else {
         soundService.playWarning();
-        const errorMsg = res.errorMessage || 'Product not found. Please ask a staff member for assistance.';
+        const errorMsg = 'Product not found.';
         setScanError(errorMsg);
         playVoice(errorMsg);
         return { success: false, error: errorMsg };
       }
     },
-    [products, playVoice, settings.currencySymbol]
+    [products, playVoice]
   );
 
 
@@ -795,6 +800,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (verificationInProgressRef.current) return false;
       verificationInProgressRef.current = true;
       const attempt = ++verificationAttemptRef.current;
+      // Capture the already-stable basket weight before setting pendingProduct,
+      // because that state transition temporarily pauses background monitoring.
+      // This closes the race where a quickly placed second item became the new
+      // baseline and was therefore never seen as an increase.
+      const knownBasketWeight = backgroundBaselineRef.current;
       setPendingProduct(product);
       setVerificationStatus('WAITING');
       setDetectedWeight(null);
@@ -815,7 +825,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
               settings.weightToleranceGrams,
               simulateFailure,
               'increase',
-              () => setVerificationStatus('VERIFYING')
+              () => {
+                setVerificationStatus('VERIFYING');
+                // Scale readiness remains visible on screen, not spoken to the customer.
+              },
+              knownBasketWeight
             );
 
         if (attempt !== verificationAttemptRef.current) return false;
@@ -825,9 +839,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           soundService.playWarning();
           setVerificationStatus('FAILED');
           const message = result.reason === 'TIMEOUT'
-            ? 'No matching weight change was detected. Remove the item and try again.'
-            : 'Weight verification failed. Please remove extra items and try again.';
+            ? 'No matching weight change was detected.'
+            : 'Weight verification failed.';
           setScanError(message);
+          playVoice(message);
           return false;
         }
 
@@ -835,6 +850,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (cartId) {
           const res: any = await addCartItem(cartId, { barcode: product.barcode, quantity: 1 });
           if (!res?.cart) throw new Error('The server did not return the updated cart.');
+          const newTotal = Number.isFinite(Number(res.cart.total))
+            ? Number(res.cart.total)
+            : currentTotal + product.price;
           const formatted = res.cart.items.map((i: any) => ({ product: {
             id: i.productId,
             barcode: i.barcode,
@@ -847,7 +865,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }, quantity: i.quantity }));
           setCartItems(formatted);
           setCartStatus(res.cart.status || 'ACTIVE');
+          playVoice(
+            `${product.name}. Price: ${product.price.toFixed(2)} Philippine pesos. Added to your cart. Your new total is ${newTotal.toFixed(2)} Philippine pesos.`
+          );
         } else {
+          const newTotal = currentTotal + product.price;
           setCartItems((prev) => {
             const existing = prev.find((item) => item.product.id === product.id);
             if (existing) {
@@ -857,6 +879,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
             return [...prev, { product, quantity: 1 }];
           });
+          playVoice(
+            `${product.name}. Price: ${product.price.toFixed(2)} Philippine pesos. Added to your cart. Your new total is ${newTotal.toFixed(2)} Philippine pesos.`
+          );
+        }
+        if (typeof result.basketWeightGrams === 'number' && Number.isFinite(result.basketWeightGrams)) {
+          backgroundBaselineRef.current = result.basketWeightGrams;
+          backgroundBaselineSamplesRef.current = [];
+          backgroundReadingTimestampRef.current = null;
         }
         soundService.playSuccessChime();
         setVerificationStatus('VERIFIED');
@@ -875,7 +905,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
     },
-    [cartId, settings.weightToleranceGrams]
+    [cartId, currentTotal, playVoice, settings.weightToleranceGrams]
   );
 
   const retryVerification = useCallback(async () => {
@@ -887,7 +917,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const confirmPendingProduct = useCallback(async () => {
     if (!pendingProduct) {
-      playVoice('Scan a product before pressing the add button.');
       return false;
     }
     if (verificationStatus === 'VERIFIED') return false;
@@ -935,11 +964,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     removalAttemptRef.current += 1;
     removalInProgressRef.current = false;
     setItemToRemove(null);
-  }, []);
+  }, [playVoice]);
 
   const startItemRemovalVerification = useCallback(async (simulateSuccess: boolean = false) => {
     if (!itemToRemove) {
-      playVoice('Select an item with the minus or trash button before pressing remove.');
+      playVoice('No item selected for removal.');
       return false;
     }
     if (removalInProgressRef.current && !simulateSuccess) return false;
@@ -974,8 +1003,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         soundService.playWarning();
         if (weightCheck.reason === 'MISMATCH') {
           setRemovalStatus('REMOVAL_MISMATCH');
+          playVoice('Removed item does not match.');
         } else {
           setRemovalStatus('REMOVAL_FAILED');
+          playVoice('Removed item does not match.');
         }
         removalInProgressRef.current = false;
         return false;
@@ -1028,6 +1059,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setDetectedWeight(null);
     setScanError(null);
     soundService.playSuccessChime();
+    playVoice('Product was removed.');
 
 
     setTimeout(() => {
@@ -1051,7 +1083,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const confirmCheckout = useCallback(() => {
     if (!cartId) {
       setCheckoutError('No active cart was found. Please return to the cart and try again.');
-      playVoice('No active cart found. Please start a shopping session first.');
+      playVoice('No active cart found.');
       return;
     }
 
@@ -1067,7 +1099,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setCartStatus('PAYMENT_PENDING');
         setCustomerScreenState('QR_PAYMENT');
         setCheckoutSubmitting(false);
-        playVoice('QR Ph payment is ready. Scan the code using your preferred bank or electronic wallet.');
+        playVoice('QR payment is ready.');
       })
       .catch((err) => {
         console.error('QR Ph checkout failed', err);
@@ -1077,7 +1109,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           ? err.message
           : 'The QR Ph payment could not be created. Please try again.');
         soundService.playWarning();
-        playVoice('QR Ph payment could not be created. Please try again or ask store staff for assistance.');
+        playVoice('Payment failed.');
       });
   }, [cartId, playVoice, settings.storeLogo, settings.storeName]);
 
@@ -1089,9 +1121,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setCheckoutError(null);
       setCartStatus('ACTIVE');
       setCustomerScreenState('CHECKOUT_REVIEW');
-      playVoice('Payment cancelled. You may review your cart and try again.');
+      playVoice('Payment cancelled.');
     } catch (error) {
       setCheckoutError(error instanceof Error ? error.message : 'Payment could not be cancelled.');
+      playVoice('Payment failed.');
     }
   }, [paymentIntent?.paymentId, playVoice]);
 
@@ -1103,8 +1136,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (response?.payment) setPaymentIntent(response.payment);
     } catch (error) {
       setCheckoutError(error instanceof Error ? error.message : 'Demo payment could not be completed.');
+      playVoice('Payment failed.');
     }
-  }, [paymentIntent?.paymentId, paymentIntent?.providerMode]);
+  }, [paymentIntent?.paymentId, paymentIntent?.providerMode, playVoice]);
 
   const loginAdmin = useCallback(async (email: string, pass: string) => {
     try {
@@ -1137,7 +1171,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           id: tx.transactionId, cartId: tx.cartId, date: tx.createdAt, total: tx.total,
           subtotal: tx.subtotal, discount: tx.discount, paymentMethod: tx.paymentMethod,
           amountReceived: tx.amountReceived, change: tx.change,
-          paymentStatus: tx.paymentStatus, cashierName: tx.cashierId,
+          paymentStatus: tx.paymentStatus, processedBy: tx.processedBy,
           invoiceNumber: tx.invoiceNumber,
           paymentReference: tx.paymentReference,
           paymentProvider: tx.paymentProvider,
@@ -1169,8 +1203,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     clearAdminSession();
     setAdminUser(null);
     setAdminScreen('LOGIN');
-    setUserMode('CUSTOMER');
-    setCustomerScreen('WELCOME');
+    if (window.location.pathname.replace(/\/+$/, '') !== '/admin') {
+      window.history.replaceState({}, '', '/admin');
+    }
+    setUserMode('ADMIN');
   }, []);
 
   const saveProduct = useCallback(async (product: Product) => {
@@ -1237,7 +1273,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         weightAnomaly,
         settings,
         updateSettings,
-        toggleVoice,
         playVoice,
         adminUser,
         products,

@@ -61,6 +61,8 @@ export const WeightVerification: React.FC<WeightVerificationProps> = ({
             ? '✓ ITEM VERIFIED'
             : verificationStatus === 'FAILED'
             ? 'Weight Verification Failed'
+            : verificationStatus === 'WAITING'
+            ? 'Preparing the basket scale.'
             : 'Please place the item inside the cart.'}
         </h2>
         <p className="weight-verification__subtitle">
@@ -68,7 +70,9 @@ export const WeightVerification: React.FC<WeightVerificationProps> = ({
             ? `${pendingProduct.name} has been successfully added to your cart.`
             : verificationStatus === 'FAILED'
             ? scanError || 'The detected basket weight does not match the expected product weight.'
-            : 'The cart load cells are awaiting weight increase inside the basket.'}
+            : verificationStatus === 'WAITING'
+            ? 'Keep the item outside the basket while a stable baseline is prepared.'
+            : 'The scale is ready. Place only the scanned item inside the basket.'}
         </p>
       </div>
 
@@ -88,7 +92,7 @@ export const WeightVerification: React.FC<WeightVerificationProps> = ({
             {verificationStatus === 'WAITING' && (
               <div className="weight-verification__status weight-verification__status--waiting">
                 <Scale className="weight-verification__status-icon" />
-                <span>WAITING FOR ITEM</span>
+                <span>PREPARING SCALE</span>
               </div>
             )}
             {verificationStatus === 'VERIFYING' && (

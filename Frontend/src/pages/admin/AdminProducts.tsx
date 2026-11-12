@@ -1,6 +1,7 @@
 import './AdminProducts.css';
-import React, { useMemo, useRef, useState } from 'react';
-import { Plus, Edit2, Trash2, Search, Check, AlertCircle, ChevronDown, Image as ImageIcon, X } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { Plus, Edit2, Trash2, Search, Check, CheckCircle2, AlertCircle, AlertTriangle, ChevronDown, Image as ImageIcon, X } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { Button } from '../../components/Button';
 import { Modal } from '../../components/Modal';
@@ -12,6 +13,9 @@ export const AdminProducts: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [notice, setNotice] = useState<{ type: 'success' | 'error'; title: string; text: string } | null>(null);
 
   const [barcode, setBarcode] = useState('');
   const [name, setName] = useState('');
@@ -33,6 +37,7 @@ export const AdminProducts: React.FC = () => {
   }, [products]);
 
   const openAddModal = () => {
+    setNotice(null);
     setEditingProduct(null);
     setBarcode('');
     setName('');
@@ -51,6 +56,7 @@ export const AdminProducts: React.FC = () => {
   };
 
   const openEditModal = (p: Product) => {
+    setNotice(null);
     setEditingProduct(p);
     setBarcode(p.barcode);
     setName(p.name);
@@ -90,10 +96,42 @@ export const AdminProducts: React.FC = () => {
     };
 
     try {
+      const wasEditing = Boolean(editingProduct);
       await saveProduct(newProd);
       setIsModalOpen(false);
+      setNotice({
+        type: 'success',
+        title: wasEditing ? 'Product updated' : 'Product added',
+        text: wasEditing
+          ? `${newProd.name} updated successfully.`
+          : `${newProd.name} added successfully.`,
+      });
     } catch (error) {
       setFormError(error instanceof Error ? error.message : 'Unable to save product.');
+    }
+  };
+
+  const handleDeleteProduct = async () => {
+    if (!productToDelete || isDeleting) return;
+    setIsDeleting(true);
+    setNotice(null);
+    try {
+      const productName = productToDelete.name;
+      await deleteProduct(productToDelete.id);
+      setProductToDelete(null);
+      setNotice({
+        type: 'success',
+        title: 'Product deleted',
+        text: `${productName} deleted successfully.`,
+      });
+    } catch (error) {
+      setNotice({
+        type: 'error',
+        title: 'Delete failed',
+        text: error instanceof Error ? error.message : 'Unable to delete product.',
+      });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -120,6 +158,12 @@ export const AdminProducts: React.FC = () => {
     categoryOption.toLowerCase().includes(category.trim().toLowerCase())
   );
 
+  useEffect(() => {
+    if (!notice) return;
+    const dismissTimer = window.setTimeout(() => setNotice(null), 4000);
+    return () => window.clearTimeout(dismissTimer);
+  }, [notice]);
+
   return (
     <div className="admin-products">
 
@@ -138,6 +182,22 @@ export const AdminProducts: React.FC = () => {
         </Button>
       </div>
 
+      {notice && createPortal(
+        <div
+          className={`admin-products__notice admin-products__notice--${notice.type}`}
+          role={notice.type === 'error' ? 'alert' : 'status'}
+          aria-live={notice.type === 'error' ? 'assertive' : 'polite'}
+          aria-atomic="true"
+        >
+          {notice.type === 'success' ? <CheckCircle2 aria-hidden="true" /> : <AlertCircle aria-hidden="true" />}
+          <div className="admin-products__notice-copy">
+            <strong>{notice.title}</strong>
+            <span>{notice.text}</span>
+          </div>
+          <button type="button" onClick={() => setNotice(null)} aria-label="Dismiss notification"><X /></button>
+        </div>,
+        document.body
+      )}
 
       <div className="admin-products__search-section">
         <div className="admin-products__search-box">
@@ -216,14 +276,7 @@ export const AdminProducts: React.FC = () => {
                         <Edit2 className="admin-products__action-icon" />
                       </button>
                       <button
-                        onClick={async () => {
-                          if (!window.confirm(`Delete ${p.name}?`)) return;
-                          try {
-                            await deleteProduct(p.id);
-                          } catch (error) {
-                            setFormError(error instanceof Error ? error.message : 'Unable to delete product.');
-                          }
-                        }}
+                        onClick={() => { setNotice(null); setProductToDelete(p); }}
                         className="admin-products__action-button admin-products__action-button--delete"
                         title="Delete Product"
                       >
@@ -278,7 +331,12 @@ export const AdminProducts: React.FC = () => {
                   required
                 />
                 {isCategoryMenuOpen && matchingCategoryOptions.length > 0 && (
-                  <div className="admin-products__category-menu" role="listbox" aria-label="Category options">
+                  <div
+                    className="admin-products__category-menu"
+                    role="listbox"
+                    aria-label="Category options"
+                    data-kiosk-keep-focus="true"
+                  >
                     {matchingCategoryOptions.map((categoryOption) => (
                       <button
                         key={categoryOption}
@@ -401,6 +459,43 @@ export const AdminProducts: React.FC = () => {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      <Modal
+        isOpen={Boolean(productToDelete)}
+        onClose={() => { if (!isDeleting) setProductToDelete(null); }}
+        title="Delete Product"
+        maxWidth="sm"
+      >
+        <div className="admin-products__delete-confirmation">
+          <AlertTriangle aria-hidden="true" />
+          <div>
+            <strong>Are you sure you want to delete this product?</strong>
+            <p>{productToDelete?.name}</p>
+            <span>This action cannot be undone.</span>
+          </div>
+        </div>
+        <div className="admin-products__delete-actions">
+          <Button
+            type="button"
+            variant="ghost"
+            size="md"
+            disabled={isDeleting}
+            onClick={() => setProductToDelete(null)}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="danger"
+            size="md"
+            disabled={isDeleting}
+            icon={<Trash2 className="admin-products__submit-icon" />}
+            onClick={() => void handleDeleteProduct()}
+          >
+            {isDeleting ? 'Deleting...' : 'Delete Product'}
+          </Button>
+        </div>
       </Modal>
     </div>
   );

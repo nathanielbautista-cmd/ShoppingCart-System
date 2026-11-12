@@ -102,7 +102,7 @@ const forgotPassword = async (req, res, next) => {
   try {
     const email = String(req.body.email || '').toLowerCase().trim();
     const role = String(req.body.role || '').toLowerCase().trim();
-    if (!EMAIL_PATTERN.test(email) || !['admin', 'cashier'].includes(role)) {
+    if (!EMAIL_PATTERN.test(email) || role !== 'admin') {
       return res.status(400).json({ success: false, message: 'A valid email and account type are required' });
     }
 
@@ -134,7 +134,7 @@ const resetPassword = async (req, res, next) => {
     const code = String(req.body.code || '').trim();
     const newPassword = String(req.body.newPassword || '');
 
-    if (!EMAIL_PATTERN.test(email) || !['admin', 'cashier'].includes(role) || !/^\d{6}$/.test(code)) {
+    if (!EMAIL_PATTERN.test(email) || role !== 'admin' || !/^\d{6}$/.test(code)) {
       return res.status(400).json({ success: false, message: 'Email, account type, and a valid 6-digit code are required' });
     }
     if (newPassword.length > 128 || !STRONG_PASSWORD.test(newPassword)) {

@@ -41,7 +41,7 @@ Cart.find = () => ({
   select: () => ({
     lean: async () => [
       { status: 'ACTIVE' },
-      { status: 'WAITING_FOR_CASHIER' },
+      { status: 'PAYMENT_PENDING' },
       { status: 'COMPLETED' }
     ]
   })
@@ -76,7 +76,7 @@ const run = async () => {
   assert(body.stockStatus.outOfStock === 1, 'Out-of-stock count was not calculated correctly');
   assert(body.summary.totalSales === 2450, 'Total sales were not calculated correctly');
   assert(body.operations.activeCarts === 1, 'Active carts were not calculated correctly');
-  assert(body.summary.waitingForCashier === 1, 'Waiting carts were not calculated correctly');
+  assert(body.summary.pendingPayments === 1, 'Pending payments were not calculated correctly');
   assert(body.summary.todaySales === 750, "Today's sales were not calculated correctly");
   assert(body.operations.completedCheckoutsToday === 3, 'Completed checkouts were not calculated correctly');
   assert(body.topProducts[0].name === 'Rice', 'Fast-moving products were not returned');

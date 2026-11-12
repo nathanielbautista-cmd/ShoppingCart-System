@@ -33,8 +33,8 @@ export const BudgetLimitAlert: React.FC = () => {
     soundService.playWarning();
     playVoice(
       currentLevel === 'REACHED'
-        ? 'Budget limit reached. You have no remaining budget.'
-        : `Budget exceeded by ${settings.currencySymbol}${(currentTotal - budget).toFixed(2)}. Remove an item or adjust your budget.`
+        ? 'Budget limit reached. You have used your full budget. Review your cart before adding another item.'
+        : 'Budget exceeded. Remove an item or adjust your budget.'
     );
   }, [budget, currentLevel, currentTotal, hasSetBudget, playVoice, settings.currencySymbol, userMode]);
 

@@ -34,7 +34,7 @@ module.exports = createSqliteModel({
     if (!user.name || String(user.name).trim().length > 100) throw new Error('Please provide a valid name');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.email || '')) throw new Error('Please provide a valid email address');
     if (!/^\+?[0-9]{7,15}$/.test(user.phoneNumber || '')) throw new Error('Please provide a valid phone number');
-    if (!['admin', 'cashier'].includes(user.role)) throw new Error('Invalid user role');
+    if (user.role !== 'admin') throw new Error('Invalid user role');
     if (!/^\$2[aby]\$/.test(user.password || '') && !STRONG_PASSWORD.test(user.password || '')) {
       throw new Error('Password must include uppercase, lowercase, number, and special character');
     }

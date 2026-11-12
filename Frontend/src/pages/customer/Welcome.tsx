@@ -5,19 +5,14 @@ import { useCart } from '../../context/CartContext';
 import { Button } from '../../components/Button';
 
 export const Welcome: React.FC = () => {
-  const { startShoppingSession, setUserMode, setAdminScreen, sessionError, settings } = useCart();
-
-  const openAdminLogin = () => {
-    setAdminScreen('LOGIN');
-    setUserMode('ADMIN');
-  };
+  const { startShoppingSession, sessionError, settings } = useCart();
 
   return <div className="welcome-page">
     <div className="welcome-page__topbar">
       <div className="welcome-page__brand">
-        <button type="button" className={`welcome-page__brand-mark ${settings.storeLogo ? 'has-store-logo' : ''}`} aria-label="Open admin login" onClick={openAdminLogin}>
+        <div className={`welcome-page__brand-mark ${settings.storeLogo ? 'has-store-logo' : ''}`}>
           {settings.storeLogo ? <img src={settings.storeLogo} alt="" /> : <ShoppingCart />}
-        </button>
+        </div>
         <strong>{settings.storeName}</strong>
       </div>
       <div className="welcome-page__online"><Wifi /> System online</div>

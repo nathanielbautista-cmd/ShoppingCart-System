@@ -22,15 +22,14 @@ export const verifyAdminEmail = async (email: string, code: string) =>
 export const resendAdminVerification = async (email: string) =>
   api.post('/auth/resend-verification', { email });
 
-export const requestPasswordReset = async (email: string, role: 'admin' | 'cashier') =>
-  api.post('/auth/forgot-password', { email, role });
+export const requestPasswordReset = async (email: string) =>
+  api.post('/auth/forgot-password', { email, role: 'admin' });
 
 export const resetAccountPassword = async (
   email: string,
-  role: 'admin' | 'cashier',
   code: string,
   newPassword: string
-) => api.post('/auth/reset-password', { email, role, code, newPassword });
+) => api.post('/auth/reset-password', { email, role: 'admin', code, newPassword });
 
 export const changeAdminPassword = async (currentPassword: string, newPassword: string) =>
   api.put('/auth/change-password', { currentPassword, newPassword });
