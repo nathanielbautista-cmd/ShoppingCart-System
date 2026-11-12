@@ -1,7 +1,6 @@
 import './AdminLogin.css';
 import React, { useState } from 'react';
-import { ArrowLeft, MailCheck, Shield } from 'lucide-react';
-import { Button } from '../../components/Button';
+import { MailCheck, Shield } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { AdminLogin } from './AdminLogin';
 import { Signup } from './Signup';
@@ -11,7 +10,7 @@ import { AdminForgotPassword } from './AdminForgotPassword';
 type AuthView = 'LOGIN' | 'SIGNUP' | 'VERIFY' | 'FORGOT';
 
 export const AdminAuth: React.FC = () => {
-  const { setUserMode, setCustomerScreen, settings } = useCart();
+  const { settings } = useCart();
   const [view, setView] = useState<AuthView>('LOGIN');
   const [pendingEmail, setPendingEmail] = useState('');
   const [pendingPassword, setPendingPassword] = useState('');
@@ -22,11 +21,6 @@ export const AdminAuth: React.FC = () => {
     setPendingPassword(password);
     setVerificationMessage(message);
     setView('VERIFY');
-  };
-
-  const returnToCustomer = () => {
-    setUserMode('CUSTOMER');
-    setCustomerScreen('WELCOME');
   };
 
   const title = view === 'LOGIN'
@@ -63,11 +57,6 @@ export const AdminAuth: React.FC = () => {
         {view === 'VERIFY' && <AdminEmailVerification email={pendingEmail} password={pendingPassword} initialMessage={verificationMessage} onLogin={() => setView('LOGIN')} />}
         {view === 'FORGOT' && <AdminForgotPassword initialEmail={pendingEmail} onLogin={() => setView('LOGIN')} />}
 
-        {view !== 'SIGNUP' && (
-          <footer className="admin-auth-footer">
-            <Button variant="ghost" size="sm" icon={<ArrowLeft />} onClick={returnToCustomer}>Return to Customer Screen</Button>
-          </footer>
-        )}
       </section>
     </div>
   );
